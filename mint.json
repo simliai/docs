@@ -9,11 +9,7 @@
   "colors": {
     "primary": "#000000",
     "light": "#FFFFFF",
-    "dark": "#000000",
-    "anchors": {
-      "from": "#666666",
-      "to": "#000000"
-    }
+    "dark": "#000000"
   },
   "topbarLinks": [
     {
@@ -39,17 +35,23 @@
       "pages": [
         "api-reference/introduction",
         "api-reference/rate-limits",
-        "api-reference/error-codes"
+        "api-reference/error-codes",
+        "api-reference/available-face-ids",
+        "api-reference/available-voice-ids"
       ]
     },
     {
       "group": "Endpoint Examples",
       "pages": [
         "api-reference/endpoint/startSession",
+        "api-reference/endpoint/isSessionAvailable",
         "api-reference/endpoint/getPossibleVoiceIDs",
-        "api-reference/endpoint/getPossibleFaceIDs",
-        "api-reference/endpoint/isSessionAvailable"
+        "api-reference/endpoint/getPossibleFaceIDs"
       ]
     }
-  ]
+  ],
+  "modeToggle": {
+    "default": "dark",
+    "isHidden": true
+  }
 }

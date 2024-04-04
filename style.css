@@ -1,0 +1,12 @@
+body {
+    /* font-family: Arial, sans-serif; */
+    background-color: black;
+  }
+
+#search-bar-entry {
+    display: none;
+}
+
+#search-bar-entry-mobile {
+    display: none;
+}
