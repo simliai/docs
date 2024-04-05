@@ -1,33 +1,70 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'Details for each endpoint'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
 
 ## Welcome
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+This page will explain each API and it's details.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## `/startSession`
 
-## Authentication
+The `/startSession` endpoint starts a daily room dedicated for your interaction. 
+It responds with a daily url which can be used standalone (follow the url and have an interaction with your avatar)
+, or embed the link into a daily code snippet that can be used in Web or mobile across many frameworks. (Javascript, React, React Native, Android, iOS)
+For more info on the daily sdk that you can use to embed the interaction into your project, head over to [daily-reference](https://docs.daily.co/guides/products/call-object)
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+```tsx React JS Example
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+// Create a daily call object
+callObject = DailyIframe.createCallObject({
+                videoSource: false,
+              });
+
+// Set user's name in the room
+callObject.setUserName(firstName);
+callObject.setLocalVideo(false);
+
+// Join the room with the 
+// url returned by /startSession endpoint
+callObject.join({ url }).then(async () => {
+          if (callObject === null || callObject === undefined) {
+            return;
+          }
+          console.log(await callObject.setInputDevicesAsync(inputDevie));
+        });
+        
+return (
+  <DailyProvider callObject={callObject}>
+          <Call
+            onCancel={reloadPage}
+            onCallEnd={startLeavingCall}
+            onStuck={handleJennaStuck}
+          />
+  </DailyProvider>
+);
 ```
+
+More detailed information at [daily-reference](https://docs.daily.co/guides/products/call-object)
+
+
+## `/isSessionAvailable`
+
+The total number of interactions are limited as such we've created a handy endpoint that you can call to know if the servers have a slot available
+for a live interaction.
+
+```json Example Response
+{
+  "isAvailable": true
+}
+```
+
+## `/getPossibleVoiceIDs`
+
+Currently elevenlab voices are used. You can check list of currently supported voices using this endpoint.
+
+## `/getPossibleFaceIDs`
+
+All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint. 
+We are continously adding new ones.
