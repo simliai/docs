@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://35.214.172.224:8080"
+      "url": "https://simli.com/api"
     }
   ],
   "paths": {
