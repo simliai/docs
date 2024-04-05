@@ -1,61 +1,50 @@
 ---
 title: Introduction
 icon: 'flag'
-description: 'Welcome to the home of your new documentation'
+description: 'Simli lets developers create interactive AI avatars. Ready to make your first one? Your journey begins here.'
 ---
 
-## Setting up
+## Key Concepts
 
-The first step to world-class documentation is setting up your editing environments.
+### API Key
+
+All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in). 
+The API key makes it easier for you to track your usage and control who has access to Simli.
+
+### Faces
+
+All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint. 
+We are continously adding new ones.
+
+### Voices
+
+We currently use elevenLab voices, so you will have plenty of options to choose from. 
+You can get a list of voices from our `/getPossibleVoiceIDs` endpoint. 
+
+### Interaction Prompts
+
+The interactable avatars started using the `/startSession` endpoint require a prompt to be entered. 
+This prompt controls the behaviour of the avatar when speaking with a user.
+You can adjuts the prompt as needed.
+
+## Resources
+
+Here are some resources to get you started
 
 <CardGroup cols={2}>
   <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
+    title="Quick Start"
+    icon="jet-fighter"
+    href="/quickstart"
   >
-    Get your docs set up locally for easy development
+    Quickly implement Simli APIs into your projects
   </Card>
   <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
-  </Card>
-</CardGroup>
-
-## Make it yours
-
-Update your docs to your brand and add valuable content for the best user conversion.
-
-<CardGroup cols={2}>
-  <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
-  >
-    Customize your docs to your company's colors and brands
-  </Card>
-  <Card
-    title="Reference APIs"
+    title="Sample Project"
     icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
+    href="/sample-project"
   >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/components/accordion"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
+    Here is a sample project to get you started
   </Card>
 </CardGroup>
+

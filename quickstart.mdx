@@ -1,7 +1,7 @@
 ---
 title: 'Quickstart'
-icon: 'wand-magic-sparkles'
-description: 'Master our API under 5 minutes'
+icon: 'jet-fighter'
+description: 'Start an AI Avatar interaction in under 10 minutes'
 ---
 
 ## 1. API Key
@@ -50,15 +50,16 @@ url = "https://simli.com/api/startSession"
 
 # Request payload
 payload = {
-    "apiKey": "123",
+    "apiKey": "YOUR_API_KEY",
+    "userName": "Johnny",
+    "characterName": "Jenna"
     "faceId": "tmp9i8bbq7c",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM"
     "intro": "Hey, how are you.",
     "prompt": "Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\n\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\n\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\n\n'Example of Jenna's dialogue pattern:\nJenna: Hi there What's this? A meeting?\nJenna: Oh hold on let me wait for the next token",
     "timeLimit": {
-        "limit": 60
+        "limit": 60 # Session limit in seconds
     },
-    "userName": "Johnny",
-    "voiceId": "21m00Tcm4TlvDq8ikWAM"
 }
 
 # Sending POST request

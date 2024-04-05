@@ -34,8 +34,7 @@
       "group": "API Documentation",
       "pages": [
         "api-reference/introduction",
-        "api-reference/rate-limits",
-        "api-reference/error-codes",
+        "api-reference/limitations",
         "api-reference/available-face-ids",
         "api-reference/available-voice-ids"
       ]
