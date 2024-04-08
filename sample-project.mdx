@@ -1,34 +1,28 @@
 ---
 title: 'Sample Project'
 icon: 'code'
-description: 'Example section for showcasing API endpoints'
+description: 'Explore our demos on GitHub'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
-
 ## Welcome
+We've crafted a JavaScript demo covering all the key functionalities you need to kick off your journey in building custom sessions and tweaking your call interface using the Daily SDK.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+### This demo will go through
+- Creating a call object
+- Call Simli API to create a session
+- Join session through Daily call
+- Attach video and audio tracks to the DOM
+- Leave a call and clean up
+- Recieve and update App State
 
+### Preview
+![preview](/preview.gif)
+
+### Repo 
 <Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
+  title="simli-js-demo"
+  icon="github"
+  href="https://github.com/simliai/simli-js-demo"
 >
-  View the OpenAPI specification file
+  Create a session and customize your call interface using Daily.
 </Card>
-
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```

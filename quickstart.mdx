@@ -41,8 +41,8 @@ Dialogue that works:
 
 ## 3. Creating a session
 Get session meeting URL with a simple request like the following Python example:
-
-```python
+<CodeGroup>
+```python Python
 import requests
 
 # API endpoint
@@ -68,6 +68,186 @@ response = requests.post(url, json=payload)
 
 print("Response:", response.json())
 ```
+```javascript Javascript
+const fetch = require('node-fetch');
+
+// API endpoint
+const url = "https://simli.com/api/startSession";
+
+// Request payload
+const payload = {
+    apiKey: "YOUR_API_KEY",
+    userName: "Johnny",
+    characterName: "Jenna",
+    faceId: "tmp9i8bbq7c",
+    voiceId: "21m00Tcm4TlvDq8ikWAM",
+    intro: "Hey, how are you.",
+    prompt: "Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\n\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\n\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\n\n'Example of Jenna's dialogue pattern:\nJenna: Hi there What's this? A meeting?\nJenna: Oh hold on let me wait for the next token",
+    timeLimit: {
+        limit: 60 // Session limit in seconds
+    }
+};
+
+// Sending POST request
+fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+})
+.then(response => response.json())
+.then(data => console.log("Response:", data))
+.catch(error => console.error("Error:", error));
+```
+```java Java
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            // API endpoint
+            URL url = new URL("https://simli.com/api/startSession");
+
+            // Request payload
+            String payload = "{\"apiKey\":\"YOUR_API_KEY\",\"userName\":\"Johnny\",\"characterName\":\"Jenna\",\"faceId\":\"tmp9i8bbq7c\",\"voiceId\":\"21m00Tcm4TlvDq8ikWAM\",\"intro\":\"Hey, how are you.\",\"prompt\":\"Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\\n\\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\\n\\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\\n\\n'Example of Jenna's dialogue pattern:\\nJenna: Hi there What's this? A meeting?\\nJenna: Oh hold on let me wait for the next token\",\"timeLimit\":{\"limit\":60}}";
+
+            // Open connection
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+
+            // Send request
+            OutputStream outputStream = connection.getOutputStream();
+            outputStream.write(payload.getBytes());
+            outputStream.flush();
+
+            // Get response
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Print response
+            System.out.println("Response: " + response.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+```ruby Ruby
+require 'net/http'
+require 'uri'
+require 'json'
+
+# API endpoint
+url = URI("https://simli.com/api/startSession")
+
+# Request payload
+payload = {
+    "apiKey": "YOUR_API_KEY",
+    "userName": "Johnny",
+    "characterName": "Jenna",
+    "faceId": "tmp9i8bbq7c",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "intro": "Hey, how are you.",
+    "prompt": "Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\n\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\n\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\n\n'Example of Jenna's dialogue pattern:\nJenna: Hi there What's this? A meeting?\nJenna: Oh hold on let me wait for the next token",
+    "timeLimit": {
+        "limit": 60 # Session limit in seconds
+    },
+}
+
+# Sending POST request
+http = Net::HTTP.new(url.host, url.port)
+http.use_ssl = true
+request = Net::HTTP::Post.new(url)
+request["Content-Type"] = "application/json"
+request.body = payload.to_json
+response = http.request(request)
+
+puts "Response: #{response.body}"
+
+```
+```php PHP
+<?php
+
+// API endpoint
+$url = "https://simli.com/api/startSession";
+
+// Request payload
+$data = array(
+    "apiKey" => "YOUR_API_KEY",
+    "userName" => "Johnny",
+    "characterName" => "Jenna",
+    "faceId" => "tmp9i8bbq7c",
+    "voiceId" => "21m00Tcm4TlvDq8ikWAM",
+    "intro" => "Hey, how are you.",
+    "prompt" => "Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\n\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\n\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\n\n'Example of Jenna's dialogue pattern:\nJenna: Hi there What's this? A meeting?\nJenna: Oh hold on let me wait for the next token",
+    "timeLimit" => array(
+        "limit" => 60 // Session limit in seconds
+    )
+);
+
+// Sending POST request
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+$response = curl_exec($ch);
+
+// Print response
+echo "Response: " . $response;
+
+// Close cURL session
+curl_close($ch);
+
+?>
+
+```
+```dart Dart
+import 'dart:convert';
+import 'dart:io';
+
+void main() async {
+  // API endpoint
+  var url = Uri.parse("https://simli.com/api/startSession");
+
+  // Request payload
+  var payload = {
+    "apiKey": "YOUR_API_KEY",
+    "userName": "Johnny",
+    "characterName": "Jenna",
+    "faceId": "tmp9i8bbq7c",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "intro": "Hey, how are you.",
+    "prompt": "Compose dialogue for a character named Jenna, an AI character that has come alive on and is reperesented in visual form as an attractive 40 year old woman. Each of Jenna's responses should start with a short, standalone opening phrase, strictly limited to no more than 4 words.\nThe phrase following this opener should be brief, continuing or initiating a new thought without leading punctuation from the opener. This sentence should be concise, with any additional sentences being slightly longer but not exceeding 10 words, allowing Jenna to humorously interact with the users in the meeting.\n\nRemember, Jenna's dialogue must abide by the format rules in every speaking turn:\n- A short non-content opener, ending with a full stop, exclamation mark, or question mark.\n- The second sentence should be quite short as well, and any additional following sentences can be a bit longer, further developing his point.\n\nInclude an example dialogue to illustrate the expected structure of Jenna's lines. For instance:\n\n'Example of Jenna's dialogue pattern:\nJenna: Hi there What's this? A meeting?\nJenna: Oh hold on let me wait for the next token",
+    "timeLimit": {
+      "limit": 60 // Session limit in seconds
+    }
+  };
+
+  // Sending POST request
+  HttpClientRequest request = await HttpClient().postUrl(url);
+  request.headers.set('Content-Type', 'application/json');
+  request.add(utf8.encode(json.encode(payload)));
+  HttpClientResponse response = await request.close();
+
+  // Process response
+  await for (var contents in response.transform(utf8.decoder)) {
+    print("Response: $contents");
+  }
+}
+```
+</CodeGroup>
 Read more at [/startSession](/api-reference/endpoint/startSession)
 
 ## 4. Accessing the Meeting URL
