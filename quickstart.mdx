@@ -3,13 +3,15 @@ title: 'Quickstart'
 icon: 'bolt'
 description: 'Start an AI Avatar interaction in under 10 minutes'
 ---
-
-## 1. API Key
+<Steps>
+<Step>
+## API Key
 In order to use our API you need to get your `apiKey` first.
 [Create an account](https://simli.com/sign-up-in), log in
 and in your profile you can view your API Key.
-
-## 2. Prompting
+</Step>
+<Step>
+## Prompting
 For an interaction to work successfully, the prompt should abide by rules that the responses always return in the following format `NAME: ANSWER.`, e.g. `Jenna: Hello.`
 
 Here is a sample prompt:
@@ -38,8 +40,9 @@ Dialogue that works:
 `NAME: ANSWER. ANSWER.`
 
 `NAME: ANSWER! ANSWER. ANSWER.`
-
-## 3. Creating a session
+</Step>
+<Step>
+## Creating a session
 Get session meeting URL with a simple request like the following Python example:
 <CodeGroup>
 ```python Python
@@ -249,8 +252,11 @@ void main() async {
 ```
 </CodeGroup>
 Read more at [/startSession](/api-reference/endpoint/startSession)
-
-## 4. Accessing the Meeting URL
+</Step>
+<Step>
+## Accessing the Meeting URL
 Upon receiving the `meetingUrl`, which is a [Daily](https://docs.daily.co) call URL, expect the character to join the meeting within 4 to 6 seconds. Simply paste the meetingUrl into your browser to join the session directly. After the 
 
 To customize the call interface, check out our [Sample Project](/sample-project) or read more about [Daily SDK](https://docs.daily.co/guides/products/client-sdk).
+</Step>
+</Steps>
