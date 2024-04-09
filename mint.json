@@ -37,9 +37,7 @@
       "group": "API Documentation",
       "pages": [
         "api-reference/introduction",
-        "api-reference/limitations",
-        "api-reference/available-face-ids",
-        "api-reference/available-voice-ids"
+        "api-reference/limitations"
       ]
     },
     {
@@ -50,6 +48,10 @@
         "api-reference/endpoint/getPossibleVoiceIDs",
         "api-reference/endpoint/getPossibleFaceIDs"
       ]
+    },
+    {
+      "group": "",
+      "pages": ["api-reference/swagger"]
     }
   ],
   "modeToggle": {
