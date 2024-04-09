@@ -98,7 +98,7 @@
                   },
                   "faceId": {
                     "type": "string",
-                    "description": "Character's face ID, see all possible face IDs [here](/api-reference/available-face-ids)"
+                    "description": "Character's face ID, see all possible face IDs [here](/api-reference/endpoint/getPossibleFaceIDs)"
                   },
                   "intro": {
                     "type": "string",
@@ -123,7 +123,7 @@
                   },
                   "voiceId": {
                     "type": "string",
-                    "description": "Character's voice ID, see all possible voice IDs [here](/api-reference/available-voice-ids)"
+                    "description": "Character's voice ID, see all possible voice IDs [here](/api-reference/endpoint/getPossibleVoiceIDs)"
                   }
                 },
                 "required": [
