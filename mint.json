@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Starter Kit",
+  "name": "Simli",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg"
@@ -11,10 +11,13 @@
     "light": "#FFFFFF",
     "dark": "#000000"
   },
+  "feedback": {
+    "suggestEdit": true
+  },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:lars@simli.com"
+      "url": "mailto:support@simli.com"
     }
   ],
   "topbarCtaButton": {
