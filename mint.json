@@ -29,29 +29,29 @@
       "group": "Get Started",
       "pages": [
         "introduction",
-        "quickstart",
-        "sample-project"
+        "quickstart"
       ]
     },
     {
-      "group": "API Documentation",
+      "group": "Documentation",
       "pages": [
-        "api-reference/introduction",
+        "api-reference/Simli-React-SDK",
+        "api-reference/available-faces",
         "api-reference/limitations"
       ]
     },
     {
-      "group": "Endpoint Examples",
+      "group": "API Reference",
       "pages": [
-        "api-reference/endpoint/startSession",
+        "api-reference/endpoint/startAudioToVideoSession",
         "api-reference/endpoint/isSessionAvailable",
-        "api-reference/endpoint/getPossibleVoiceIDs",
-        "api-reference/endpoint/getPossibleFaceIDs"
+        "api-reference/endpoint/getPossibleFaceIDs",
+        "api-reference/endpoint/LipsyncStream"
       ]
     },
     {
       "group": "",
-      "pages": ["api-reference/swagger"]
+      "pages": ["api-reference/status","api-reference/swagger"]
     }
   ],
   "modeToggle": {

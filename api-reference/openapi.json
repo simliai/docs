@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://simli.com/api"
+      "url": "https://api.simli.ai"
     }
   ],
   "paths": {
@@ -70,120 +70,6 @@
                   "type": "object",
                   "properties": {
                     "faceIDs": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/startSession": {
-      "post": {
-        "summary": "Start a session",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "apiKey": {
-                    "type": "string",
-                    "description": "Get your [API key](https://www.simli.com/sign-up-in)"
-                  },
-                  "faceId": {
-                    "type": "string",
-                    "description": "Character's face ID, see all possible face IDs [here](/api-reference/endpoint/getPossibleFaceIDs)"
-                  },
-                  "intro": {
-                    "type": "string",
-                    "description": "The character will say this at the beginning of the session"
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "description": "Character interaction prompt, refer to [this guide](/quickstart#2-prompting) for more information"
-                  },
-                  "timeLimit": {
-                    "type": "object",
-                    "properties": {
-                      "limit": {
-                        "type": "integer",
-                        "description": "Session time limit in seconds, character will leave after this time"
-                      }
-                    }
-                  },
-                  "userName": {
-                    "type": "string",
-                    "description": "The character will refer to the user by this name"
-                  },
-                  "voiceId": {
-                    "type": "string",
-                    "description": "Character's voice ID, see all possible voice IDs [here](/api-reference/endpoint/getPossibleVoiceIDs)"
-                  }
-                },
-                "required": [
-                  "apiKey",
-                  "faceId",
-                  "intro",
-                  "prompt",
-                  "timeLimit",
-                  "userName",
-                  "voiceId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Session start response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "meetingUrl": {
-                      "type": "string",
-                      "description": "Daily call url to join the session, refer to [this guide](/quickstart#4-accessing-the-meeting-url) for more information"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/getPossibleVoiceIDs": {
-      "get": {
-        "summary": "Get possible voice IDs",
-        "parameters": [
-          {
-            "name": "apiKey",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of possible voice IDs",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "voiceIDs": {
                       "type": "object",
                       "additionalProperties": {
                         "type": "string"

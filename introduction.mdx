@@ -1,56 +1,64 @@
 ---
 title: Introduction
-icon: 'flag'
-description: 'Simli lets developers create interactive AI avatars. Ready to make your first one? Your journey begins here.'
+icon: "flag"
+description: "Simli lets developers create Lipsynced AI avatars. Ready to make your first one? Your journey begins here."
 ---
 
 # An API with endless possibilities.
-With visual conversational AI avatars like our API gives you, anything is possible: mock interviews, sales assistants, language training, coaching, CS training, historical characters and so much more.
+
+With visual lipsynced AI avatars like our API gives you, anything is possible: mock interviews, sales assistants, language training, coaching, CS training, historical characters and so much more. [Try our demo](https://www.simli.com/demo).
+
 <Frame>
   <img src="/Background_avatars.gif" />
 </Frame>
 
 ## Key Concepts
 
-### API Key
-
-All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in). 
+### 1. API Key
+All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
 The API key makes it easier for you to track your usage and control who has access to Simli.
 
-### Faces
-
-All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint. 
+### 2. Faces
+All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint.
 We are continously adding new ones.
 
-### Voices
+### 3. WebSocket
+Stream PCM16 audio bytes to our LipsyncStream WebSocket to recieve video and audio bytes to be decoded accoring to the [WebSocket scheme](/api-reference/endpoint/LipsyncStream).
 
-We currently use elevenLab voices, so you will have plenty of options to choose from. 
-You can get a list of voices from our `/getPossibleVoiceIDs` endpoint. 
+### 4. Simli React SDK
+Get started by using our Simli React SDK to handle WebSocket communication, decode recieved bytes and sync audio & video playback.
 
-### Interaction Prompts
+## Sample Repos
 
-The interactable avatars started using the `/startSession` endpoint require a prompt to be entered. 
-This prompt controls the behaviour of the avatar when speaking with a user.
-You can adjuts the prompt as needed.
+We built some sample repos to get started
 
-## Resources
+<Card
+  title="simli-retell-react-demo"
+  icon="github"
+  href="https://github.com/simliai/simli-retell-frontend-reactjs-demo"
+>
+  Integrating Retell conversational AI bot with Simli-React-SDK
+</Card>
+<Card
+  title="simli-radio-next-demo"
+  icon="github"
+  href="https://github.com/simliai/simli-radio-next-js-demo"
+>
+  Stream incoming audio from a radio broadcast to Simli-React-SDK to process and return lipsynced video and audio frames.
+</Card>
+<Card
+  title="simli-radio-python-demo"
+  icon="github"
+  href="https://github.com/simliai/RadioDemo"
+>
+  This is a showcase of the Simli Lipsync API in action. The demo works by getting an mp3 radio stream, converting it to pcm16 using ffmpeg and sending the pcm16 frames to the Simli Lipsync API over websockets.
+</Card>
 
-Here are some resources to get you started
 
-<CardGroup cols={2}>
-  <Card
-    title="Quick Start"
-    icon="bolt"
-    href="/quickstart"
-  >
-    Quickly implement Simli APIs into your projects
-  </Card>
-  <Card
-    title="Sample Project"
-    icon="code"
-    href="/sample-project"
-  >
-    Here is a sample project to get you started
-  </Card>
-</CardGroup>
+
+### Get started in 5 minutes
+<Card title="Quickstart" icon="bolt" href="/quickstart">
+  Quickly start building with our Simli-React-SDK
+</Card>
+
 
