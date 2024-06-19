@@ -82,6 +82,52 @@
           }
         }
       }
+    },
+    "/startAudioToVideoSession": {
+      "post": {
+        "summary": "Start Audio to Video Session",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "faceId": {
+                    "type": "string"
+                  },
+                  "isJPG": {
+                    "type": "boolean"
+                  },
+                  "apiKey": {
+                    "type": "string"
+                  },
+                  "syncAudio": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["faceId", "isJPG", "apiKey", "syncAudio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session token response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "session_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

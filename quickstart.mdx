@@ -1,7 +1,7 @@
 ---
 title: 'Quickstart'
 icon: 'bolt'
-description: 'Start an AI Avatar interaction in under 10 minutes'
+description: 'Use Simli-React-SDK to start streaming in 10 minutes'
 ---
 <Steps>
 <Step>
@@ -15,11 +15,55 @@ and in your profile you can view your API Key.
 `npm install simli-react-sdk`
 </Step>
 <Step>
-## Start Session
-Check available faces or create your own face here: [Available Faces](/api-reference/available-faces)
+## Start Session to retrive `session_token`
+
+Function to start session
+```js
+export const StartAudioToVideoSession = async (faceId: string, isJPG: Boolean, syncAudio: Boolean) => {
+    const metadata = {
+      faceId: faceId,
+      isJPG: isJPG,
+      apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+      syncAudio: syncAudio,
+    };
+  
+    const response = await fetch(
+      'https://api.simli.ai/startAudioToVideoSession',
+      {
+        method: 'POST',
+        body: JSON.stringify(metadata),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  
+    return response.json();
+  };
+```
+You can check available faceIDs here: [Available Faces](/api-reference/available-faces)
+
 </Step>
 <Step>
-## Stream Audio
-Use `<SimliFaceStream ref={}>`
+## Setup `SimliFaceStream` componenet and Stream Audio
+1. Intialize a React ref
+```js
+const simliFaceStreamRef = useRef(null);
+```
+2. Add ref to Simli componenet
+```js
+<SimliFaceStream ref={simliFaceStreamRef} start={true} sessionToken={sessionToken} minimumChunkSize={8} />
+```
+3. Stream audio using `sendAudioDataToLipsync()`
+
+AudioData should be of type `PCM16` and sample rate `16KHz`
+```js
+let audioData = new Uint8Array(10680);
+```
+```js
+if (simliFaceStreamRef.current) {
+    simliFaceStreamRef.current.sendAudioDataToLipsync(audioData);
+}
+```
 </Step>
 </Steps>
