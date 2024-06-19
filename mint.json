@@ -51,7 +51,7 @@
     },
     {
       "group": "",
-      "pages": ["api-reference/status","api-reference/swagger"]
+      "pages": ["api-reference/status"]
     }
   ],
   "modeToggle": {
