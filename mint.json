@@ -35,7 +35,7 @@
     {
       "group": "Documentation",
       "pages": [
-        "api-reference/Simli-React-SDK",
+        "api-reference/simli-react-sdk",
         "api-reference/available-faces",
         "api-reference/limitations"
       ]
