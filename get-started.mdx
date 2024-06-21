@@ -1,8 +1,23 @@
 ---
-title: 'Quickstart'
+title: 'Get Started'
 icon: 'bolt'
-description: 'Use Simli-React-SDK to start streaming in 10 minutes'
+description: 'Use Simli-React-SDK to start streaming'
 ---
+
+## Key Concepts
+
+1. **API Key**: All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
+The API key makes it easier for you to track your usage and control who has access to Simli.
+
+2. **Faces**: All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint.
+We are continously adding new ones.
+
+3. **WebSocket**: Stream PCM16 audio bytes to our LipsyncStream WebSocket to recieve video and audio bytes to be decoded accoring to the [WebSocket scheme](/api-reference/endpoint/LipsyncStream).
+
+4. **Simli React SDK**: Get started by using our Simli React SDK to handle WebSocket communication, decode recieved bytes and sync audio & video playback.
+
+## Start Building
+
 <Steps>
 <Step>
 ## API Key
@@ -65,5 +80,17 @@ if (simliFaceStreamRef.current) {
     simliFaceStreamRef.current.sendAudioDataToLipsync(audioData);
 }
 ```
+If done successfully, you will recieve video and audio bytes to be rendered on your frontend.
+</Step>
+<Step>
+## Clone our demo repo
+Clone our demo repo to get started with a working example.
+<Card
+  title="simli-radio-next-demo"
+  icon="github"
+  href="https://github.com/simliai/simli-radio-next-js-demo"
+>
+  Stream incoming audio from a radio broadcast to Simli-React-SDK to process and return lipsynced video and audio frames.
+</Card>
 </Step>
 </Steps>

@@ -4,7 +4,7 @@ icon: "flag"
 description: "Simli lets developers create Lipsynced AI avatars. Ready to make your first one? Your journey begins here."
 ---
 
-# An API with endless possibilities.
+## An API with endless possibilities.
 
 With visual lipsynced AI avatars like our API gives you, anything is possible: mock interviews, sales assistants, language training, coaching, CS training, historical characters and so much more. [Try our demo](https://www.simli.com/demo).
 
@@ -12,25 +12,18 @@ With visual lipsynced AI avatars like our API gives you, anything is possible: m
   <img src="/Background_avatars.gif" />
 </Frame>
 
-## Key Concepts
+## How it works?
+Using our `LipsyncStream` API is simple. Through a bi-directional websocket communication, you send us audio and we send you back video and audio frames.
 
-### 1. API Key
-All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
-The API key makes it easier for you to track your usage and control who has access to Simli.
+You can then use these video and audio frame bytes to render video and playback audio in sync. You can also use our `Simli-React-SDK` to handle WebSocket communication, decode received bytes and sync audio & video playback.
 
-### 2. Faces
-All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint.
-We are continously adding new ones.
-
-### 3. WebSocket
-Stream PCM16 audio bytes to our LipsyncStream WebSocket to recieve video and audio bytes to be decoded accoring to the [WebSocket scheme](/api-reference/endpoint/LipsyncStream).
-
-### 4. Simli React SDK
-Get started by using our Simli React SDK to handle WebSocket communication, decode recieved bytes and sync audio & video playback.
+<Info>
+We encourage you to learn more about [LipsyncStream WebSocket](/api-reference/endpoint/LipsyncStream)
+</Info>
 
 ## Sample Repos
 
-We built some sample repos to get started
+We built some sample repos to get you started
 
 <Card
   title="simli-retell-react-demo"
@@ -57,8 +50,8 @@ We built some sample repos to get started
 
 
 ### Get started in 10 minutes
-<Card title="Quickstart" icon="bolt" href="/quickstart">
-  Quickly start building with our Simli-React-SDK
+<Card title="Get Started" icon="bolt" href="/get-started">
+  Start building with our Simli-React-SDK
 </Card>
 
 
