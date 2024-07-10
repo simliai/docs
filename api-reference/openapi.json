@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://simli.com/api"
+      "url": "https://api.simli.ai"
     }
   ],
   "paths": {

@@ -43,8 +43,6 @@
       "group": "API Reference",
       "pages": [
         "api-reference/endpoint/startAudioToVideoSession",
-        "api-reference/endpoint/isSessionAvailable",
-        "api-reference/endpoint/getPossibleFaceIDs",
         "api-reference/endpoint/LipsyncStream"
       ]
     },
