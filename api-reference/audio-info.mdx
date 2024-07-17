@@ -1,0 +1,93 @@
+---
+Title: Audio
+---
+
+# Audio and the forgotten knowledge of the past
+
+## Purpose of the document
+
+Talk about Audio formats, encoding schemes, popular audio container formats, streamability, and raw audio data. There's another [good article](https://docs.retellai.com/knowledge/audio-basics) that goes into more details about general digital audio. This document is more focused on the audio formats and encoding schemes that are popular in the web world.
+
+## What's raw audio data and why so many different representations?
+
+A quick recap of the Retell AI article, audio in the real world is a sound wave which can be represented by some (math) function. Usually, such functions are complicated so we represent the sound wave with how loud is it at a given time. How many times we're checking the loudness is what's called `sampling rate`. That's all there is to audio in the real world.
+
+As the years went on, we created different ways to represent this data in a digital form. Which is why you might see terms like `Int8 PCM`, `Int16 PCM`, `float32 PCM` and many other ways of representing the same raw audio data on a computer. Each format has its merits and some of them are limited by the hardware they were designed for which is besides the point. All of these are known as raw audio data and are usually stored in a `.wav` file to be played by any audio player.
+
+## Audio codec vs Audio container (File format)
+
+Let's get something clear, an audio codec is a part of a specific audio container. In simple terms, the container contains a lot more than just the audio, it also contains metadata, subtitles, and depending on the format, instructions on how to play the audio. On the other hand, the codec is the actual algorithm that is used to encode and decode the audio data.
+
+Not all audio containers need a codec. For example, `.wav` files can contain metadata about the sampling rate, channel count, and which type of raw audio data is stored in the file. Which is different from `.raw` files which are just raw audio data with no metadata and can not be played without knowing anything else about how the file was made. However, all containers need to specify what kind of data is inside. Sometimes, there are containers that are paired with a specific codec, like `.mp3` files which are paired with the `MPEG-1 Audio Layer III` codec.
+
+Most codecs split the audio data into frames and encode them separately. This means that the whole frame needs to be decoded before it can be played. This is why you might see some audio players take a while to start playing a file. Other codecs might not include the metadata of the audio file which makes individual frames impossible to decode and as such they can't be played without the whole file.
+
+This is why you can't just download half an mp3 file and it works, sometimes it does, mostly it doesn't. Because mp3 is not the most friendly format for streaming. Other codecs like `Opus` are designed to be streamed and can be played as soon as the first frame is downloaded.
+
+## Audio Processing
+
+Generally speaking, you can't really do anything with encoded audio. Even playing it requires decoding it into pcm first. Most decoders will decode the audio in chunks, processing each encoded frame into its equivalent pcm. The problem is which PCM format to use. Well it actually depends on what you actually need. Some applications require PCM Int16, others use Float32. The trick is to know what you need and convert the audio to that format because using an incorrect format gives you garbage results.
+
+One of the most well known and widely used decoders is [ffmpeg](https://ffmpeg.org/). It handles almost all forms of audio and video and is extremely powerful. So powerful in fact that it is somewhat notorious for being difficult to use. But since we only care about decoding the audio
+
+here's a simple command to decode an audio file to PCM Int16:
+
+```bash
+ffmpeg -i **INPUT FILE PATH** -f s16le -acodec pcm_s16le -ar 16000 -ac 1 output.raw
+```
+
+So let's dissect this command:
+
+- `ffmpeg`: The command to run the ffmpeg program
+- `-i`: tells ffmpeg that what follows is the input file. FFMPEG can automatically deduce all metadata about the file to decode it properly unless the input is either a raw audio file or it is piped from another program or stdin.
+- `** INPUT FILE PATH **`:  The path to the input file. This can be a local file or a remote file (URL) and a lot more. FFMPEG can handle a ton of different input modes refer to the [documentation](https://ffmpeg.org/ffmpeg.html) for more information.
+- `-f`: means that the following arguments specify the formatting of the output
+- `s16le`: specifies that the output format is PCM signed Int16 little endian.
+- `-acodec`: specifies the audio codec to use. In this case, we're using the PCM codec. While not a codec on its own, it's listed under codecs for generality
+- `pcm_s16le`: specifies the PCM format to use. In this case, we're using PCM Int16 little endian.
+- `-ar`: specifies the audio sampling rate. In this case, we're using 16000 Hz.
+- `-ac`: specifies the number of audio channels. In this case, we're using 1 channel.
+- `output.raw`: specifies the output file name. This can be anything you want.
+
+We can modify it a little bit to convert the audio to PCM Float32:
+
+```bash
+ffmpeg -i **INPUT FILE PATH** -f f32le -acodec pcm_f32le -ar 16000 -ac 1 output.raw
+```
+
+The only difference is the `-f` and `-acodec` arguments. The rest is the same.
+
+Okay that's fine and all but what if you want the output in your program, or maybe the audio file is the output of an API call and you don't want to save it to disk. Well, you can pipe the input to stdin and get the output from stdout. Here's how you can do it:
+
+```bash
+ffmpeg -i pipe:0 -f s16le -acodec pcm_s16le -ar 16000 -ac 1 pipe:1
+```
+
+This command is the same as the first one but instead of specifying the input and output files, we're using `pipe:0` and `pipe:1` respectively. This tells ffmpeg to use stdin and stdout as the input and output respectively. This is useful when you want to use the output in your program or you want to pipe the output to another program.
+
+So if we're using python we can do something like this:
+
+```python
+import subprocess
+import requests
+import threading
+
+def read_output(process):
+    for line in process.stdout:
+        print(len(line))
+
+ffmpegProcess = subprocess.Popen(
+    ["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "pipe:1"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE
+)
+readThread = threading.Thread(target=read_output, args=(ffmpegProcess,))
+readThread.start()
+for chunk in requests.get("https://radio.talksport.com/stream", stream=True).iter_content(4096):
+    ffmpegProcess.stdin.write(chunk)
+
+```
+
+This code will read the audio stream from the TalkSport radio station, which streams out an mp3 (good choice for them, not low latency streaming), and convert it to PCM Int16. The `read_output` function reads the output from the ffmpeg process and prints the length of the output. You can modify it to do whatever you want with the output.
+
+You can also find a package that wraps the ffmpeg binaries and call them directly without having to deal with subprocesses and input piping. There's [PyAV](https://github.com/PyAV-Org/PyAV) for python, [ffmpeg.Net](https://github.com/cmxl/FFmpeg.NET) for C#, [ffmpeg-Go](https://github.com/u2takey/ffmpeg-go) for Go. There are many more out there, just search for them. Most of the time the correct solution is just the cli and subprocesses though.

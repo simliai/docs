@@ -35,16 +35,20 @@
     {
       "group": "Documentation",
       "pages": [
-        "api-reference/simli-react-sdk",
+        "api-reference/webrtc-info",
+        "api-reference/audio-info",
         "api-reference/available-faces"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/endpoint/startAudioToVideoSession",
-        "api-reference/endpoint/LipsyncStream"
+        "api-reference/endpoint/startAudioToVideoSession"
       ]
+    },
+    {
+      "group": "Websockets (Deprecated)",
+      "pages": ["get-started-websocket","api-reference/simli-react-sdk" ,"api-reference/endpoint/LipsyncStream"]
     },
     {
       "group": "",

@@ -1,0 +1,78 @@
+---
+Title: 'WebRTC'
+description: 'WebRTC and you, the bare minimum to get going'
+---
+
+## Purpose of the document
+
+This document is not an explanation of WebRTC, or even how it works. It is just a simple description of the WebRTC APIs and related Objects (most likely the same as the Javascript Implementation) and what sequence of calls you need to make to get a media stream going and rendered. If you're interested in how it actually works, you can read this reference by [Pion WebRTC](https://webrtcforthecurious.com/) (Go implementation of the protocol). I have not fully read it myself but it looks nice XD.
+
+If you just want to use the Simli WebRTC API, go to the [Simli WebRTC API](PLACE HOLDER LINK).
+
+## The Jargon: WebRTC Objects and APIs
+
+### RTCConfiguration
+
+This is the configuration object that you pass to the `RTCPeerConnection` object. It contains the `iceServers` array which contains the STUN and TURN servers that the client will use to establish the connection.
+
+### RTCOffer
+
+This is the object that is created by the `RTCPeerConnection` object. It contains the information about the media streams that the client is willing to share and the configuration of the connection. IP addresses, codecs, etc. Everything that you can accept or send. This object is then sent to the other peer.
+
+### RTCAnswer
+
+This is the object that is created by the `RTCPeerConnection` object in response to the `RTCOffer` object. It contains the information about the media streams that the client is willing to share and the configuration of the connection. IP addresses, codecs, etc. Everything that you can accept or send. This object is then sent to the other peer.
+
+### RTCIceCandidate
+
+Fancy talk for possible IP addresses that the peers can use to connect to each other. This includes local IPs too, so the WebRTC spec makes it easy to connect to other computers on your network without going through the general Internet. This is used to establish the connection between the peers.
+
+### RTCPeerConnection
+
+tl;dr: You start the connection, create offer, get answer, assign answer here, and you'll start trying to connect to the peer.
+
+This is the main object which everything revolves around. As the client, you'll be initiating the connection. So this object creates the RTC offer according to the configuration. Then it creates the RTCOffer, which other peers will use to know how to connect to you and what kind of data will be exchanged. Other peers will also have an RTCPeerConnection object which will create an RTCAnswer (Same as the offer but is created in response to the offer). The RTCAnswer is used to know what the peer agreed to and how to connect to them.
+
+### MediaStreamTracks
+
+These objects represent the Audio and Video streams. TO BE CLEAR, the streams themselves are not joined in any way so your video and audio are completly independent of each other. You can have a video stream without audio and vice versa. These objects are then added to the `RTCPeerConnection` object to be sent to the other peer. It is also the object that you get from the `getUserMedia` function when you specify what you're sending in the offer.
+
+### Datachannel
+
+This is the object that you can use to send data between the peers. It is not a stream, so you can't send a continuous stream of data. It is more like a message. You can send a message and the other peer will receive it. You can also send a message to a specific channel, so you can have multiple channels for different types of data.
+
+## Dancing the dance: WebRTC handshake and creating the connection
+
+### You and I, Local and Remote
+
+Everything starts with the RTCPeerConnection. Sure you need the configuration, but you can just ... not (given you're only testing on localhost, STUN/ICE is needed for reliable connection most of the time). So you create the RTCPeerConnection. Then, you specify what kind of data are we sending, is it datachannel, audio, video, or any combination of them. This is also where we might want to specify a config for the MediaStreams or the datachannel.
+
+Once you have figured out what you want the connection to do, you create the offer object using, surprise, `createOffer()` function. This creates a json that will be sent to all peers that you want to connect to. Also you must make sure to tell the RTCPeerConnection object to use the offer as the local description using `setLocalDescription()` function.
+
+There's no exact way that specifies how to send the offer and get the answer. Some examples make you paste the offer in a CLI, others can use a POST request (easiest way in my opinion), and someone thought using WebSockets is a good idea (if you're doing [trickle ICE](https://github.com/pion/webrtc/tree/master/examples/trickle-ice) then probably but that's a different rabbithole that I won't get into here).
+
+Regardless of how you're getting the answer, you need to set the remote description of the RTCPeerConnection object to the answer using `setRemoteDescription()` function. The peer does the same thing, but in reverse. They get the offer set it as the RemoteDescription and create an answer and set it as the LocalDescription.
+
+AAAND Tada, this is the actual bare minimum. If you're not going over the internet and just testing on localhost, you can now see the video and audio streams of the other peer (assuming you added the streams to the RTCPeerConnection object and have the HTML stuff figured out correctly). As an example, you can see the [server example](https://github.com/aiortc/aiortc/tree/main/examples/server) on the aiortc (python's webrtc) github page which streams a video from disk to the client, using the same principles described here.
+
+### If there's a will there's a way: ICE and Getting the target IP
+
+The main reason we're using WebRTC is to allow peer to peer communication without going through some intermediary server. So, we create the offer which contains the return information; however, your computer doesn't really know its current IP address and in most cases, it probably dynamically assigned. Which is where STUN and ICE come in.
+
+A STUN server is used to tell you what your IP address is and what port is open for communication. ICE is basically the mechanism for getting all possible IP addresses (local and public) and prioritize them based on least delay [(more info here)](https://webrtchacks.com/trickle-ice/). Ideally, you would wait to get ALL ICE candidates before sending the offer. Sadly, ICE is SLOW. At the time of writing, it takes 40 seconds on average to finish the ICE process.
+
+As such, people have started working with partial ICE results. Once you get and ICE candidate, you can send it to the other peer and they can start trying to connect to you. This is called trickle ICE. While it is mostly standard, it is not implemented in all browsers. So, you might want to wait for all ICE candidates before sending the offer.
+
+Aiortc library doesn't currently support trickle ICE, so what we're currently doing is waiting until no more ICE candidates are being generated for 500ms and then sending the offer. This is not ideal but it works great for our current limitations.
+
+### Showing the work: Displaying Video and Playing Audio
+
+This is actually the most straight forward thing in here. The RTCPeerConnection emits a lot of different events, the one we care about here is the `track` event. This event is emitted when a new MediaStreamTrack is added to the RTCPeerConnection object. You can then use this event to add the track to the HTML video or audio element by setting the `srcObject` property of the element to the MediaStream object that the track is a part of.
+
+### I ran out of titles: Accessing Mediastreams and applying transformations
+
+Each language has it's own way of getting the video/audio data from the MediaStream object. You're on your own kid.
+
+### I prefer text: Using Datachannels
+
+You need to create the datachannel object using the `createDataChannel()` function. You can then send messages using the `send()` function. You can also listen for messages using the `message` event. You can also listen for the `open` event to know when the datachannel is ready to send messages. You can also send binary data without base64 encoding by using the `send()` function with an UInt8Array as the argument.

@@ -1,20 +1,18 @@
 ---
 title: 'Get Started'
 icon: 'bolt'
-description: 'Use Simli-React-SDK to start streaming'
+description: 'Use our React WebRTC componenet to start streaming'
 ---
 
 ## Key Concepts
 
-1. **API Key**: All endpoints require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
+1. **API Key**: Our endpoint require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
 The API key makes it easier for you to track your usage and control who has access to Simli.
 
-2. **Faces**: All our available Avatar faces can be accessed by using the `/getPossibleFaceIDs` endpoint.
+2. **Faces**: All our available Avatar faces can be accessed through: [Available Faces](/api-reference/available-faces).
 We are continously adding new ones.
 
-3. **WebSocket**: Stream PCM16 audio bytes to our LipsyncStream WebSocket to recieve video and audio bytes to be decoded accoring to the [WebSocket scheme](/api-reference/endpoint/LipsyncStream).
-
-4. **Simli React SDK**: Get started by using our Simli React SDK to handle WebSocket communication, decode recieved bytes and sync audio & video playback.
+3. **WebRTC**: Stream PCM16 audio bytes to our WebRTC componenet to start recieving media.
 
 ## Start Building
 
@@ -26,61 +24,38 @@ In order to use our API you need to get your `apiKey` first.
 and in your profile you can view your API Key.
 </Step>
 <Step>
-## Install Simli-React-SDK
-`npm install simli-react-sdk`
-</Step>
-<Step>
-## Start Session to retrive `session_token`
+## Download simli-webrtc-react componenet
 
-Function to start session
-```js
-export const StartAudioToVideoSession = async (faceId: string, isJPG: Boolean, syncAudio: Boolean) => {
-    const metadata = {
-      faceId: faceId,
-      isJPG: isJPG,
-      apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
-      syncAudio: syncAudio,
-    };
-  
-    const response = await fetch(
-      'https://api.simli.ai/startAudioToVideoSession',
-      {
-        method: 'POST',
-        body: JSON.stringify(metadata),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-  
-    return response.json();
-  };
-```
-You can check available faceIDs here: [Available Faces](/api-reference/available-faces)
+Download and import the componenet inside your react project.
+
+[Download from GitHub](https://github.com/simliai/simli-webrtc-react-sdk)
+
 
 </Step>
 <Step>
-## Setup `SimliFaceStream` componenet and Stream Audio
+## Setup the componenet and Stream Audio
 1. Intialize a React ref
 ```js
-const simliFaceStreamRef = useRef(null);
+const webRTC = useRef(null);
 ```
-2. Add ref to Simli componenet
+2. Add ref to the componenet
 ```js
-<SimliFaceStream ref={simliFaceStreamRef} start={true} sessionToken={sessionToken} minimumChunkSize={8} />
+<WebRTCComponent ref={webRTC} faceID={'tmp9i8bbq7c'} />
 ```
-3. Stream audio using `sendAudioDataToLipsync()`
+3. Call start function
+```js
+webRTC.current.start();
+```
+4. Stream audio using `sendAudioData()`
 
 AudioData should be of type `PCM16` and sample rate `16KHz`
+
 ```js
-let audioData = new Uint8Array(10680);
-```
-```js
-if (simliFaceStreamRef.current) {
-    simliFaceStreamRef.current.sendAudioDataToLipsync(audioData);
+if (webRTC.current) {
+    webRTC.current.sendAudioData(audioData);
 }
 ```
-If done successfully, you will recieve video and audio bytes to be rendered on your frontend.
+If done successfully, you will recieve media to be rendered on your frontend.
 </Step>
 <Step>
 ## Working example
