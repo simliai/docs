@@ -36,6 +36,7 @@
       "group": "Documentation",
       "pages": [
         "api-reference/simli-client",
+        "api-reference/simli-webrtc",
         "api-reference/available-faces",
         "api-reference/webrtc-info",
         "api-reference/audio-info"
