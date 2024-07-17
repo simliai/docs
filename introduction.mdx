@@ -1,7 +1,7 @@
 ---
 title: Introduction
 icon: "flag"
-description: "Simli lets developers create Lipsynced AI avatars. Ready to make your first one? Your journey begins here."
+description: "Simli speech-to-video API lets developers create Lipsynced AI avatars. Ready to make your first one? Your journey begins here."
 ---
 
 ## An API with endless possibilities.
@@ -13,43 +13,39 @@ With visual lipsynced AI avatars like our API gives you, anything is possible: m
 </Frame>
 
 ## How it works?
-Using our `LipsyncStream` API is simple. Through a bi-directional websocket communication, you send us audio and we send you back video and audio frames.
+Our API comprimises of two main components:
+- `/startAudioToVideoSession` API to initialize a session.
+- `/StartWebRTCSession` API to start streaming `PCM16` audio bytes to video. 
 
-You can then use these video and audio frame bytes to render video and playback audio in sync. You can also use our `Simli-React-SDK` to handle WebSocket communication, decode received bytes and sync audio & video playback.
+For non-WebRTC experts, we made it easier for you to get started using our `simli-client` SDK to handle all the WebRTC communication.
 
 <Info>
-We encourage you to learn more about [LipsyncStream WebSocket](/api-reference/endpoint/LipsyncStream)
+We encourage you to learn more about [WebRTC](/api-reference/webrtc-info)
 </Info>
 
-## Sample Repos
+### simli-client SDK
+install our `simli-client` SDK to quickly get started with our API
+<Card
+  title="simli-client"
+  icon="npm"
+  href="https://www.npmjs.com/package/simli-client"
+>
+  Simli WebRTC integration made easy for you
+</Card>
+
+### Sample Repo
 
 We built some sample repos to get you started
 
 <Card
-  title="simli-retell-react-demo"
+  title="simli-ai-agent-demo"
   icon="github"
-  href="https://github.com/simliai/simli-retell-frontend-reactjs-demo"
+  href="https://github.com/simliai/simli-ai-agent-demo"
 >
-  Integrating Retell conversational AI bot with Simli-React-SDK
-</Card>
-<Card
-  title="simli-radio-next-demo"
-  icon="github"
-  href="https://github.com/simliai/simli-radio-next-js-demo"
->
-  Stream incoming audio from a radio broadcast to Simli-React-SDK to process and return lipsynced video and audio frames.
-</Card>
-<Card
-  title="simli-radio-python-demo"
-  icon="github"
-  href="https://github.com/simliai/RadioDemo"
->
-  This is a showcase of the Simli Lipsync API in action. The demo works by getting an mp3 radio stream, converting it to pcm16 using ffmpeg and sending the pcm16 frames to the Simli Lipsync API over websockets.
+  A simple demo demonstrating use of simli-client with OpenAI for LLM and ElevnLabs for speech
 </Card>
 
-
-
-### Get started in 10 minutes
+### Get going in 5 minutes
 <Card title="Get Started" icon="bolt" href="/get-started">
   Start building with our Simli-React-SDK
 </Card>

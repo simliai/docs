@@ -35,19 +35,21 @@
     {
       "group": "Documentation",
       "pages": [
+        "api-reference/simli-client",
+        "api-reference/available-faces",
         "api-reference/webrtc-info",
-        "api-reference/audio-info",
-        "api-reference/available-faces"
+        "api-reference/audio-info"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/endpoint/startAudioToVideoSession"
+        "api-reference/endpoint/startAudioToVideoSession",
+        "api-reference/endpoint/StartWebRTCSession"
       ]
     },
     {
-      "group": "Websockets (Deprecated)",
+      "group": "Websockets",
       "pages": ["get-started-websocket","api-reference/simli-react-sdk" ,"api-reference/endpoint/LipsyncStream"]
     },
     {

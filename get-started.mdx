@@ -1,7 +1,7 @@
 ---
 title: 'Get Started'
 icon: 'bolt'
-description: 'Use our React WebRTC componenet to start streaming'
+description: 'Use our simli-client sdk to start streaming'
 ---
 
 ## Key Concepts
@@ -12,7 +12,7 @@ The API key makes it easier for you to track your usage and control who has acce
 2. **Faces**: All our available Avatar faces can be accessed through: [Available Faces](/api-reference/available-faces).
 We are continously adding new ones.
 
-3. **WebRTC**: Stream PCM16 audio bytes to our WebRTC componenet to start recieving media.
+3. **simli-client**: Stream PCM16 audio bytes to our SDK to start recieving media.
 
 ## Start Building
 
@@ -24,36 +24,53 @@ In order to use our API you need to get your `apiKey` first.
 and in your profile you can view your API Key.
 </Step>
 <Step>
-## Download simli-webrtc-react componenet
+## Import simli-client
 
-Download and import the componenet inside your react project.
+Import the `simli-client` package to your project.
 
-[Download from GitHub](https://github.com/simliai/simli-webrtc-react-sdk)
+```bash
+npm install simli-client
+```
 
+Check on GitHub: [simli-client](https://github.com/simliai/simli-client)
 
 </Step>
 <Step>
-## Setup the componenet and Stream Audio
-1. Intialize a React ref
+## Initialize and start streaming
+1. Create a React ref and pass it to the video and audio
 ```js
-const webRTC = useRef(null);
+<video ref={videoRef} autoPlay playsInline ></video>
+<audio ref={audioRef} autoPlay ></audio>
 ```
-2. Add ref to the componenet
+
+2. Initialize SimliClient and pass in the video and audio ref
 ```js
-<WebRTCComponent ref={webRTC} faceID={'tmp9i8bbq7c'} />
+const simliClient = new SimliClient();
+
+const SimliConfig = {
+  apiKey: SIMLI-API-KEY,
+  faceID: FACE-ID,
+  handleSilence: true,
+  videoRef: videoRef,
+  audioRef: audioRef,
+};
+
+simliClient.Initialize(SimliConfig);
 ```
-3. Call start function
+
+3. Call start function to Setup WebRTC connection
 ```js
-webRTC.current.start();
+simliClient.start();
 ```
+
 4. Stream audio using `sendAudioData()`
 
 AudioData should be of type `PCM16` and sample rate `16KHz`
 
 ```js
-if (webRTC.current) {
-    webRTC.current.sendAudioData(audioData);
-}
+// Example: sending empty audio data
+const emptyAudioData = new Uint8Array(6000).fill(0);
+simliClient.sendAudioData(emptyAudioData);
 ```
 If done successfully, you will recieve media to be rendered on your frontend.
 </Step>
@@ -61,11 +78,11 @@ If done successfully, you will recieve media to be rendered on your frontend.
 ## Working example
 Clone our demo repo to get started with a working example.
 <Card
-  title="simli-radio-next-demo"
+  title="simli-ai-agent-demo"
   icon="github"
-  href="https://github.com/simliai/simli-radio-next-js-demo"
+  href="https://github.com/simliai/simli-ai-agent-demo"
 >
-  Stream incoming audio from a radio broadcast to Simli-React-SDK to process and return lipsynced video and audio frames.
+  A simple demo demonstrating use of simli-client with OpenAI for LLM and ElevnLabs for speech
 </Card>
 </Step>
 </Steps>
