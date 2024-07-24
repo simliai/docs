@@ -18,6 +18,10 @@
     {
       "name": "Support",
       "url": "mailto:support@simli.com"
+    },
+    {
+      "name": "Join our Discord",
+      "url": "https://discord.gg/yQx49zNF4d"
     }
   ],
   "topbarCtaButton": {
@@ -55,7 +59,7 @@
     },
     {
       "group": "",
-      "pages": ["api-reference/status"]
+      "pages": ["api-reference/discord", "api-reference/status"]
     }
   ],
   "modeToggle": {
