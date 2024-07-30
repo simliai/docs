@@ -163,6 +163,117 @@
           }
         }
       }
+    },
+    "/textToVideoStream": {
+      "post": {
+        "summary": "Generate video stream from text",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextToVideoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "URL of the HLS .m3u8 playlist file"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TextToVideoRequest": {
+        "type": "object",
+        "required": [
+          "ttsAPIKey",
+          "simliAPIKey",
+          "faceId",
+          "user_id",
+          "requestBody"
+        ],
+        "properties": {
+          "ttsAPIKey": {
+            "type": "string"
+          },
+          "simliAPIKey": {
+            "type": "string"
+          },
+          "faceId": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "requestBody": {
+            "type": "object",
+            "required": [
+              "audioProvider",
+              "text",
+              "voice",
+              "quality",
+              "speed",
+              "sample_rate",
+              "voice_engine",
+              "output_format",
+              "emotion",
+              "voice_guidance",
+              "style_guidance",
+              "text_guidance"
+            ],
+            "properties": {
+              "audioProvider": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "voice": {
+                "type": "string"
+              },
+              "quality": {
+                "type": "string"
+              },
+              "speed": {
+                "type": "number"
+              },
+              "sample_rate": {
+                "type": "integer"
+              },
+              "voice_engine": {
+                "type": "string"
+              },
+              "output_format": {
+                "type": "string"
+              },
+              "emotion": {
+                "type": "string"
+              },
+              "voice_guidance": {
+                "type": "number"
+              },
+              "style_guidance": {
+                "type": "number"
+              },
+              "text_guidance": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
