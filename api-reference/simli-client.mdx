@@ -118,6 +118,27 @@ interface SimliClientConfig {
 
 ## Advanced Usage
 
+### Events
+
+As of now the simliClient emits 3 events:
+- `connected` when the data channel is open and ready to use
+- `disconnected` when the data channel is closed
+- `failed` when the webRTC connection fails to connect
+
+```js
+simliClient.on('connected', () => {
+    console.log('SimliClient is now connected!');
+}); 
+
+simliClient.on('disconnected', () => {
+    console.log('SimliClient has disconnected!');
+}); 
+
+simliClient.on('failed', () => {
+    console.log('SimliClient has failed to connect!');
+}); 
+```
+
 ### Error Handling
 
 SimliClient provides console logging for various events and errors. It's recommended to implement proper error handling in your application to manage potential issues, such as network disconnections or initialization failures.
