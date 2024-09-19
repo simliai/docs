@@ -1,6 +1,6 @@
 ---
 title: '/textToVideoStream'
-description: 'This endpoint takes a TextToVideoRequest object and returns a url of an HLS .m3u8 playlist file.'
+description: 'This endpoint returns a url of an HLS .m3u8 playlist file along with an mp4 file.'
 openapi: 'POST /textToVideoStream'
 ---
 
@@ -44,6 +44,14 @@ openapi: 'POST /textToVideoStream'
     "style_guidance": 20,
     "text_guidance": 1
   }
+}
+```
+
+### Sample Response Body
+```json
+{
+    "hls_url": "http://api.simli.ai/hls/path-to-file/output.m3u8",
+    "mp4_url": "http://api.simli.ai/mp4/path-to-file/output.mp4"
 }
 
 ```
