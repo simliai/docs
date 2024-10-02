@@ -25,7 +25,7 @@
     }
   ],
   "topbarCtaButton": {
-    "name": "API Key",
+    "name": "Get API Key",
     "url": "https://www.simli.com/sign-up-in"
   },
   "navigation": [
@@ -37,11 +37,11 @@
       ]
     },
     {
-      "group": "Documentation",
+      "group": "Features",
       "pages": [
         "api-reference/simli-client",
-        "api-reference/simli-webrtc",
         "api-reference/available-faces",
+        "api-reference/simli-webrtc",
         "api-reference/webrtc-info",
         "api-reference/audio-info"
       ]
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "group": "Websockets",
+      "group": "Websockets (Deprecated)",
       "pages": ["get-started-websocket","api-reference/simli-react-sdk" ,"api-reference/endpoint/LipsyncStream"]
     },
     {
