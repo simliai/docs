@@ -62,6 +62,8 @@ const simliConfig = {
   apiKey: 'YOUR_SIMLI_API_KEY',
   faceID: 'YOUR_FACE_ID',
   handleSilence: true,
+  maxSessionLength: 3600, // in seconds
+  maxIdleTime: 600, // in seconds
   videoRef: videoRef,
   audioRef: audioRef,
 };
@@ -107,6 +109,8 @@ interface SimliClientConfig {
     apiKey: string;
     faceID: string;
     handleSilence: boolean;
+    maxSessionLength: int;
+    maxIdleTime: int;
     videoRef: React.RefObject<HTMLVideoElement>;
     audioRef: React.RefObject<HTMLAudioElement>;
 }

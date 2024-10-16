@@ -1,28 +1,31 @@
 ---
-title: 'Quick Start'
-icon: 'bolt'
-description: 'Use our simli-client sdk to start streaming'
+title: "Quick Start"
+icon: "bolt"
+description: "Use our simli-client sdk to start streaming"
 ---
 
 ## Key Concepts
 
 1. **API Key**: Our endpoint require an API key which you can easily obtain by creating an account at [Create an account](https://simli.com/sign-up-in).
-The API key makes it easier for you to track your usage and control who has access to Simli.
+   The API key makes it easier for you to track your usage and control who has access to Simli.
 
 2. **Faces**: All our available Avatar faces can be accessed through: [Available Faces](/api-reference/available-faces).
-We are continously adding new ones.
+   We are continously adding new ones.
 
 3. **simli-client**: Stream PCM16 audio bytes to our SDK to start recieving media.
 
 ## How it works?
+
 Our API comprimises of two main components:
+
 - `/startAudioToVideoSession` API to initialize a session.
-- `/StartWebRTCSession` WebRTC API to start streaming `PCM16` audio bytes to video. 
+- `/StartWebRTCSession` WebRTC API to start streaming `PCM16` audio bytes to video.
 
 If you're a WebRTC enthusiast, we encourage you to learn more about [Simli WebRTC](/api-reference/simli-webrtc)
 
 <Info>
-In this guide we will be using our `simli-client` SDK to avoid setting up all the WebRTC complexities.
+  In this guide we will be using our `simli-client` SDK to avoid setting up all
+  the WebRTC complexities.
 </Info>
 
 ## Start Building
@@ -53,17 +56,18 @@ Check on GitHub: [simli-client](https://github.com/simliai/simli-client)
 import React, { useRef } from 'react';
 
 function YourComponent() {
-  const videoRef = useRef(null);
-  const audioRef = useRef(null);
+const videoRef = useRef(null);
+const audioRef = useRef(null);
 
-  return (
-    <div>
-      <video ref={videoRef} autoPlay playsInline></video>
-      <audio ref={audioRef} autoPlay></audio>
-    </div>
-  );
-}
-```
+return (
+
+<div>
+  <video ref={videoRef} autoPlay playsInline></video>
+  <audio ref={audioRef} autoPlay></audio>
+</div>
+); }
+
+````
 
 2. Initialize SimliClient and pass in the video and audio ref
 ```jsx
@@ -77,15 +81,18 @@ const InitializeSimliClient = () => {
     apiKey: SIMLI-API-KEY,
     faceID: FACE-ID,
     handleSilence: true,
+    maxSessionLength: 3600, // in seconds
+    maxIdleTime: 600, // in seconds
     videoRef: videoRef,
     audioRef: audioRef,
   };
 
   simliClient.Initialize(SimliConfig);
 };
-```
+````
 
 3. Call start function to Setup WebRTC connection
+
 ```js
 simliClient.start();
 ```
@@ -99,13 +106,14 @@ AudioData should be of type `PCM16` and sample rate `16KHz`
 const emptyAudioData = new Uint8Array(6000).fill(0);
 simliClient.sendAudioData(emptyAudioData);
 ```
+
 5. Finally
 
 If done successfully, you will recieve media to be rendered on your frontend.
 
 ```jsx
-import React, { useRef } from 'react';
-import { SimliClient } from 'simli-client';
+import React, { useRef } from "react";
+import { SimliClient } from "simli-client";
 
 const simliClient = new SimliClient();
 
@@ -119,6 +127,8 @@ function YourComponent() {
       apiKey: "SIMLI-API-KEY",
       faceID: "FACE-ID",
       handleSilence: true,
+      maxSessionLength: 3600, // in seconds
+      maxIdleTime: 600, // in seconds
       videoRef: videoRef,
       audioRef: audioRef,
     };

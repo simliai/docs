@@ -103,6 +103,14 @@
                   },
                   "syncAudio": {
                     "type": "boolean"
+                  },
+                  "maxSessionLength" : {
+                    "type": "integer",
+                    "description": "Max session length in seconds"
+                  },
+                  "maxIdleTime" : {
+                    "type": "integer",
+                    "description": "Max idle/silence time in seconds before session is terminated"
                   }
                 },
                 "required": ["faceId", "isJPG", "apiKey", "syncAudio"]
