@@ -1,0 +1,20 @@
+---
+title: 'Audio Buffer clearing'
+description: 'Undo the mistakes of the past'
+---
+
+If you sent a chunk of audio that you no longer want to be played, you can achieve so using both the simli-client SDK (version 1.1.5 or higher) or the API. This is commonly used to achieve interruptions like behavior (you still have to have a method to decide when to interrupt and reflect that interruption in other places in your system, most likely the LLM).
+
+- simli-client SDK:
+
+``` javascript
+client: SimliClient
+client.ClearBuffer()
+```
+
+- Simli API:
+
+``` javascript
+dc: RTCDataChannel
+dc.send("SKIP")
+```
