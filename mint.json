@@ -16,10 +16,6 @@
   },
   "topbarLinks": [
     {
-      "name": "Support",
-      "url": "mailto:support@simli.com"
-    },
-    {
       "name": "Join our Discord",
       "url": "https://discord.gg/yQx49zNF4d"
     }
@@ -33,13 +29,12 @@
       "group": "Get Started",
       "pages": [
         "introduction",
-        "get-started"
+        "api-reference/simli-client"
       ]
     },
     {
       "group": "Features",
       "pages": [
-        "api-reference/simli-client",
         "api-reference/available-faces",
         "api-reference/simli-webrtc",
         "api-reference/webrtc-info",

@@ -1,5 +1,6 @@
 ---
 title: simli-client SDK
+icon: "code"
 ---
 
 [SimliClient](https://github.com/simliai/simli-client) is a powerful tool for integrating real-time audio and video streaming capabilities into your web applications using WebRTC. This guide will walk you through the process of setting up and using SimliClient in your project.
@@ -99,22 +100,10 @@ Ensure that your audio data is in PCM16 format with a 16KHz sample rate for opti
 
 - `Initialize(config: SimliClientConfig)`: Initializes the SimliClient with the provided configuration.
 - `start()`: Sets up the WebRTC connection and prepares for streaming.
-- `sendAudioData(audioData: Uint8Array)`: Sends audio data to the server.
 - `close()`: Closes the WebRTC connection and cleans up resources.
-
-#### SimliClientConfig
-
-```typescript
-interface SimliClientConfig {
-    apiKey: string;
-    faceID: string;
-    handleSilence: boolean;
-    maxSessionLength: int;
-    maxIdleTime: int;
-    videoRef: React.RefObject<HTMLVideoElement>;
-    audioRef: React.RefObject<HTMLAudioElement>;
-}
-```
+- `sendAudioData(audioData: Uint8Array)`: Sends audio data to the server.
+- `listenToMediastreamTrack(stream: MediaStreamTrack)`: Listens to a MediaStreamTrack and sends audio data to the server. *Can be used as an alternative to `sendAudioData`.*
+- `ClearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
 
 ## Advanced Usage
 
@@ -147,13 +136,23 @@ SimliClient provides console logging for various events and errors. It's recomme
 
 The SimliClient uses a default STUN server for ICE candidate gathering. If you need to use custom ICE servers or other WebRTC configurations, you may need to modify the `createPeerConnection` method in the SimliClient class.
 
+### Fork and Contribute to simli-client
+<Card
+  title="simli-client"
+  icon="github"
+  href="https://github.com/simliai/simli-client"
+>
+  Fork and contribute to the simli-client repository on GitHub or clone for your own usecase.
+</Card>
+
 ## Troubleshooting
 
 If you encounter issues:
 
 1. Ensure your API key is correct and active.
-2. Check that your audio data is in the correct format (PCM16, 16KHz).
-3. Verify that you have the necessary permissions for accessing the user's media devices.
-4. Review the console logs for any error messages or warnings.
+2. Verify that your face ID is valid and associated with your account.
+3. Check that your audio data is in the correct format (PCM16, 16KHz).
+4. Verify that you have the necessary permissions for accessing the user's media devices.
+5. Review the console logs for any error messages or warnings.
 
-For more detailed examples and advanced usage, please refer to our [GitHub repository](https://github.com/simliai/simli-client) or contact our support team.
+Reach out to our support team for further assistance on [Discord](https://discord.gg/yQx49zNF4d).
