@@ -27,10 +27,7 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": [
-        "introduction",
-        "api-reference/simli-client"
-      ]
+      "pages": ["introduction", "api-reference/simli-client"]
     },
     {
       "group": "Features",
@@ -46,12 +43,17 @@
       "pages": [
         "api-reference/endpoint/startAudioToVideoSession",
         "api-reference/endpoint/StartWebRTCSession",
-        "api-reference/endpoint/textToVideoStream"
+        "api-reference/endpoint/textToVideoStream",
+        "api-reference/endpoint/getIceServers"
       ]
     },
     {
       "group": "Websockets (Deprecated)",
-      "pages": ["get-started-websocket","api-reference/simli-react-sdk" ,"api-reference/endpoint/LipsyncStream"]
+      "pages": [
+        "get-started-websocket",
+        "api-reference/simli-react-sdk",
+        "api-reference/endpoint/LipsyncStream"
+      ]
     },
     {
       "group": "",

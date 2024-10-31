@@ -104,11 +104,11 @@
                   "syncAudio": {
                     "type": "boolean"
                   },
-                  "maxSessionLength" : {
+                  "maxSessionLength": {
                     "type": "integer",
                     "description": "Max session length in seconds"
                   },
-                  "maxIdleTime" : {
+                  "maxIdleTime": {
                     "type": "integer",
                     "description": "Max idle/silence time in seconds before session is terminated"
                   }
@@ -199,6 +199,42 @@
           }
         }
       }
+    },
+    "/getIceServers": {
+      "post": {
+        "summary": "Geticeservers",
+        "operationId": "getIceServers_getIceServers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -281,6 +317,17 @@
             }
           }
         }
+      },
+      "IceRequest": {
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "title": "Apikey"
+          }
+        },
+        "type": "object",
+        "required": ["apiKey"],
+        "title": "IceRequest"
       }
     }
   }
