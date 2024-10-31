@@ -35,7 +35,8 @@
         "api-reference/available-faces",
         "api-reference/simli-webrtc",
         "api-reference/webrtc-info",
-        "api-reference/audio-info"
+        "api-reference/audio-info",
+        "api-reference/WSDC_Migration_Guide"
       ]
     },
     {
