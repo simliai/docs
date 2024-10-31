@@ -34,9 +34,10 @@
       "pages": [
         "api-reference/available-faces",
         "api-reference/simli-webrtc",
+        "api-reference/webrtc-signaling-guide",
+        "api-reference/WSDC_Migration_Guide",
         "api-reference/webrtc-info",
-        "api-reference/audio-info",
-        "api-reference/WSDC_Migration_Guide"
+        "api-reference/audio-info"
       ]
     },
     {
@@ -46,14 +47,6 @@
         "api-reference/endpoint/StartWebRTCSession",
         "api-reference/endpoint/textToVideoStream",
         "api-reference/endpoint/getIceServers"
-      ]
-    },
-    {
-      "group": "Websockets (Deprecated)",
-      "pages": [
-        "get-started-websocket",
-        "api-reference/simli-react-sdk",
-        "api-reference/endpoint/LipsyncStream"
       ]
     },
     {

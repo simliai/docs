@@ -1,0 +1,34 @@
+---
+title: 'WebRTC with WebSockets Signaling Guide'
+---
+
+This endpoint is a websocket endpoint that takes in a stream of PCM16 audio frames and a set of control signals to manage a WebRTC Stream. The server sends only pongs, keepalive "ACK" messages, and a STOP signal when the server wants to terminate the session
+
+<Note>WebSocket URL: `wss://api.simli.ai/StartWebRTCSession`</Note>
+
+## Initial Request Format
+
+The first request after initializing the websocket connection should be a JSON object with the following fields:
+
+```json
+{
+  "sdp": "SDP FROM pc.localDescription.sdp",
+  "type": "Type from pc.localDescription.type"
+}
+```
+
+This object is generated from an RTCPeerConnection, you can refer to [RTCPeerConnection Docs](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details (or the equivalent docs).
+
+The server responds with two objects. The first one should be ignored as it is reserved for future expansion. The second one is the answer object you give to `RTCPeerConnection.setRemoteDescription()`.
+
+After you set it, you can send in the session token obtained from `https://api.simli.ai/startAudioVideoSession`. Please send the session token itself not the whole response JSON.
+
+After that, you can send in the Audio bytes following the format specified below. You can also send "SKIP" on the websocket to clear the audio buffer and ignore everything you've already sent.
+
+## Audio Input Format
+
+The audio frame is the bytes representation of the PCM16 audio frame. The audio frame is always 16000Hz mono. The lipsync will be wrong if there's a mismatch in the audio sampling rate or channel count. As of right now not other configs are possible.
+The number of bytes will always be an even number. For example 255ms of audio will be 16000 \* 2 \* 0.255 = 8160 bytes. The minimum audio chunk size is 250ms to avoid frequent websocket calls.
+
+If there's nothing to send, you must send a zero value byte array of length 6000 bytes to keep receiveing frames.
+After sending the initial audio (you must begin with some audio), no input mode will activate if handleSilence is set to true
