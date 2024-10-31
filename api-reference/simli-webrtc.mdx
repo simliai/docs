@@ -1,9 +1,9 @@
 ---
 title: Simli WebRTC Guide
-description: 'Get started using Simli WebRTC API'
+description: "Get started using Simli WebRTC API"
 ---
 
-## Simli WebRTC API basics
+# Simli WebRTC API basics
 
 This is a quick and shallow guide on how to use the Simli WebRTC API. This won't explain how WebRTC works or go into the details of the audio. You can check the following articles for that: [WebRTC](./webrtc.md), [Audio](./audio.md). In this article, we're assuming you have a basic understanding of javascript, python, HTTP requests, and how to use APIs. Full codes will be posted at the end of this document.
 
@@ -89,6 +89,7 @@ var pc = null;
 // data channel
 var dc = null,
   dcInterval = null;
+wsConnection = null;
 
 function createPeerConnection() {
   var config = {
@@ -146,7 +147,6 @@ function createPeerConnection() {
 
   return pc;
 }
-
 ```
 
 This block of code defines the function that creates the peer connection and registers some listeners to display the state of the connection. It also connects the audio and video tracks to the video and audio elements respectively.
@@ -183,40 +183,65 @@ function negotiate() {
 This block of code defines the function that initiates the negotiation process. It creates an offer, sets the local description, while it doesn't wait until Gathering ICE candidates is finished; however, it waits until the ICE gathering state is complete or the number of candidates doesn't change for 250ms.
 
 ```javascript
-function connectToRemotePeer() {
+async function connectToRemotePeer() {
   var offer = pc.localDescription;
   var codec;
   document.getElementById("offer-sdp").textContent = offer.sdp;
 
-  return fetch("https://api.simli.ai/StartWebRTCSession", {
-    body: JSON.stringify({
-      sdp: offer.sdp,
-      type: offer.type,
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  })
-    .then((response) => {
-      return response.json();
-    })
-    .then((answer) => {
-      document.getElementById("answer-sdp").textContent = answer.sdp;
-      return pc.setRemoteDescription(answer);
-    })
-    .then((out) => {
-      return out;
-    })
-    .catch((e) => {
-      alert(e);
-    });
+  const ws = new WebSocket("wss://api.simli.ai/StartWebRTCSession");
+  wsConnection = ws;
+  ws.addEventListener("open", () => {
+    ws.send(
+      JSON.stringify({
+        sdp: offer.sdp,
+        type: offer.type,
+      })
+    );
+  });
+  let answer = null;
+  ws.addEventListener("message", async (evt) => {
+    dataChannelLog.textContent += "< " + evt.data + "\n";
+    if (evt.data === "START") {
+      dcZeroAudio = setTimeout(() => {
+        var message = new Uint8Array(64000);
+        wsConnection.send(message);
+        console.log("SEND");
+      }, 100);
+      return;
+    }
+    if (evt.data === "STOP") {
+      stop();
+      return;
+    } else if (evt.data.slice(0, 4) === "pong") {
+      console.log("PONG");
+      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
+      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
+    } else {
+      try {
+        const message = JSON.parse(evt.data);
+        if (message.type !== "answer") {
+          return;
+        }
+        answer = message;
+        document.getElementById("answer-sdp").textContent = answer.sdp;
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  });
+  ws.addEventListener("close", () => {
+    console.log("Websocket closed");
+  });
+  while (answer === null) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  await pc.setRemoteDescription(answer);
 }
 ```
 
 This block of code defines the function that connects to the remote peer. It sends the local description to the Simli API, gets the remote description, and sets it.
 
-``` javascript
+```javascript
 function start() {
   document.getElementById("start").style.display = "none";
 
@@ -265,18 +290,18 @@ function start() {
       }
     );
     const resJSON = await response.json();
-    dc.send(resJSON.session_token);
+    wsConnection.send(resJSON.session_token);
 
     dataChannelLog.textContent += "- open\n";
     dcInterval = setInterval(() => {
       var message = "ping " + current_stamp();
       dataChannelLog.textContent += "> " + message + "\n";
-      dc.send(message);
+      wsConnection.send(message);
     }, 1000);
-    await setTimeout(()=>{}, 100);
-    var message = new Uint8Array(16000)  // 0.5 second silence to start the audio (Optional)
-    dc.send(message);
-    initializeWebsocketDecoder()
+    await setTimeout(() => {}, 100);
+    var message = new Uint8Array(16000); // 0.5 second silence to start the audio (Optional)
+    wsConnection.send(message);
+    initializeWebsocketDecoder();
   });
   dc.addEventListener("message", (evt) => {
     dataChannelLog.textContent += "< " + evt.data + "\n";
@@ -345,7 +370,7 @@ async function initializeWebsocketDecoder() {
     console.log("connected");
   };
   ws.onmessage = function (event) {
-    dc.send(event.data);
+    wsConnection.send(event.data);
   };
   ws.binaryType = "arraybuffer";
   while (dc.readyState !== "open") {
@@ -369,13 +394,11 @@ async function initializeWebsocketDecoder() {
 
   return read();
 }
-
 ```
 
 This block of code defines the functions that start and stop the connection. The start function creates the peer connection, creates a data channel, sends the metadata to the Simli API, and starts the negotiation process. The stop function closes the data channel, transceivers, local audio and video, and the peer connection.
 
-``` javascript
-
+```javascript
 async function initializeWebsocketDecoder() {
   ws = new WebSocket("ws://localhost:8080/");
   ws.onopen = function (event) {
@@ -412,7 +435,7 @@ The last block of code defines the function that initializes the websocket decod
 
 and Here's everything together
 
-``` javascript filename="client.js"
+```javascript filename="client.js"
 // get DOM elements
 var dataChannelLog = document.getElementById("data-channel"),
   iceConnectionLog = document.getElementById("ice-connection-state"),
@@ -513,29 +536,54 @@ function connectToRemotePeer() {
   var codec;
   document.getElementById("offer-sdp").textContent = offer.sdp;
 
-  return fetch("https://api.simli.ai/StartWebRTCSession", {
-    body: JSON.stringify({
-      sdp: offer.sdp,
-      type: offer.type,
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  })
-    .then((response) => {
-      return response.json();
-    })
-    .then((answer) => {
-      document.getElementById("answer-sdp").textContent = answer.sdp;
-      return pc.setRemoteDescription(answer);
-    })
-    .then((out) => {
-      return out;
-    })
-    .catch((e) => {
-      alert(e);
-    });
+ const ws = new WebSocket("wss://api.simli.ai/StartWebRTCSession");
+  wsConnection = ws;
+  ws.addEventListener("open", () => {
+    ws.send(
+      JSON.stringify({
+        sdp: offer.sdp,
+        type: offer.type,
+      })
+    );
+  });
+  let answer = null;
+  ws.addEventListener("message", async (evt) => {
+    dataChannelLog.textContent += "< " + evt.data + "\n";
+    if (evt.data === "START") {
+      dcZeroAudio = setTimeout(() => {
+        var message = new Uint8Array(64000);
+        wsConnection.send(message);
+        console.log("SEND");
+      }, 100);
+      return;
+    }
+    if (evt.data === "STOP") {
+      stop();
+      return;
+    } else if (evt.data.slice(0, 4) === "pong") {
+      console.log("PONG");
+      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
+      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
+    } else {
+      try {
+        const message = JSON.parse(evt.data);
+        if (message.type !== "answer") {
+          return;
+        }
+        answer = message;
+        document.getElementById("answer-sdp").textContent = answer.sdp;
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  });
+  ws.addEventListener("close", () => {
+    console.log("Websocket closed");
+  });
+  while (answer === null) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  await pc.setRemoteDescription(answer);
 }
 
 function start() {
@@ -586,20 +634,16 @@ function start() {
       }
     );
     const resJSON = await response.json();
-    dc.send(resJSON.session_token);
+    wsConnection.send(resJSON.session_token);
 
     dataChannelLog.textContent += "- open\n";
-    dcInterval = setInterval(() => {
-      var message = "ping " + current_stamp();
-      dataChannelLog.textContent += "> " + message + "\n";
-      dc.send(message);
-    }, 1000);
+
     await setTimeout(()=>{}, 100);
     var message = new Uint8Array(16000)  // 0.5 second silence to start the audio (Optional)
-    dc.send(message);
+    wsConnection.send(message);
     initializeWebsocketDecoder()
   });
-  
+
   dc.addEventListener("message", (evt) => {
     dataChannelLog.textContent += "< " + evt.data + "\n";
 
@@ -666,7 +710,7 @@ function stop() {
 
 This one is also relatively simple and is used to decode the mp3 audio stream to PCM Int16 and send it back.
 
-``` python filename="server.py"
+```python filename="server.py"
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 import asyncio
