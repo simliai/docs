@@ -62,7 +62,7 @@ const simliClient = new SimliClient();
 const simliConfig = {
   apiKey: 'YOUR_SIMLI_API_KEY',
   faceID: 'YOUR_FACE_ID',
-  handleSilence: true,
+  handleSilence: true, // keep the face moving while in idle
   maxSessionLength: 3600, // in seconds
   maxIdleTime: 600, // in seconds
   videoRef: videoRef,
@@ -73,6 +73,8 @@ simliClient.Initialize(simliConfig);
 ```
 
 Make sure to replace `'YOUR_SIMLI_API_KEY'` with your actual Simli API key, and `'YOUR_FACE_ID'` with the desired face ID for your application.
+
+<Note>If you're using listenToMediastreamTrack() set `handleSilence: false` to avoid audio artifacts</Note>
 
 ### Step 4: Start the WebRTC Connection
 
