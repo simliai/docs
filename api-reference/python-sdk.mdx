@@ -1,0 +1,116 @@
+---
+title: simli-ai python SDK
+icon: "code"
+---
+
+[Simli SDK](httpsL//www.github.com/simliai/simli-client-py) is a powerful tool for integrating real-time audio and video streaming capabilities into your python applications using WebRTC. You can use this SDK to display a Simli outside the browser, save the stream into a file, or integrate your stream in your program however you want!
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, make sure you have:
+
+1. A Simli account with an API key
+2. Python3.9 or higher
+
+### Installation
+
+Install `simli-ai` package:
+
+```bash
+pip install simli-ai
+```
+
+## Usage
+
+### Step 1: Creating the SimliClient
+
+Create an instance of SimliClient and initialize it with your configuration:
+
+```python
+import asyncio
+from simli import SimliClient, SimliConfig
+from simli.renderers import FileRenderer
+async def main():
+    connection =  SimliClient(
+        SimliConfig(
+            apiKey="YOUR_SIMLI_API_KEY",  # API Key
+            faceId="YOUR_FACE_ID",  # Face ID
+            maxSessionLength=20,
+            maxIdleTime=10,
+        )
+    )
+    await connection.Initialize()
+
+asyncio.run(main())
+```
+
+Make sure to replace `"YOUR_SIMLI_API_KEY"` with your actual Simli API key, and `"YOUR_FACE_ID"` with the desired face ID for your application.
+
+### Step 2: Send Audio Data
+
+Once the connection is established, you can start sending audio data:
+
+```python
+# Example: sending audio data (should be PCM16 format, 16KHz sample rate)
+await connection.sendSilence(1) # to send 1 second of silence to the API
+await connection.send(audio) # where audio is a bytes object representing the raw audio data
+```
+
+Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
+
+## simli-ai API reference
+
+### simli.SimliConfig
+
+This is a dataclass that represents the config sent to [https://api.simli.ai/startAudioVideoSession] to get a session_token
+
+- `apiKey`: str. Your API key you get from [https://app.simli.com/profile]
+- `faceId`: str # FaceID you can get from [https://docs.simli.com/api-reference/available-faces] or create your own on [https://app.simli.com]
+- `syncAudio`: bool. Specify whether your want to receive the audio back (Leave true if unsure)
+- `handleSilence`: bool. Specify whether you want to keep the Simli Avatar Moving when you don't send in Audio
+- `maxSessionLength`: int. A hard time limit (in seconds) after which the session will disconnect
+- `maxIdleTime`: int. A soft time limit (in seconds) that disconnects the session after a period of not sending in data
+
+### simli.SimliClient
+
+- `class SimlClient(config: SimliConfig, useTurnServer: bool = False, latencyInterval: int = 60)`
+  - SimliClient constructor
+    - config: refer to [SimliConfig](#simli-simliconfig)
+    - useTurnServer: When set to True, it uses a Turn server to connect to Simli API, useful if behing a NATed firewall or using mobile data. Turn on if you're having connectivity issues
+    - latencyInterval: delay (in seconds) between ping calls to calculate latency between your machine and simli server. Set to 0 to disable.
+- `async def Initialize()`: Initializes the SimliClient with the provided configuration and starts the WebRTC Connection
+- `async close()`: Closes the WebRTC connection and cleans up resources.
+- `async send(data: bytes | string)`: Sends audio data or control signals to the server.
+- `async sedSilence(duration: float= 0.1875)`: Sends the specified duration to the server as silent audio, used mostly in Idle mode.
+- `async clearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
+- `async getNextVideoFrame()`: returns the following [PyAV](https://pyav.basswood-io.com/docs/stable/) VideoFrame.
+- `async getNextAudioFrame()`: returns the following PyAV AudioFrame.
+- `async getVideoStreamIterator(targetFormat:str)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
+  - `targetFormat`: specify what format you want the frames to be in, defaults to RGB.
+- `async getAudioStreamIterator(targetSampleRate)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
+  - `targetSampleRate: int`: specify the sampling rate of the output audio, specify if you want to use the audio in something else that has specific sampling rate constraints
+
+### Fork and Contribute to simli-client
+
+<Card
+  title="simli-ai"
+  icon="github"
+  href="https://github.com/simliai/simli-client-py"
+>
+  Fork and contribute to the simli-client repository on GitHub or clone for your
+  own usecase.
+</Card>
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Ensure your API key is correct and active.
+2. Verify that your face ID is valid and associated with your account.
+3. Check that your audio data is in the correct format (PCM16, 16KHz).
+4. Verify that you have the necessary permissions for accessing the user's media devices.
+5. Review the console logs for any error messages or warnings.
+
+Reach out to our support team for further assistance on [Discord](https://discord.gg/yQx49zNF4d).

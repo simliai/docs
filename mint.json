@@ -27,7 +27,11 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "api-reference/simli-client"]
+      "pages": [
+        "introduction",
+        "api-reference/simli-client",
+        "api-reference/python-sdk"
+      ]
     },
     {
       "group": "Features",

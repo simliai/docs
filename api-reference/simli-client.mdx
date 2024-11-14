@@ -1,5 +1,5 @@
 ---
-title: simli-client SDK
+title: simli-client JS SDK
 icon: "code"
 ---
 
@@ -29,7 +29,7 @@ npm install simli-client
 First, import the `SimliClient` class into your project:
 
 ```javascript
-import { SimliClient } from 'simli-client';
+import { SimliClient } from "simli-client";
 ```
 
 ### Step 2: Create HTML Elements
@@ -37,7 +37,7 @@ import { SimliClient } from 'simli-client';
 In your React component, create video and audio elements with refs:
 
 ```jsx
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 
 function YourComponent() {
   const videoRef = useRef(null);
@@ -60,8 +60,8 @@ Create an instance of SimliClient and initialize it with your configuration:
 const simliClient = new SimliClient();
 
 const simliConfig = {
-  apiKey: 'YOUR_SIMLI_API_KEY',
-  faceID: 'YOUR_FACE_ID',
+  apiKey: "YOUR_SIMLI_API_KEY",
+  faceID: "YOUR_FACE_ID",
   handleSilence: true, // keep the face moving while in idle
   maxSessionLength: 3600, // in seconds
   maxIdleTime: 600, // in seconds
@@ -74,7 +74,10 @@ simliClient.Initialize(simliConfig);
 
 Make sure to replace `'YOUR_SIMLI_API_KEY'` with your actual Simli API key, and `'YOUR_FACE_ID'` with the desired face ID for your application.
 
-<Note>If you're using listenToMediastreamTrack() set `handleSilence: false` to avoid audio artifacts</Note>
+<Note>
+  If you're using listenToMediastreamTrack() set `handleSilence: false` to avoid
+  audio artifacts
+</Note>
 
 ### Step 4: Start the WebRTC Connection
 
@@ -94,7 +97,7 @@ const audioData = new Uint8Array(6000).fill(0); // Replace with your actual audi
 simliClient.sendAudioData(audioData);
 ```
 
-Ensure that your audio data is in PCM16 format with a 16KHz sample rate for optimal performance.
+Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
 
 ## simli-client API reference
 
@@ -104,7 +107,7 @@ Ensure that your audio data is in PCM16 format with a 16KHz sample rate for opti
 - `start()`: Sets up the WebRTC connection and prepares for streaming.
 - `close()`: Closes the WebRTC connection and cleans up resources.
 - `sendAudioData(audioData: Uint8Array)`: Sends audio data to the server.
-- `listenToMediastreamTrack(stream: MediaStreamTrack)`: Listens to a MediaStreamTrack and sends audio data to the server. *Can be used as an alternative to `sendAudioData`.*
+- `listenToMediastreamTrack(stream: MediaStreamTrack)`: Listens to a MediaStreamTrack and sends audio data to the server. _Can be used as an alternative to `sendAudioData`._
 - `ClearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
 
 ## Advanced Usage
@@ -112,22 +115,23 @@ Ensure that your audio data is in PCM16 format with a 16KHz sample rate for opti
 ### Events
 
 As of now the simliClient emits 3 events:
+
 - `connected` when the data channel is open and ready to use
 - `disconnected` when the data channel is closed
 - `failed` when the webRTC connection fails to connect
 
 ```js
-simliClient.on('connected', () => {
-    console.log('SimliClient is now connected!');
-}); 
+simliClient.on("connected", () => {
+  console.log("SimliClient is now connected!");
+});
 
-simliClient.on('disconnected', () => {
-    console.log('SimliClient has disconnected!');
-}); 
+simliClient.on("disconnected", () => {
+  console.log("SimliClient has disconnected!");
+});
 
-simliClient.on('failed', () => {
-    console.log('SimliClient has failed to connect!');
-}); 
+simliClient.on("failed", () => {
+  console.log("SimliClient has failed to connect!");
+});
 ```
 
 ### Error Handling
@@ -139,12 +143,14 @@ SimliClient provides console logging for various events and errors. It's recomme
 The SimliClient uses a default STUN server for ICE candidate gathering. If you need to use custom ICE servers or other WebRTC configurations, you may need to modify the `createPeerConnection` method in the SimliClient class.
 
 ### Fork and Contribute to simli-client
+
 <Card
   title="simli-client"
   icon="github"
   href="https://github.com/simliai/simli-client"
 >
-  Fork and contribute to the simli-client repository on GitHub or clone for your own usecase.
+  Fork and contribute to the simli-client repository on GitHub or clone for your
+  own usecase.
 </Card>
 
 ## Troubleshooting
