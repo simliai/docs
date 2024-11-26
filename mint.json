@@ -50,6 +50,7 @@
         "api-reference/endpoint/startAudioToVideoSession",
         "api-reference/endpoint/StartWebRTCSession",
         "api-reference/endpoint/textToVideoStream",
+        "api-reference/endpoint/audioToVideoStream",
         "api-reference/endpoint/getIceServers"
       ]
     },
