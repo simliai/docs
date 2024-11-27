@@ -30,33 +30,39 @@
       "pages": [
         "introduction",
         "api-reference/simli-client",
-        "api-reference/python-sdk"
+        "api-reference/python-sdk",
+        "api-reference/samples"
       ]
     },
     {
       "group": "Features",
       "pages": [
         "api-reference/available-faces",
-        "api-reference/simli-webrtc",
-        "api-reference/webrtc-signaling-guide",
-        "api-reference/WSDC_Migration_Guide",
-        "api-reference/webrtc-info",
-        "api-reference/audio-info"
+        {
+          "group": "WebRTC",
+          "pages": [
+            "api-reference/simli-webrtc",
+            "api-reference/webrtc-signaling-guide",
+            "api-reference/WSDC_Migration_Guide",
+            "api-reference/webrtc-info",
+            "api-reference/audio-info"
+          ]
+        }
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "api-reference/endpoint/startAudioToVideoSession",
-        "api-reference/endpoint/StartWebRTCSession",
         "api-reference/endpoint/textToVideoStream",
         "api-reference/endpoint/audioToVideoStream",
+        "api-reference/endpoint/startAudioToVideoSession",
+        "api-reference/endpoint/StartWebRTCSession",
         "api-reference/endpoint/getIceServers"
       ]
     },
     {
       "group": "",
-      "pages": ["api-reference/discord", "api-reference/status"]
+      "pages": ["api-reference/discord"]
     }
   ],
   "modeToggle": {
