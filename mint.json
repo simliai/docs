@@ -29,6 +29,7 @@
       "group": "Get Started",
       "pages": [
         "introduction",
+        "api-reference/simli-agent",
         "api-reference/simli-client",
         "api-reference/python-sdk",
         "api-reference/samples"
