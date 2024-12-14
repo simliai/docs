@@ -2,4 +2,6 @@
 title: '/StartWebRTCSession'
 description: 'Start a WebRTC session'
 openapi: 'POST /StartWebRTCSession'
+
+Not sure if this has been brought up before, but it is unclear where the SDP and type are obtained from for reference in the StartWebRTCSession API payload. I've read through the documentation, and noted the CreateOffer and CreateAnswer methods for the RTCPeerConnection instance, but when attempting to set local description using the CreateOffer method, nothing gets set. Adding an example of how to properly use your APIs including where to obtain required parameters would be immensely helpful. I alone have spent 3 hours on this so I can only imagine the collective time spent by devs navigating your documentation.
 ---
