@@ -36,12 +36,12 @@ import { SimliClient } from "simli-client";
 
 In your React component, create video and audio elements with refs:
 
-```jsx
+```tsx
 import React, { useRef } from "react";
 
 function YourComponent() {
-  const videoRef = useRef(null);
-  const audioRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   return (
     <div>
@@ -65,8 +65,9 @@ const simliConfig = {
   handleSilence: true, // keep the face moving while in idle
   maxSessionLength: 3600, // in seconds
   maxIdleTime: 600, // in seconds
-  videoRef: videoRef,
-  audioRef: audioRef,
+  videoRef: videoRef.current,
+  audioRef: audioRef.current,
+  enableConsoleLogs: true, // enables Simli console logs
 };
 
 simliClient.Initialize(simliConfig);
