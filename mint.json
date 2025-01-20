@@ -32,15 +32,10 @@
         "api-reference/simli-agent",
         "api-reference/simli-client",
         "api-reference/python-sdk",
-        "api-reference/samples"
-      ]
-    },
-    {
-      "group": "Features",
-      "pages": [
-        "api-reference/available-faces",
+        "api-reference/available-faces", 
         {
-          "group": "WebRTC",
+          "group": "WebRTC Guides",
+          "icon": "book",
           "pages": [
             "api-reference/simli-webrtc",
             "api-reference/webrtc-signaling-guide",
