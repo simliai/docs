@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "API Documentation",
     "description": "Documentation for API endpoints",
@@ -272,10 +272,279 @@
           }
         }
       }
+    },
+    "/getRequestStatus": {
+      "post": {
+        "summary": "Getrequeststatus",
+        "operationId": "getRequestStatus_getRequestStatus_post",
+        "parameters": [
+          {
+            "name": "face_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Face Id"
+            }
+          },
+          {
+            "name": "api-key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generateFaceID": {
+      "post": {
+        "summary": "Generatefaceidapi",
+        "operationId": "generateFaceIDAPI_generateFaceID_post",
+        "parameters": [
+          {
+            "name": "face_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "untitled_avatar",
+              "title": "Face Name"
+            }
+          },
+          {
+            "name": "api-key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_generateFaceIDAPI_generateFaceID_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/startE2ESession": {
+      "post": {
+        "summary": "Start Pipecat Session",
+        "operationId": "start_pipecat_session_startE2ESession_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "TTS_Provider": {
+        "type": "string",
+        "enum": ["ElevenLabs", "Cartesia"],
+        "title": "TTS_Provider"
+      },
+
+      "CustomLLMConfig": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "gpt-4o-mini"
+          },
+          "baseURL": {
+            "type": "string",
+            "title": "Baseurl"
+          },
+          "llmAPIKey": {
+            "type": "string",
+            "title": "Llmapikey"
+          }
+        },
+        "type": "object",
+        "required": ["baseURL", "llmAPIKey"],
+        "title": "CustomLLMConfig"
+      },
+
+      "StartAgentRequest": {
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "title": "Apikey"
+          },
+          "faceId": {
+            "type": "string",
+            "title": "Faceid",
+            "default": "tmp9i8bbq7c"
+          },
+          "ttsProvider": {
+            "$ref": "#/components/schemas/TTS_Provider",
+            "default": "Cartesia"
+          },
+          "ttsAPIKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttsapikey"
+          },
+          "ttsModel": {
+            "type": "string",
+            "title": "Ttsmodel",
+            "default": "sonic-english"
+          },
+          "voiceId": {
+            "type": "string",
+            "title": "Voiceid",
+            "default": "a167e0f3-df7e-4d52-a9c3-f949145efdab"
+          },
+          "systemPrompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Systemprompt",
+            "default": "You are Chatbot, a friendly, helpful robot. Your goal is to demonstrate your capabilities in a succinct way. Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way, but keep your responses brief."
+          },
+          "firstMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firstmessage"
+          },
+          "maxSessionLength": {
+            "type": "integer",
+            "title": "Maxsessionlength",
+            "default": 3600
+          },
+          "maxIdleTime": {
+            "type": "integer",
+            "title": "Maxidletime",
+            "default": 300
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "default": "en"
+          },
+          "customLLMConfig": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomLLMConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": ["apiKey"],
+        "title": "StartAgentRequest"
+      },
+
+      "Body_generateFaceIDAPI_generateFaceID_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "required": ["image"],
+        "title": "Body_generateFaceIDAPI_generateFaceID_post"
+      },
+
       "TextToVideoRequest": {
         "type": "object",
         "required": [

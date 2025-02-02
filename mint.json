@@ -30,9 +30,15 @@
       "pages": [
         "introduction",
         "api-reference/simli-agent",
-        "api-reference/simli-client",
+        {
+          "group": "Javascript SDK",
+          "pages": [
+            "api-reference/simli-client",
+            "api-reference/backend-authentication"
+          ]
+        },
         "api-reference/python-sdk",
-        "api-reference/available-faces", 
+        "api-reference/available-faces",
         {
           "group": "WebRTC Guides",
           "icon": "book",
@@ -47,13 +53,27 @@
       ]
     },
     {
-      "group": "API Reference",
+      "group": "Video API Reference",
       "pages": [
         "api-reference/endpoint/textToVideoStream",
         "api-reference/endpoint/audioToVideoStream",
         "api-reference/endpoint/startAudioToVideoSession",
         "api-reference/endpoint/StartWebRTCSession",
-        "api-reference/endpoint/getIceServers"
+        "api-reference/endpoint/getIceServers",
+        {
+          "group": "End 2 End API (Simli Auto)",
+          "pages": [
+            "api-reference/endpoint/startE2ESession",
+            "api-reference/endpoint/customLLM"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Face ID Creation API Reference",
+      "pages": [
+        "api-reference/endpoint/generateFaceID",
+        "api-reference/endpoint/getRequestStatus"
       ]
     },
     {
