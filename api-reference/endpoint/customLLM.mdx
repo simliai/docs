@@ -1,0 +1,154 @@
+---
+title: "Use your own LLM"
+icon: comments
+---
+
+TL;DR, If you have an OpenAI compatible API (test it out with the python or JS SDKs), pass [Simli the base url, an API key, and the model name](/api-reference/endpoint/startE2ESession#body-custom-llm-config-base-url) and you're golden!
+
+## Background
+
+Using the Simli manged API is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledgebase, a RAG powered system, using your finetuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, hello, you're in the right place.
+
+There's a fun trick that you may already know about if you're this deep into the weeds, if you look at the [Deepseek api docs](https://api-docs.deepseek.com/), you can see that they're using the OpenAI SDK as if it was their own! They just put in the base_url for their API and the API key and then it works as if nothing weird is going on.
+
+Well, this is a result of Deepseek, and a lot of LLM API providers copying most of OpenAI's homework in terms of API design, having the same endpoint naming scheme and Response body structure. OpenAI API has a lot going on; however, there are 3 essential parts that everyone copied: Request path, Request Structure, Response Structure.
+
+## The basic OpenAI request
+
+To make an OpenAI-compatible LLM API, you need to have something resembling the following
+
+POST `http(s)://my-awesome-llm-hosted-here/some/random/path */chat/completions*`
+
+With the header `Authorization` and value `Bearer INSERT_SECRET_API_KEY`
+
+and Body
+
+```JSON
+"model":"my-AGI",
+"messages": [
+    {"role":"system", "content":"This is a sample system message (AKA base prompt)"}
+    {"role":"asssistant", "content":"This is a sample AI generated message"}
+    {"role":"user","content":"This is a sample user Input"}
+]
+```
+
+and the response(s)
+
+```JSON
+{
+    "id":0,
+    "choices" :[ {
+        "delta": {"content":"Chunk Completion Text Example"}
+    }],
+    "created": "Unix Time Stamp",
+    "model":"the model name you had in request",
+    "object": "chat.completion.chunk" // Just a literal
+}
+```
+
+Response has the mimetype `text/eventstream` and the structure above is used for all chunks. You must ensure that the text body is correctly formatted. Additionally, you must indicate that your response is done by sending a DONE frame. All responses are followed by 2 newline delimiters. Using FastAPI for example, you would have an async generator looking like this:
+
+```python
+import json
+async def outputStream():
+    ResultDict = [{
+        "id":0,
+        "choices" :[ {
+            "delta": {"content":"Chunk Completion Text Example"}
+        }],
+        "created": "Unix Time Stamp",
+        "model":"the model name you had in request",
+        "object": "chat.completion.chunk" # Just a literal
+    }]
+    async for chunk in ResultDict:
+        yield f"data: {json.dumps(chunk)}\n\n"
+    yield "data: [DONE]\n\n"
+
+```
+
+Here's an example server sending out a mock response with FastAPI, which can be simply run using `python app.py` and passing the hosting URL to Simli. (more examples in other languages coming soon)
+
+```python
+import time
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+import json
+
+app = FastAPI()
+
+
+async def streamOutput():
+    data = {
+        "id": "",
+        "choices": [
+            {
+                "delta": {"content": "This is a test. "},
+                "index": 0,
+            }
+        ],
+        "model": "gpt-4o-mini-2024-07-18",
+        "created": 0,
+        "object": "chat.completion.chunk",
+    }
+    for i in range(5):
+        data["id"] = f"id-{i}"
+        data["choices"][0]["index"] = i
+        data["created"] = int(time.time())
+        out = f"data: {json.dumps(data)}\n\n"
+        yield out
+    yield "data: [DONE]\n\n"
+
+
+@app.post("/chat/completions")
+async def chat_completions(_: Request):
+    return StreamingResponse(streamOutput(), media_type="text/event-stream")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=11000)
+```
+
+and another exxample just wrapping OpenAI SDK on the server
+
+```python
+import os
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionChunk
+from typing import AsyncGenerator
+from dotenv import load_dotenv
+
+app = FastAPI()
+
+load_dotenv(override=True)
+OPEN_AI_API_KEY = os.getenv("OPENAI_API_KEY")
+async_client = AsyncOpenAI(api_key=OPEN_AI_API_KEY)
+
+
+async def streamOutput(request: Request):
+    output: AsyncGenerator[
+        ChatCompletionChunk
+    ] = await async_client.chat.completions.create(**(await request.json()))
+
+    async for item in output:
+        out = f"data: {item.model_dump_json(exclude_unset=True)}\n\n"
+        yield out
+    yield "data: [DONE]\n\n"
+
+
+@app.post("/chat/completions")
+async def chat_completions(request: Request):
+    return StreamingResponse(
+        streamOutput(request),
+        media_type="text/event-stream",
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=11000)
+```
