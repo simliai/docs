@@ -174,7 +174,7 @@
       }
     },
 
-    "/startWebRTCSession": {
+    "/startWebRTCSessio": {
       "post": {
         "summary": "Start WebRTC Session",
         "requestBody": {
