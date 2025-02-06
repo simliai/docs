@@ -1,5 +1,5 @@
 ---
-title: "Use your own LLM"
+title: "Bring your own LLM"
 icon: comments
 ---
 
@@ -7,7 +7,7 @@ TL;DR, If you have an OpenAI compatible API (test it out with the python or JS S
 
 ## Background
 
-Using the Simli manged API is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledgebase, a RAG powered system, using your finetuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, hello, you're in the right place.
+Using Simli Auto (our end-to-end API) is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledge base, a RAG powered system, using your fine-tuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, you're in the right place.
 
 There's a fun trick that you may already know about if you're this deep into the weeds, if you look at the [Deepseek api docs](https://api-docs.deepseek.com/), you can see that they're using the OpenAI SDK as if it was their own! They just put in the base_url for their API and the API key and then it works as if nothing weird is going on.
 

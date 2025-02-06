@@ -53,20 +53,20 @@
       ]
     },
     {
-      "group": "Video API Reference",
+      "group": "Simli Compose - API Reference",
       "pages": [
         "api-reference/endpoint/textToVideoStream",
         "api-reference/endpoint/audioToVideoStream",
         "api-reference/endpoint/startAudioToVideoSession",
-        "api-reference/endpoint/StartWebRTCSession",
-        "api-reference/endpoint/getIceServers",
-        {
-          "group": "End 2 End API (Simli Auto)",
-          "pages": [
-            "api-reference/endpoint/startE2ESession",
-            "api-reference/endpoint/customLLM"
-          ]
-        }
+        "api-reference/endpoint/startWebRTCSession",
+        "api-reference/endpoint/getIceServers"
+      ]
+    },
+    {
+      "group": "Simli Auto - API Reference",
+      "pages": [
+        "api-reference/endpoint/startE2ESession",
+        "api-reference/endpoint/customLLM"
       ]
     },
     {
@@ -78,7 +78,9 @@
     },
     {
       "group": "",
-      "pages": ["api-reference/discord"]
+      "pages": [
+        "api-reference/discord"
+      ]
     }
   ],
   "modeToggle": {

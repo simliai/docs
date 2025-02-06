@@ -188,7 +188,7 @@ async function connectToRemotePeer() {
   var codec;
   document.getElementById("offer-sdp").textContent = offer.sdp;
 
-  const ws = new WebSocket("wss://api.simli.ai/StartWebRTCSession");
+  const ws = new WebSocket("wss://api.simli.ai/startWebRTCSession");
   wsConnection = ws;
   ws.addEventListener("open", () => {
     ws.send(
@@ -536,7 +536,7 @@ function connectToRemotePeer() {
   var codec;
   document.getElementById("offer-sdp").textContent = offer.sdp;
 
- const ws = new WebSocket("wss://api.simli.ai/StartWebRTCSession");
+ const ws = new WebSocket("wss://api.simli.ai/startWebRTCSession");
   wsConnection = ws;
   ws.addEventListener("open", () => {
     ws.send(

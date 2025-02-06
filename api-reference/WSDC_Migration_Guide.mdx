@@ -23,7 +23,7 @@ It's simple, the datachannel worked horribly as a session init mechanism over tu
 
 ### Session Init
 
-Well, you had a POST call to `https://api.simli.ai/StartWebRTCSession` which you sent a JSON with `{sdp: pc.localDescription.sdp, type: pc.localDescription.type}`. Now, it's a WebSocket connection to `wss://api.simli.ai/StartWebRTCSession` to which you send the same JSON. On it, you receive two messages, the first one is reserved for possible future behavior, the second one is the output of the POST call: `{sdp:remoteSDP, type:"answer"}`. The second response you use with `pc.setRemoteDescrition(ANSWER_RECEIVED_FROM_WEBSOCKET)` and that's the main difference in session initiallization nothing more.
+Well, you had a POST call to `https://api.simli.ai/startWebRTCSession` which you sent a JSON with `{sdp: pc.localDescription.sdp, type: pc.localDescription.type}`. Now, it's a WebSocket connection to `wss://api.simli.ai/startWebRTCSession` to which you send the same JSON. On it, you receive two messages, the first one is reserved for possible future behavior, the second one is the output of the POST call: `{sdp:remoteSDP, type:"answer"}`. The second response you use with `pc.setRemoteDescrition(ANSWER_RECEIVED_FROM_WEBSOCKET)` and that's the main difference in session initiallization nothing more.
 
 ### Sending and Receiving Data
 
