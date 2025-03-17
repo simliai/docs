@@ -11,71 +11,17 @@
     }
   ],
   "paths": {
-    "/isSessionAvailable": {
-      "post": {
-        "summary": "Check if session is available",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "apiKey": {
-                    "type": "string"
-                  }
-                },
-                "required": ["apiKey"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Session availability response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "isAvailable": {
-                      "type": "boolean"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/getPossibleFaceIDs": {
+    "/WebRTC": {
       "get": {
-        "summary": "Get possible face IDs",
-        "parameters": [
-          {
-            "name": "apiKey",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "Index",
+        "operationId": "index_WebRTC_get",
         "responses": {
           "200": {
-            "description": "List of possible face IDs",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "faceIDs": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "string"
-                      }
-                    }
-                  }
+
                 }
               }
             }
@@ -83,53 +29,17 @@
         }
       }
     },
-    "/startAudioToVideoSession": {
-      "post": {
-        "summary": "Start Audio to Video Session",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "faceId": {
-                    "type": "string"
-                  },
-                  "isJPG": {
-                    "type": "boolean"
-                  },
-                  "apiKey": {
-                    "type": "string"
-                  },
-                  "syncAudio": {
-                    "type": "boolean"
-                  },
-                  "maxSessionLength": {
-                    "type": "integer",
-                    "description": "Max session length in seconds"
-                  },
-                  "maxIdleTime": {
-                    "type": "integer",
-                    "description": "Max idle/silence time in seconds before session is terminated"
-                  }
-                },
-                "required": ["faceId", "isJPG", "apiKey", "syncAudio"]
-              }
-            }
-          }
-        },
+    "/WebRTC/client.js": {
+      "get": {
+        "summary": "Javascript",
+        "operationId": "javascript_WebRTC_client_js_get",
         "responses": {
           "200": {
-            "description": "Session token response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "session_token": {
-                      "type": "string"
-                    }
-                  }
+
                 }
               }
             }
@@ -137,15 +47,15 @@
         }
       }
     },
-    "/audioToVideoStream": {
+    "/startWebRTCSession": {
       "post": {
-        "summary": "Audiotovideo",
-        "operationId": "audioToVideo_audioToVideoStream_post",
+        "summary": "Startwebrtcsession",
+        "operationId": "StartWebRTCSession_startWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AudioToVideoRequest"
+                "$ref": "#/components/schemas/RTCOffer"
               }
             }
           },
@@ -156,7 +66,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -173,35 +85,37 @@
         }
       }
     },
-
-    "/startWebRTCSession": {
+    "/StartWebRTCSession": {
       "post": {
-        "summary": "Start WebRTC Session",
+        "summary": "Startwebrtcsession",
+        "operationId": "StartWebRTCSession_StartWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "sdp": {
-                    "type": "string"
-                  },
-                  "type": {
-                    "type": "string"
-                  }
-                },
-                "required": ["sdp", "type"]
+                "$ref": "#/components/schemas/RTCOffer"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "WebRTC Session response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -211,25 +125,417 @@
     },
     "/textToVideoStream": {
       "post": {
-        "summary": "Generate video stream from text",
+        "summary": "Texttovideostream",
+        "description": "This endpoint takes a TextToVideoRequest object and returns a url of an HLS .m3u8 playlist file.",
+        "operationId": "textToVideoStream_textToVideoStream_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TextToVideoRequest"
+              },
+              "examples": {
+                "PlayHT": {
+                  "summary": "PlayHT",
+                  "description": "PlayHT",
+                  "value": {
+                    "ttsAPIKey": "",
+                    "simliAPIKey": "",
+                    "faceId": "tmp9i8bbq7c",
+                    "user_id": "",
+                    "requestBody": {
+                      "audioProvider": "PlayHT",
+                      "text": "Hello, my name is John Doe",
+                      "voice": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/female-cs/manifest.json",
+                      "quality": "draft",
+                      "speed": 1,
+                      "sample_rate": 24000,
+                      "voice_engine": "PlayHT2.0-turbo",
+                      "output_format": "mp3",
+                      "emotion": "female_happy",
+                      "voice_guidance": 3,
+                      "style_guidance": 20,
+                      "text_guidance": 1
+                    }
+                  }
+                },
+                "ElevenLabs": {
+                  "summary": "ElevenLabs",
+                  "description": "ElevenLabs",
+                  "value": {
+                    "ttsAPIKey": "",
+                    "simliAPIKey": "",
+                    "faceId": "tmp9i8bbq7c",
+                    "requestBody": {
+                      "audioProvider": "ElevenLabs",
+                      "model_id": "eleven_turbo_v2_5",
+                      "voiceName": "21m00Tcm4TlvDq8ikWAM",
+                      "text": "Hello, my name is John Doe",
+                      "voice_settings": {
+                        "stability": 0.5,
+                        "similarity_boost": 0.8
+                      }
+                    }
+                  }
+                }
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
-            "description": "Successful response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string",
-                  "description": "URL of the HLS .m3u8 playlist file"
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mp4/{machineIP}/{file}": {
+      "get": {
+        "summary": "Hlstomp4",
+        "operationId": "hlsToMP4_mp4__machineIP___file__get",
+        "parameters": [
+          {
+            "name": "machineIP",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Machineip"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hls/{machineIP}/{file}": {
+      "get": {
+        "summary": "Getcachedvideo",
+        "operationId": "getCachedVideo_hls__machineIP___file__get",
+        "parameters": [
+          {
+            "name": "machineIP",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Machineip"
+            }
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/createE2ESessionToken": {
+      "post": {
+        "summary": "Createpipecatsessiontoken",
+        "operationId": "createPipecatSessionToken_createE2ESessionToken_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionSecrets"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/session/{agent_id}/{session_token}": {
+      "get": {
+        "summary": "Startagentidquery",
+        "operationId": "startAgentIDQuery_session__agent_id___session_token__get",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "session_token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Token"
+            }
+          },
+          {
+            "name": "redirect",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Redirect"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/session/{agent_id}": {
+      "get": {
+        "summary": "Startagentidheader",
+        "operationId": "startAgentIDHeader_session__agent_id__get",
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "redirect",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Redirect"
+            }
+          },
+          {
+            "name": "session-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/startE2ESession": {
+      "post": {
+        "summary": "Startpipecatsession",
+        "operationId": "startPipecatSession_startE2ESession_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartAgentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/getE2ETranscript/{sessionId}": {
+      "get": {
+        "summary": "Gete2Etranscript",
+        "operationId": "getE2ETranscript_getE2ETranscript__sessionId__get",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sessionid"
+            }
+          },
+          {
+            "name": "api-key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -256,7 +562,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -273,45 +581,17 @@
         }
       }
     },
-    "/getRequestStatus": {
+    "/audioToVideoStream": {
       "post": {
-        "summary": "Getrequeststatus",
-        "operationId": "getRequestStatus_getRequestStatus_post",
-        "parameters": [
-          {
-            "name": "face_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Face Id"
-            }
-          },
-          {
-            "name": "api-key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Api-Key"
-            }
-          }
-        ],
+        "summary": "Audiotovideointerface",
+        "operationId": "audioToVideoInterface_audioToVideoStream_post",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+
                 }
               }
             }
@@ -319,56 +599,17 @@
         }
       }
     },
-    "/generateFaceID": {
+    "/audioToVideo": {
       "post": {
-        "summary": "Generatefaceidapi",
-        "operationId": "generateFaceIDAPI_generateFaceID_post",
-        "parameters": [
-          {
-            "name": "face_name",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "untitled_avatar",
-              "title": "Face Name"
-            }
-          },
-          {
-            "name": "api-key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Api-Key"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_generateFaceIDAPI_generateFaceID_post"
-              }
-            }
-          }
-        },
+        "summary": "Audiotovideointerface",
+        "operationId": "audioToVideoInterface_audioToVideo_post",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+
                 }
               }
             }
@@ -376,15 +617,87 @@
         }
       }
     },
-    "/startE2ESession": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Check Health",
+        "operationId": "check_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/available_sessions": {
+      "get": {
+        "summary": "Check Session Availability",
+        "operationId": "check_session_availability_available_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/available-sessions": {
+      "get": {
+        "summary": "Check Session Availability",
+        "operationId": "check_session_availability_available_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/startAudioToVideoSession": {
       "post": {
-        "summary": "Start Pipecat Session",
-        "operationId": "start_pipecat_session_startE2ESession_post",
+        "summary": "Start Audio To Video Session",
+        "operationId": "start_audio_to_video_session_startAudioToVideoSession_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartAgentRequest"
+                "$ref": "#/components/schemas/StartStreamingSessionRequest"
               }
             }
           },
@@ -395,7 +708,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -415,12 +730,35 @@
   },
   "components": {
     "schemas": {
-      "TTS_Provider": {
-        "type": "string",
-        "enum": ["ElevenLabs", "Cartesia"],
-        "title": "TTS_Provider"
+      "CartesiaAudioGenAPIRequest": {
+        "properties": {
+          "audioProvider": {
+            "type": "string",
+            "const": "Cartesia",
+            "title": "Audioprovider"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": "Hello world"
+          },
+          "voice_id": {
+            "type": "string",
+            "title": "Voice Id",
+            "default": "a167e0f3-df7e-4d52-a9c3-f949145efdab"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id",
+            "default": "sonic-turbo-2025-03-07"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audioProvider"
+        ],
+        "title": "CartesiaAudioGenAPIRequest"
       },
-
       "CustomLLMConfig": {
         "properties": {
           "model": {
@@ -438,10 +776,233 @@
           }
         },
         "type": "object",
-        "required": ["baseURL", "llmAPIKey"],
+        "required": [
+          "baseURL",
+          "llmAPIKey"
+        ],
         "title": "CustomLLMConfig"
       },
-
+      "ElevenLabsAudioGenAPIRequest": {
+        "properties": {
+          "audioProvider": {
+            "type": "string",
+            "const": "ElevenLabs",
+            "title": "Audioprovider"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": "Hello world"
+          },
+          "voiceName": {
+            "type": "string",
+            "title": "Voicename",
+            "default": "21m00Tcm4TlvDq8ikWAM"
+          },
+          "voice_settings": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Voice Settings",
+            "default": {
+              "stability": 0.5,
+              "similarity_boost": 0.8
+            }
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id",
+            "default": "eleven_turbo_v2_5"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audioProvider"
+        ],
+        "title": "ElevenLabsAudioGenAPIRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IceRequest": {
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "title": "Apikey"
+          }
+        },
+        "type": "object",
+        "required": [
+          "apiKey"
+        ],
+        "title": "IceRequest"
+      },
+      "LLM_Provider": {
+        "type": "string",
+        "enum": [
+          "OpenAI",
+          "User"
+        ],
+        "title": "LLM_Provider"
+      },
+      "PlayHTAudioGenAPIRequest": {
+        "properties": {
+          "audioProvider": {
+            "type": "string",
+            "const": "PlayHT",
+            "title": "Audioprovider"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          },
+          "quality": {
+            "type": "string",
+            "title": "Quality",
+            "default": "draft"
+          },
+          "output_format": {
+            "type": "string",
+            "title": "Output Format",
+            "default": "mp3"
+          },
+          "speed": {
+            "type": "integer",
+            "title": "Speed",
+            "default": 1
+          },
+          "sample_rate": {
+            "type": "integer",
+            "title": "Sample Rate",
+            "default": 24000
+          },
+          "voice_engine": {
+            "type": "string",
+            "title": "Voice Engine",
+            "default": "PlayHT2.0-turbo"
+          },
+          "emotion": {
+            "type": "string",
+            "title": "Emotion",
+            "default": "female_happy"
+          },
+          "voice_guidance": {
+            "type": "integer",
+            "title": "Voice Guidance",
+            "default": 3
+          },
+          "style_guidance": {
+            "type": "integer",
+            "title": "Style Guidance",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "audioProvider",
+          "text",
+          "voice"
+        ],
+        "title": "PlayHTAudioGenAPIRequest"
+      },
+      "RTCOffer": {
+        "properties": {
+          "sdp": {
+            "type": "string",
+            "title": "Sdp"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sdp",
+          "type"
+        ],
+        "title": "RTCOffer"
+      },
+      "SessionSecrets": {
+        "properties": {
+          "expiryStamp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expirystamp",
+            "default": -1
+          },
+          "simliAPIKey": {
+            "type": "string",
+            "title": "Simliapikey"
+          },
+          "llmAPIKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmapikey",
+            "default": ""
+          },
+          "ttsAPIKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttsapikey",
+            "default": ""
+          },
+          "originAllowList": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originallowlist",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "simliAPIKey"
+        ],
+        "title": "SessionSecrets"
+      },
       "StartAgentRequest": {
         "properties": {
           "apiKey": {
@@ -471,7 +1032,7 @@
           "ttsModel": {
             "type": "string",
             "title": "Ttsmodel",
-            "default": "sonic-english"
+            "default": "sonic-turbo-2025-03-07"
           },
           "voiceId": {
             "type": "string",
@@ -525,154 +1086,181 @@
                 "type": "null"
               }
             ]
+          },
+          "createTranscript": {
+            "type": "boolean",
+            "title": "Createtranscript",
+            "default": false
           }
         },
-        "type": "object",
-        "required": ["apiKey"],
-        "title": "StartAgentRequest"
-      },
-
-      "Body_generateFaceIDAPI_generateFaceID_post": {
-        "properties": {
-          "image": {
-            "type": "string",
-            "format": "binary",
-            "title": "Image"
-          }
-        },
-        "type": "object",
-        "required": ["image"],
-        "title": "Body_generateFaceIDAPI_generateFaceID_post"
-      },
-
-      "TextToVideoRequest": {
         "type": "object",
         "required": [
-          "ttsAPIKey",
-          "simliAPIKey",
-          "faceId",
-          "user_id",
-          "requestBody"
+          "apiKey"
         ],
-        "properties": {
-          "ttsAPIKey": {
-            "type": "string"
-          },
-          "simliAPIKey": {
-            "type": "string"
-          },
-          "faceId": {
-            "type": "string"
-          },
-          "user_id": {
-            "type": "string"
-          },
-          "requestBody": {
-            "type": "object",
-            "required": [
-              "audioProvider",
-              "text",
-              "voice",
-              "quality",
-              "speed",
-              "sample_rate",
-              "voice_engine",
-              "output_format",
-              "emotion",
-              "voice_guidance",
-              "style_guidance",
-              "text_guidance"
-            ],
-            "properties": {
-              "audioProvider": {
-                "type": "string"
-              },
-              "text": {
-                "type": "string"
-              },
-              "voice": {
-                "type": "string"
-              },
-              "quality": {
-                "type": "string"
-              },
-              "speed": {
-                "type": "number"
-              },
-              "sample_rate": {
-                "type": "integer"
-              },
-              "voice_engine": {
-                "type": "string"
-              },
-              "output_format": {
-                "type": "string"
-              },
-              "emotion": {
-                "type": "string"
-              },
-              "voice_guidance": {
-                "type": "number"
-              },
-              "style_guidance": {
-                "type": "number"
-              },
-              "text_guidance": {
-                "type": "number"
-              }
-            }
-          }
-        }
+        "title": "StartAgentRequest"
       },
-      "IceRequest": {
+      "StartStreamingSessionRequest": {
         "properties": {
-          "apiKey": {
-            "type": "string",
-            "title": "Apikey"
-          }
-        },
-        "type": "object",
-        "required": ["apiKey"],
-        "title": "IceRequest"
-      },
-      "AudioToVideoRequest": {
-        "properties": {
-          "simliAPIKey": {
-            "type": "string",
-            "title": "Simliapikey"
-          },
           "faceId": {
             "type": "string",
             "title": "Faceid"
           },
-          "audioBase64": {
+          "apiVersion": {
             "type": "string",
-            "title": "Audiobase64"
+            "title": "Apiversion",
+            "default": "v1"
           },
-          "audioFormat": {
+          "isJPG": {
+            "type": "boolean",
+            "title": "Isjpg",
+            "default": false
+          },
+          "syncAudio": {
+            "type": "boolean",
+            "title": "Syncaudio",
+            "default": false
+          },
+          "audioInputFormat": {
             "type": "string",
-            "enum": ["pcm16", "pcm32", "wav", "mp3", "ogg"],
-            "title": "Audioformat"
+            "title": "Audioinputformat",
+            "default": "pcm16"
           },
-          "audioSampleRate": {
+          "batchSize": {
             "type": "integer",
-            "title": "Audiosamplerate",
-            "default": 16000
-          },
-          "audioChannelCount": {
-            "type": "integer",
-            "title": "Audiochannelcount",
+            "title": "Batchsize",
             "default": 1
           },
-          "videoStartingFrame": {
+          "apiKey": {
+            "type": "string",
+            "title": "Apikey"
+          },
+          "handleSilence": {
+            "type": "boolean",
+            "title": "Handlesilence",
+            "default": true
+          },
+          "maxSessionLength": {
             "type": "integer",
-            "title": "Videostartingframe",
-            "default": 0
+            "title": "Maxsessionlength",
+            "default": 3600
+          },
+          "maxIdleTime": {
+            "type": "integer",
+            "title": "Maxidletime",
+            "default": 300
+          },
+          "preloadAvatar": {
+            "type": "boolean",
+            "title": "Preloadavatar",
+            "default": false
           }
         },
         "type": "object",
-        "required": ["simliAPIKey", "faceId", "audioBase64", "audioFormat"],
-        "title": "AudioToVideoRequest"
+        "required": [
+          "faceId",
+          "apiKey"
+        ],
+        "title": "StartStreamingSessionRequest"
+      },
+      "TTS_Provider": {
+        "type": "string",
+        "enum": [
+          "ElevenLabs",
+          "PlayHT",
+          "Cartesia",
+          "User"
+        ],
+        "title": "TTS_Provider"
+      },
+      "TextToVideoRequest": {
+        "properties": {
+          "faceId": {
+            "type": "string",
+            "title": "Faceid"
+          },
+          "ttsAPIKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttsapikey"
+          },
+          "simliAPIKey": {
+            "type": "string",
+            "title": "Simliapikey"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": ""
+          },
+          "requestBody": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ElevenLabsAudioGenAPIRequest"
+              },
+              {
+                "$ref": "#/components/schemas/PlayHTAudioGenAPIRequest"
+              },
+              {
+                "$ref": "#/components/schemas/CartesiaAudioGenAPIRequest"
+              }
+            ],
+            "title": "Requestbody",
+            "discriminator": {
+              "propertyName": "audioProvider",
+              "mapping": {
+                "Cartesia": "#/components/schemas/CartesiaAudioGenAPIRequest",
+                "ElevenLabs": "#/components/schemas/ElevenLabsAudioGenAPIRequest",
+                "PlayHT": "#/components/schemas/PlayHTAudioGenAPIRequest"
+              }
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "faceId",
+          "simliAPIKey",
+          "requestBody"
+        ],
+        "title": "TextToVideoRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }
