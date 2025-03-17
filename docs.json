@@ -1,0 +1,163 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Simli",
+  "colors": {
+    "primary": "#000000",
+    "light": "#FFFFFF",
+    "dark": "#000000"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "pages": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "overview",
+              "api-reference/create-agent"
+            ]
+          },
+          {
+            "group": "Use Simli Widget",
+            "pages": [
+              "api-reference/widget"
+            ]
+          },
+          {
+            "group": "Use Simli Auto",
+            "pages": [
+              "api-reference/simli-auto"
+            ]
+          },
+          {
+            "group": "Use an SDK",
+            "pages": [
+              {
+                "group": "JavaScript",
+                "icon": "js",
+                "pages": [
+                  "api-reference/javascript",
+                  "api-reference/javascript-auth"
+                ]
+              },
+              "api-reference/python",
+              {
+                "group": "Starter repos",
+                "icon": "github",
+                "pages": [
+                  "api-reference/simli-agent",
+                  "api-reference/openAI",
+                  "api-reference/elevenlabs",
+                  "api-reference/samples/all-samples"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Links",
+            "pages": [
+              "api-reference/discord"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "pages": [
+          {
+            "group": "WebRTC API",
+            "pages": [
+              "api-reference/endpoint/textToVideoStream",
+              "api-reference/endpoint/audioToVideoStream",
+              "api-reference/endpoint/startAudioToVideoSession",
+              "api-reference/endpoint/StartWebRTCSession",
+              "api-reference/endpoint/getIceServers"
+            ]
+          },
+          {
+            "group": "End 2 End API (Simli Auto)",
+            "pages": [
+              "api-reference/endpoint/startE2ESession",
+              "api-reference/endpoint/customLLM"
+            ]
+          },
+          {
+            "group": "Face ID Creation",
+            "pages": [
+              "api-reference/endpoint/generateFaceID",
+              "api-reference/endpoint/getRequestStatus"
+            ]
+          },
+          {
+            "group": "Integrate with Simli",
+            "pages": [
+              "api-reference/samples/pipecat",
+              "api-reference/samples/livekit",
+              {
+                "group": "WebRTC Guides",
+                "icon": "book",
+                "pages": [
+                  "api-reference/simli-webrtc",
+                  "api-reference/webrtc-signaling-guide",
+                  "api-reference/WSDC_Migration_Guide",
+                  "api-reference/webrtc-info",
+                  "api-reference/audio-info"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Links",
+            "pages": [
+              "api-reference/swagger"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Video Tutorials",
+        "pages": [
+          {
+            "group": "Videos",
+            "pages": [
+              "video-section/tutorials",
+              "video-section/showcase"
+            ]
+          },
+          {
+            "group": "By Language",
+            "pages": [
+              "video-section/english",
+              "video-section/arabic",
+              "video-section/norwegian"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Join our Discord",
+        "href": "https://discord.gg/yQx49zNF4d"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Simli Dashboard",
+      "href": "https://app.simli.com/"
+    }
+  }
+}
