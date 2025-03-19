@@ -2,6 +2,116 @@
 title: Simli Auto
 icon: "code"
 iconType: "duotone"
+description: "Create interactive AI avatars with just a few API calls"
 ---
 
-Auto content goes here
+## Overview
+
+Simli Auto is a powerful API that enables you to create and manage interactive AI avatars with real-time text-to-speech and facial animation capabilities. It provides a streamlined way to integrate conversational AI agents into your applications with minimal setup.
+
+## Key Features
+
+- **End-to-End Sessions**: Create interactive sessions with AI avatars that can engage in real-time conversations
+- **Custom LLM Support**: Bring your own Language Model by providing an OpenAI-compatible API endpoint
+- **Multiple TTS Providers**: Choose from various text-to-speech providers including ElevenLabs, PlayHT, and Cartesia
+- **Multi-Language Support**: Support for multiple languages through Deepgram's language models
+- **Session Management**: Built-in session handling with configurable idle times and session lengths
+- **Transcript Generation**: Optional conversation transcript generation for record-keeping
+
+## Available APIs
+
+### Session Management
+- **`POST /createE2ESessionToken`**: Creates a new session token for authentication. Requires your Simli API key and optionally a TTS API key.
+- **`POST /startE2ESession`**: Initializes a new end-to-end interactive session with an AI avatar. Configure TTS provider, language, and other session parameters.
+- **`GET /session/{agent_id}`**: Retrieves session information for a specific agent using header-based authentication.
+- **`GET /session/{agent_id}/{session_token}`**: Retrieves session information for a specific agent using URL-based token authentication.
+
+### Conversation Management
+- **`GET /getE2ETranscript/{sessionId}`**: Retrieves the conversation transcript for a specific session if transcript generation was enabled.
+
+### Custom Integration
+- **`POST /textToVideoStream`**: Converts text to video stream with facial animations and speech.
+- **`POST /audioToVideoStream`**: Converts audio input to video stream with facial animations.
+- **`POST /getIceServers`**: Retrieves ICE (Interactive Connectivity Establishment) servers for WebRTC connections.
+
+## Getting Started
+
+To start using the Simli Auto API, you'll need:
+
+1. A Simli API key
+2. (Optional) API keys for your preferred TTS provider
+3. (Optional) Custom LLM configuration if not using the default model
+
+### Quick Start
+
+Here's a basic flow to get started:
+
+1. Create a session token:
+```bash
+POST /createE2ESessionToken
+{
+  "simliAPIKey": "your-api-key",
+  "ttsAPIKey": "your-tts-api-key"  // Optional
+}
+```
+
+2. Start an end-to-end session:
+```bash
+POST /startE2ESession
+{
+  "apiKey": "your-api-key",
+  "faceId": "your-face-id",
+  "ttsProvider": "Cartesia",  // Or "ElevenLabs"
+  "language": "en",
+  "createTranscript": false
+}
+```
+
+### Using Custom LLMs
+
+Simli Auto supports integration with any OpenAI-compatible LLM API. To use your own LLM:
+
+```json
+{
+  "customLLMConfig": {
+    "model": "your-model-name",
+    "baseURL": "https://your-llm-api-endpoint.com",
+    "llmAPIKey": "your-llm-api-key"
+  }
+}
+```
+
+### Session Configuration
+
+You can customize various session parameters:
+
+- `maxSessionLength`: Maximum duration of the session in seconds (default: 3600)
+- `maxIdleTime`: Maximum idle time before session timeout in seconds (default: 300)
+- `systemPrompt`: Custom prompt to define the AI's behavior
+- `firstMessage`: Initial message from the AI when session starts
+
+## Best Practices
+
+1. **Session Management**
+   - Keep track of session tokens and handle expiration appropriately
+   - Configure idle times based on your use case
+
+2. **Resource Optimization**
+   - Use appropriate batch sizes for audio processing
+   - Handle session cleanup when no longer needed
+
+3. **Error Handling**
+   - Implement proper error handling for API responses
+   - Monitor session status and handle timeouts gracefully
+
+## Rate Limits and Quotas
+
+Please refer to your API plan for specific rate limits and quotas. Ensure your application handles rate limiting appropriately to maintain optimal performance.
+
+## Next Steps
+
+- Explore the detailed API reference for each endpoint
+- Check out our example implementations
+- Join our community for support and updates
+
+For more detailed information about specific endpoints and features, navigate through the API reference sections.

@@ -68,20 +68,14 @@
         "tab": "API Reference",
         "pages": [
           {
-            "group": "WebRTC API",
+            "group": "Simli Auto",
             "pages": [
-              "api-reference/endpoint/textToVideoStream",
-              "api-reference/endpoint/audioToVideoStream",
-              "api-reference/endpoint/startAudioToVideoSession",
-              "api-reference/endpoint/StartWebRTCSession",
-              "api-reference/endpoint/getIceServers"
-            ]
-          },
-          {
-            "group": "End 2 End API (Simli Auto)",
-            "pages": [
-              "api-reference/endpoint/startE2ESession",
-              "api-reference/endpoint/customLLM"
+              "api-reference/endpoint/simli-auto/createE2ESessionToken",
+              "api-reference/endpoint/simli-auto/startE2ESession",
+              "api-reference/endpoint/simli-auto/customLLM",
+              "api-reference/endpoint/simli-auto/session-agent_id-session_token",
+              "api-reference/endpoint/simli-auto/session-agent_id",
+              "api-reference/endpoint/simli-auto/getE2ETranscript-sessionId"
             ]
           },
           {
@@ -92,10 +86,18 @@
             ]
           },
           {
-            "group": "Integrate with Simli",
+            "group": "Agents",
             "pages": [
-              "api-reference/samples/pipecat",
-              "api-reference/samples/livekit",
+              "api-reference/endpoint/agent/agent-create",
+              "api-reference/endpoint/agent/agent-update",
+              "api-reference/endpoint/agent/agent-delete",
+              "api-reference/endpoint/agent/agent-get",
+              "api-reference/endpoint/agent/agent-list"
+            ]
+          },
+          {
+            "group": "WebRTC API",
+            "pages": [
               {
                 "group": "WebRTC Guides",
                 "icon": "book",
@@ -106,13 +108,19 @@
                   "api-reference/webrtc-info",
                   "api-reference/audio-info"
                 ]
-              }
+              },
+              "api-reference/endpoint/webrtc/startWebRTCSession",
+              "api-reference/endpoint/webrtc/startAudioToVideoSession",
+              "api-reference/endpoint/webrtc/getIceServers",
+              "api-reference/endpoint/webrtc/textToVideoStream",
+              "api-reference/endpoint/webrtc/audioToVideoStream"
             ]
           },
           {
-            "group": "Links",
+            "group": "Integrate with Simli",
             "pages": [
-              "api-reference/swagger"
+              "api-reference/samples/pipecat",
+              "api-reference/samples/livekit"
             ]
           }
         ]
@@ -120,19 +128,12 @@
       {
         "tab": "Video Tutorials",
         "pages": [
+          "video-section/feature-your-video",
           {
             "group": "Videos",
             "pages": [
               "video-section/tutorials",
-              "video-section/showcase"
-            ]
-          },
-          {
-            "group": "By Language",
-            "pages": [
-              "video-section/english",
-              "video-section/arabic",
-              "video-section/norwegian"
+              "video-section/usecases"
             ]
           }
         ]
