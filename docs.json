@@ -17,7 +17,8 @@
             "group": "Get Started",
             "pages": [
               "overview",
-              "api-reference/create-agent"
+              "api-reference/create-agent",
+              "api-reference/preset-faces"
             ]
           },
           {
