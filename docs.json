@@ -49,8 +49,8 @@
                 "icon": "github",
                 "pages": [
                   "api-reference/simli-agent",
-                  "api-reference/openAI",
-                  "api-reference/elevenlabs",
+                  "api-reference/samples/openai",
+                  "api-reference/samples/elevenlabs",
                   "api-reference/samples/all-samples"
                 ]
               }
