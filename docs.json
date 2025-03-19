@@ -128,14 +128,14 @@
       {
         "tab": "Video Tutorials",
         "pages": [
-          "video-section/feature-your-video",
           {
             "group": "Videos",
             "pages": [
               "video-section/tutorials",
               "video-section/usecases"
             ]
-          }
+          },
+          "video-section/feature-your-video"
         ]
       }
     ]
