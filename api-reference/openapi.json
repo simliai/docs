@@ -558,13 +558,33 @@
     "/audioToVideoStream": {
       "post": {
         "summary": "Audiotovideointerface",
-        "operationId": "audioToVideoInterface_audioToVideoStream_post",
+        "operationId": "audioToVideo_audioToVideoStream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioToVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -1182,6 +1202,45 @@
         "type": "object",
         "required": ["loc", "msg", "type"],
         "title": "ValidationError"
+      },
+      "AudioToVideoRequest": {
+        "properties": {
+          "simliAPIKey": {
+            "type": "string",
+            "title": "Simliapikey"
+          },
+          "faceId": {
+            "type": "string",
+            "title": "Faceid"
+          },
+          "audioBase64": {
+            "type": "string",
+            "title": "Audiobase64"
+          },
+          "audioFormat": {
+            "type": "string",
+            "enum": ["pcm16", "pcm32", "wav", "mp3", "ogg"],
+            "title": "Audioformat"
+          },
+          "audioSampleRate": {
+            "type": "integer",
+            "title": "Audiosamplerate",
+            "default": 16000
+          },
+          "audioChannelCount": {
+            "type": "integer",
+            "title": "Audiochannelcount",
+            "default": 1
+          },
+          "videoStartingFrame": {
+            "type": "integer",
+            "title": "Videostartingframe",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["simliAPIKey", "faceId", "audioBase64", "audioFormat"],
+        "title": "AudioToVideoRequest"
       }
     }
   }
