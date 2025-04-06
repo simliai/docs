@@ -10,6 +10,11 @@
       "url": "https://api.simli.ai"
     }
   ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
   "paths": {
     "/ping": {
       "get": {
@@ -146,6 +151,14 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-simli-api-key",
+        "description": "API key for authentication"
+      }
+    },
     "schemas": {
       "AgentResponse": {
         "type": "object",
