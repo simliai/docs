@@ -15,27 +15,6 @@ description: "Embed a Simli Agent on your website in a few minutes."
   ></video>
 </Frame>
 
-<Card title="Simli Widget" icon="code" href="https://app.simli.com">
-  Start using the Simli Widget on your website.
-</Card>
-
-Simli Widget is a simple and easy to use code embedding that allows you to embed a Simli Agent on any HTML website. It utilizes the Simli Auto API.
-## Supported platforms
-- Any website that supports HTML
-- WordPress
-- Shopify
-- Squarespace
-- Wix
-- Weebly
-
-## How to use?
-- Create an Agent in the Simli app
-- Copy the embed code
-- Paste the embed code in the HTML of your website
-
-<Info>
-  Make sure to update the embded code on your website if you update your API Keys or Allowlist.
-</Info>
 
 ## Features
 
@@ -70,3 +49,56 @@ Simli Widget is a simple and easy to use code embedding that allows you to embed
   Start using the Simli Widget on your website.
 </Card>
 
+### Supported platforms
+- WordPress, Shopify, Squarespace, Wix, Weebly and any website that supports HTML
+
+## Customize widget appearance
+
+The Simli Widget can be customized using various parameters in the embed code. Here are the available customization options:
+
+```tsx
+<simli-widget
+  token="your-token"
+  agentid="your-agent-id"
+  position="relative"
+  customtext="Call Agent"
+  customimage="https://app.simli.com/images/logo.png"
+  overlay="false"
+>
+</simli-widget>
+```
+
+### Parameters
+
+- `token` (required): Your Simli API token for authentication
+- `agentid` (required): The unique identifier of your Simli Agent
+
+#### Default Mode
+- `position`: Controls the widget's position on the page
+  - `"relative"`: Positions the widget in the normal document flow
+  - `"left"`: Fixes the widget to the left side of the screen
+  - `"right"`: Fixes the widget to the right side of the screen
+- `customtext`: Custom text to display on the widget button
+- `customimage`: URL to a custom image to replace the default dotted face animation
+
+#### Overlay Mode (Custom Trigger Button)
+- `overlay`: Set to "true" to enable overlay mode, which creates a full-screen experience and enables you to customize the trigger button. Create a trigger button with the ID `simliOverlayBtn` in your HTML
+
+```tsx
+<button id="simliOverlayBtn">Open Widget</button>
+<simli-widget
+  token="your-token"
+  agentid="your-agent-id"
+  position="relative"
+  overlay="true"
+>
+</simli-widget>
+```
+
+<Card title="Simli Widget" icon="code" href="https://app.simli.com">
+  Start using the Simli Widget on your website.
+</Card>
+
+<Info>
+  Make sure to re-update the embded code on your website if you update your API Keys or Allowlist.
+</Info>
