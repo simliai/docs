@@ -1,26 +1,21 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "API Documentation",
-    "description": "Documentation for API endpoints",
-    "version": "1.0.0"
+    "title": "FastAPI",
+    "version": "0.1.0"
   },
-  "servers": [
-    {
-      "url": "https://api.simli.ai"
-    }
-  ],
   "paths": {
     "/WebRTC": {
       "get": {
         "summary": "Index",
-        "operationId": "index_WebRTC_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -30,13 +25,14 @@
     "/WebRTC/client.js": {
       "get": {
         "summary": "Javascript",
-        "operationId": "javascript_WebRTC_client_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -46,7 +42,6 @@
     "/startWebRTCSession": {
       "post": {
         "summary": "Startwebrtcsession",
-        "operationId": "StartWebRTCSession_startWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -62,7 +57,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -82,7 +79,6 @@
     "/StartWebRTCSession": {
       "post": {
         "summary": "Startwebrtcsession",
-        "operationId": "StartWebRTCSession_StartWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -98,7 +94,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -119,7 +117,6 @@
       "post": {
         "summary": "Texttovideostream",
         "description": "This endpoint takes a TextToVideoRequest object and returns a url of an HLS .m3u8 playlist file.",
-        "operationId": "textToVideoStream_textToVideoStream_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -180,7 +177,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -200,7 +199,6 @@
     "/mp4/{machineIP}/{file}": {
       "get": {
         "summary": "Hlstomp4",
-        "operationId": "hlsToMP4_mp4__machineIP___file__get",
         "parameters": [
           {
             "name": "machineIP",
@@ -226,7 +224,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -246,7 +246,6 @@
     "/hls/{machineIP}/{file}": {
       "get": {
         "summary": "Getcachedvideo",
-        "operationId": "getCachedVideo_hls__machineIP___file__get",
         "parameters": [
           {
             "name": "machineIP",
@@ -272,7 +271,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -289,10 +290,9 @@
         }
       }
     },
-    "/createE2ESessionToken": {
+    "/auto/token": {
       "post": {
-        "summary": "Createpipecatsessiontoken",
-        "operationId": "createPipecatSessionToken_createE2ESessionToken_post",
+        "summary": "Create Simli session token to be used in Simli sessions",
         "requestBody": {
           "content": {
             "application/json": {
@@ -308,7 +308,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -325,66 +327,10 @@
         }
       }
     },
-    "/session/{agent_id}/{session_token}": {
-      "get": {
-        "summary": "Startagentidquery",
-        "operationId": "startAgentIDQuery_session__agent_id___session_token__get",
-        "parameters": [
-          {
-            "name": "agent_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Agent Id"
-            }
-          },
-          {
-            "name": "session_token",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Session Token"
-            }
-          },
-          {
-            "name": "redirect",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Redirect"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/session/{agent_id}": {
-      "get": {
-        "summary": "Startagentidheader",
-        "operationId": "startAgentIDHeader_session__agent_id__get",
+    "/auto/start/{agent_id}": {
+      "post": {
+        "summary": "Start a Simli session with an agent ID and session token",
+
         "parameters": [
           {
             "name": "agent_id",
@@ -420,7 +366,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -437,10 +385,9 @@
         }
       }
     },
-    "/startE2ESession": {
+    "/auto/start/configurable": {
       "post": {
-        "summary": "Startpipecatsession",
-        "operationId": "startPipecatSession_startE2ESession_post",
+        "summary": "Start a Simli session with body parameters (as opposed to using agent ID + session token)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -456,7 +403,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -473,14 +422,13 @@
         }
       }
     },
-    "/getE2ETranscript/{sessionId}": {
+    "/auto/transcript/{session_id}": {
       "get": {
-        "summary": "Gete2Etranscript",
-        "operationId": "getE2ETranscript_getE2ETranscript__sessionId__get",
+        "summary": "Get the transcript of a Simli session by session ID",
         "parameters": [
           {
             "name": "sessionId",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -502,7 +450,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -522,7 +472,6 @@
     "/getIceServers": {
       "post": {
         "summary": "Geticeservers",
-        "operationId": "getIceServers_getIceServers_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -538,7 +487,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -558,32 +509,13 @@
     "/audioToVideoStream": {
       "post": {
         "summary": "Audiotovideointerface",
-        "operationId": "audioToVideo_audioToVideoStream_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AudioToVideoRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+
                 }
               }
             }
@@ -594,13 +526,14 @@
     "/audioToVideo": {
       "post": {
         "summary": "Audiotovideointerface",
-        "operationId": "audioToVideoInterface_audioToVideo_post",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -610,13 +543,14 @@
     "/": {
       "get": {
         "summary": "Root",
-        "operationId": "root__get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -626,13 +560,31 @@
     "/health": {
       "get": {
         "summary": "Check Health",
-        "operationId": "check_health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generalHealth": {
+      "get": {
+        "summary": "Healthnolipsyncendpoint",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
               }
             }
           }
@@ -642,13 +594,14 @@
     "/available_sessions": {
       "get": {
         "summary": "Check Session Availability",
-        "operationId": "check_session_availability_available_sessions_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -658,13 +611,14 @@
     "/available-sessions": {
       "get": {
         "summary": "Check Session Availability",
-        "operationId": "check_session_availability_available_sessions_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -674,7 +628,6 @@
     "/startAudioToVideoSession": {
       "post": {
         "summary": "Start Audio To Video Session",
-        "operationId": "start_audio_to_video_session_startAudioToVideoSession_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -690,7 +643,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           },
@@ -734,7 +689,9 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider"],
+        "required": [
+          "audioProvider"
+        ],
         "title": "CartesiaAudioGenAPIRequest"
       },
       "CustomLLMConfig": {
@@ -754,7 +711,10 @@
           }
         },
         "type": "object",
-        "required": ["baseURL", "llmAPIKey"],
+        "required": [
+          "baseURL",
+          "llmAPIKey"
+        ],
         "title": "CustomLLMConfig"
       },
       "ElevenLabsAudioGenAPIRequest": {
@@ -792,7 +752,9 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider"],
+        "required": [
+          "audioProvider"
+        ],
         "title": "ElevenLabsAudioGenAPIRequest"
       },
       "HTTPValidationError": {
@@ -816,12 +778,17 @@
           }
         },
         "type": "object",
-        "required": ["apiKey"],
+        "required": [
+          "apiKey"
+        ],
         "title": "IceRequest"
       },
       "LLM_Provider": {
         "type": "string",
-        "enum": ["OpenAI", "User"],
+        "enum": [
+          "OpenAI",
+          "User"
+        ],
         "title": "LLM_Provider"
       },
       "PlayHTAudioGenAPIRequest": {
@@ -881,7 +848,11 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider", "text", "voice"],
+        "required": [
+          "audioProvider",
+          "text",
+          "voice"
+        ],
         "title": "PlayHTAudioGenAPIRequest"
       },
       "RTCOffer": {
@@ -896,7 +867,10 @@
           }
         },
         "type": "object",
-        "required": ["sdp", "type"],
+        "required": [
+          "sdp",
+          "type"
+        ],
         "title": "RTCOffer"
       },
       "SessionSecrets": {
@@ -941,6 +915,11 @@
             "title": "Ttsapikey",
             "default": ""
           },
+          "createTranscript": {
+            "type": "boolean",
+            "title": "Createtranscript",
+            "default": false
+          },
           "originAllowList": {
             "anyOf": [
               {
@@ -959,7 +938,9 @@
           }
         },
         "type": "object",
-        "required": ["simliAPIKey"],
+        "required": [
+          "simliAPIKey"
+        ],
         "title": "SessionSecrets"
       },
       "StartAgentRequest": {
@@ -1050,10 +1031,17 @@
             "type": "boolean",
             "title": "Createtranscript",
             "default": false
+          },
+          "disableSuperRes": {
+            "type": "boolean",
+            "title": "Disablesuperres",
+            "default": false
           }
         },
         "type": "object",
-        "required": ["apiKey"],
+        "required": [
+          "apiKey"
+        ],
         "title": "StartAgentRequest"
       },
       "StartStreamingSessionRequest": {
@@ -1081,6 +1069,17 @@
             "type": "string",
             "title": "Audioinputformat",
             "default": "pcm16"
+          },
+          "sessionAggregator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessionaggregator"
           },
           "batchSize": {
             "type": "integer",
@@ -1110,15 +1109,33 @@
             "type": "boolean",
             "title": "Preloadavatar",
             "default": false
+          },
+          "disableSuperRes": {
+            "type": "boolean",
+            "title": "Disablesuperres",
+            "default": false
+          },
+          "force256": {
+            "type": "boolean",
+            "title": "Force256",
+            "default": false
           }
         },
         "type": "object",
-        "required": ["faceId", "apiKey"],
+        "required": [
+          "faceId",
+          "apiKey"
+        ],
         "title": "StartStreamingSessionRequest"
       },
       "TTS_Provider": {
         "type": "string",
-        "enum": ["ElevenLabs", "PlayHT", "Cartesia", "User"],
+        "enum": [
+          "ElevenLabs",
+          "PlayHT",
+          "Cartesia",
+          "User"
+        ],
         "title": "TTS_Provider"
       },
       "TextToVideoRequest": {
@@ -1168,10 +1185,19 @@
                 "PlayHT": "#/components/schemas/PlayHTAudioGenAPIRequest"
               }
             }
+          },
+          "disableSuperRes": {
+            "type": "boolean",
+            "title": "Disablesuperres",
+            "default": false
           }
         },
         "type": "object",
-        "required": ["faceId", "simliAPIKey", "requestBody"],
+        "required": [
+          "faceId",
+          "simliAPIKey",
+          "requestBody"
+        ],
         "title": "TextToVideoRequest"
       },
       "ValidationError": {
@@ -1200,47 +1226,12 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
-      },
-      "AudioToVideoRequest": {
-        "properties": {
-          "simliAPIKey": {
-            "type": "string",
-            "title": "Simliapikey"
-          },
-          "faceId": {
-            "type": "string",
-            "title": "Faceid"
-          },
-          "audioBase64": {
-            "type": "string",
-            "title": "Audiobase64"
-          },
-          "audioFormat": {
-            "type": "string",
-            "enum": ["pcm16", "pcm32", "wav", "mp3", "ogg"],
-            "title": "Audioformat"
-          },
-          "audioSampleRate": {
-            "type": "integer",
-            "title": "Audiosamplerate",
-            "default": 16000
-          },
-          "audioChannelCount": {
-            "type": "integer",
-            "title": "Audiochannelcount",
-            "default": 1
-          },
-          "videoStartingFrame": {
-            "type": "integer",
-            "title": "Videostartingframe",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": ["simliAPIKey", "faceId", "audioBase64", "audioFormat"],
-        "title": "AudioToVideoRequest"
       }
     }
   }

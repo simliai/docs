@@ -71,12 +71,11 @@
           {
             "group": "Simli Auto",
             "pages": [
-              "api-reference/endpoint/simli-auto/createE2ESessionToken",
-              "api-reference/endpoint/simli-auto/startE2ESession",
-              "api-reference/endpoint/simli-auto/customLLM",
-              "api-reference/endpoint/simli-auto/session-agent_id-session_token",
-              "api-reference/endpoint/simli-auto/session-agent_id",
-              "api-reference/endpoint/simli-auto/getE2ETranscript-sessionId"
+              "api-reference/endpoint/simli-auto/token",
+              "api-reference/endpoint/simli-auto/start",
+              "api-reference/endpoint/simli-auto/start-configurable",
+              "api-reference/endpoint/simli-auto/transcript",
+              "api-reference/endpoint/simli-auto/customLLM"
             ]
           },
           {
