@@ -313,16 +313,6 @@
                 }
               }
             }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }
@@ -330,7 +320,6 @@
     "/auto/start/{agent_id}": {
       "post": {
         "summary": "Start a Simli session with an agent ID and session token",
-
         "parameters": [
           {
             "name": "agent_id",
@@ -514,9 +503,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -560,6 +547,21 @@
     "/health": {
       "get": {
         "summary": "Check Health",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generalHealth": {
+      "get": {
+        "summary": "Healthnolipsyncendpoint",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -874,46 +876,38 @@
         "title": "RTCOffer"
       },
       "SessionSecrets": {
+        "type": "object",
+        "title": "SessionSecrets",
+        "required": [
+          "simliAPIKey"
+        ],
         "properties": {
           "expiryStamp": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expirystamp",
-            "default": -1
+            "type": "integer",
+            "title": "ExpiryStamp",
+            "default": -1,
+            "example": 1234567890
           },
           "simliAPIKey": {
             "type": "string",
-            "title": "Simliapikey"
+            "title": "SimliAPIKey",
+            "example": "your-simli-api-key"
           },
           "llmAPIKey": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Llmapikey",
-            "default": ""
+            "type": "string",
+            "title": "LLMAPIKey",
+            "example": "your-llm-api-key"
           },
           "ttsAPIKey": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ttsapikey",
-            "default": ""
+            "type": "string",
+            "title": "TTSAPIKey",
+            "example": "your-tts-api-key"
+          },
+          "createTranscript": {
+            "type": "boolean",
+            "title": "CreateTranscript",
+            "default": false,
+            "example": true
           },
           "createTranscript": {
             "type": "boolean",
@@ -921,27 +915,18 @@
             "default": false
           },
           "originAllowList": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array",
-                "uniqueItems": true
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Originallowlist",
-            "default": []
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "title": "OriginAllowList",
+            "example": [
+              "https://example.com",
+              "https://another.com"
+            ]
           }
-        },
-        "type": "object",
-        "required": [
-          "simliAPIKey"
-        ],
-        "title": "SessionSecrets"
+        }
       },
       "StartAgentRequest": {
         "properties": {
