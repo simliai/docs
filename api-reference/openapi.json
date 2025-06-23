@@ -1,21 +1,26 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "FastAPI",
-    "version": "0.1.0"
+    "title": "API Documentation",
+    "description": "Documentation for API endpoints",
+    "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "https://api.simli.ai"
+    }
+  ],
   "paths": {
     "/WebRTC": {
       "get": {
         "summary": "Index",
+        "operationId": "index_WebRTC_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -25,14 +30,13 @@
     "/WebRTC/client.js": {
       "get": {
         "summary": "Javascript",
+        "operationId": "javascript_WebRTC_client_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -42,6 +46,7 @@
     "/startWebRTCSession": {
       "post": {
         "summary": "Startwebrtcsession",
+        "operationId": "StartWebRTCSession_startWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -57,9 +62,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -79,6 +82,7 @@
     "/StartWebRTCSession": {
       "post": {
         "summary": "Startwebrtcsession",
+        "operationId": "StartWebRTCSession_StartWebRTCSession_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -94,9 +98,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -117,6 +119,7 @@
       "post": {
         "summary": "Texttovideostream",
         "description": "This endpoint takes a TextToVideoRequest object and returns a url of an HLS .m3u8 playlist file.",
+        "operationId": "textToVideoStream_textToVideoStream_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -177,9 +180,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -199,6 +200,7 @@
     "/mp4/{machineIP}/{file}": {
       "get": {
         "summary": "Hlstomp4",
+        "operationId": "hlsToMP4_mp4__machineIP___file__get",
         "parameters": [
           {
             "name": "machineIP",
@@ -224,9 +226,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -246,6 +246,7 @@
     "/hls/{machineIP}/{file}": {
       "get": {
         "summary": "Getcachedvideo",
+        "operationId": "getCachedVideo_hls__machineIP___file__get",
         "parameters": [
           {
             "name": "machineIP",
@@ -271,9 +272,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -355,9 +354,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -392,9 +389,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -439,9 +434,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -460,7 +453,7 @@
     },
     "/getIceServers": {
       "post": {
-        "summary": "Geticeservers",
+        "summary": "Get Ice Servers (WebRTC)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -476,9 +469,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -518,35 +509,17 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
         }
       }
     },
-    "/": {
-      "get": {
-        "summary": "Root",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/health": {
-      "get": {
-        "summary": "Check Health",
+    "/audioToVideo": {
+      "post": {
+        "summary": "Audiotovideointerface",
+        "operationId": "audioToVideoInterface_audioToVideo_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -559,34 +532,16 @@
         }
       }
     },
-    "/generalHealth": {
+    "/health": {
       "get": {
-        "summary": "Healthnolipsyncendpoint",
+        "summary": "Check Health",
+        "operationId": "check_health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/generalHealth": {
-      "get": {
-        "summary": "Healthnolipsyncendpoint",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -601,9 +556,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -618,9 +571,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -645,9 +596,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           },
@@ -691,9 +640,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "audioProvider"
-        ],
+        "required": ["audioProvider"],
         "title": "CartesiaAudioGenAPIRequest"
       },
       "CustomLLMConfig": {
@@ -713,10 +660,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "baseURL",
-          "llmAPIKey"
-        ],
+        "required": ["baseURL", "llmAPIKey"],
         "title": "CustomLLMConfig"
       },
       "ElevenLabsAudioGenAPIRequest": {
@@ -754,9 +698,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "audioProvider"
-        ],
+        "required": ["audioProvider"],
         "title": "ElevenLabsAudioGenAPIRequest"
       },
       "HTTPValidationError": {
@@ -780,17 +722,12 @@
           }
         },
         "type": "object",
-        "required": [
-          "apiKey"
-        ],
+        "required": ["apiKey"],
         "title": "IceRequest"
       },
       "LLM_Provider": {
         "type": "string",
-        "enum": [
-          "OpenAI",
-          "User"
-        ],
+        "enum": ["OpenAI", "User"],
         "title": "LLM_Provider"
       },
       "PlayHTAudioGenAPIRequest": {
@@ -850,11 +787,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "audioProvider",
-          "text",
-          "voice"
-        ],
+        "required": ["audioProvider", "text", "voice"],
         "title": "PlayHTAudioGenAPIRequest"
       },
       "RTCOffer": {
@@ -869,64 +802,71 @@
           }
         },
         "type": "object",
-        "required": [
-          "sdp",
-          "type"
-        ],
+        "required": ["sdp", "type"],
         "title": "RTCOffer"
       },
       "SessionSecrets": {
-        "type": "object",
-        "title": "SessionSecrets",
-        "required": [
-          "simliAPIKey"
-        ],
         "properties": {
           "expiryStamp": {
-            "type": "integer",
-            "title": "ExpiryStamp",
-            "default": -1,
-            "example": 1234567890
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expirystamp",
+            "default": -1
           },
           "simliAPIKey": {
             "type": "string",
-            "title": "SimliAPIKey",
-            "example": "your-simli-api-key"
+            "title": "Simliapikey"
           },
           "llmAPIKey": {
-            "type": "string",
-            "title": "LLMAPIKey",
-            "example": "your-llm-api-key"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llmapikey",
+            "default": ""
           },
           "ttsAPIKey": {
-            "type": "string",
-            "title": "TTSAPIKey",
-            "example": "your-tts-api-key"
-          },
-          "createTranscript": {
-            "type": "boolean",
-            "title": "CreateTranscript",
-            "default": false,
-            "example": true
-          },
-          "createTranscript": {
-            "type": "boolean",
-            "title": "Createtranscript",
-            "default": false
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttsapikey",
+            "default": ""
           },
           "originAllowList": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "uniqueItems": true,
-            "title": "OriginAllowList",
-            "example": [
-              "https://example.com",
-              "https://another.com"
-            ]
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originallowlist",
+            "default": []
           }
-        }
+        },
+        "type": "object",
+        "required": ["simliAPIKey"],
+        "title": "SessionSecrets"
       },
       "StartAgentRequest": {
         "properties": {
@@ -1016,17 +956,10 @@
             "type": "boolean",
             "title": "Createtranscript",
             "default": false
-          },
-          "disableSuperRes": {
-            "type": "boolean",
-            "title": "Disablesuperres",
-            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "apiKey"
-        ],
+        "required": ["apiKey"],
         "title": "StartAgentRequest"
       },
       "StartStreamingSessionRequest": {
@@ -1054,17 +987,6 @@
             "type": "string",
             "title": "Audioinputformat",
             "default": "pcm16"
-          },
-          "sessionAggregator": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sessionaggregator"
           },
           "batchSize": {
             "type": "integer",
@@ -1094,33 +1016,15 @@
             "type": "boolean",
             "title": "Preloadavatar",
             "default": false
-          },
-          "disableSuperRes": {
-            "type": "boolean",
-            "title": "Disablesuperres",
-            "default": false
-          },
-          "force256": {
-            "type": "boolean",
-            "title": "Force256",
-            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "faceId",
-          "apiKey"
-        ],
+        "required": ["faceId", "apiKey"],
         "title": "StartStreamingSessionRequest"
       },
       "TTS_Provider": {
         "type": "string",
-        "enum": [
-          "ElevenLabs",
-          "PlayHT",
-          "Cartesia",
-          "User"
-        ],
+        "enum": ["ElevenLabs", "PlayHT", "Cartesia", "User"],
         "title": "TTS_Provider"
       },
       "TextToVideoRequest": {
@@ -1170,19 +1074,10 @@
                 "PlayHT": "#/components/schemas/PlayHTAudioGenAPIRequest"
               }
             }
-          },
-          "disableSuperRes": {
-            "type": "boolean",
-            "title": "Disablesuperres",
-            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "faceId",
-          "simliAPIKey",
-          "requestBody"
-        ],
+        "required": ["faceId", "simliAPIKey", "requestBody"],
         "title": "TextToVideoRequest"
       },
       "ValidationError": {
@@ -1211,12 +1106,47 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
+      },
+      "AudioToVideoRequest": {
+        "properties": {
+          "simliAPIKey": {
+            "type": "string",
+            "title": "Simliapikey"
+          },
+          "faceId": {
+            "type": "string",
+            "title": "Faceid"
+          },
+          "audioBase64": {
+            "type": "string",
+            "title": "Audiobase64"
+          },
+          "audioFormat": {
+            "type": "string",
+            "enum": ["pcm16", "pcm32", "wav", "mp3", "ogg"],
+            "title": "Audioformat"
+          },
+          "audioSampleRate": {
+            "type": "integer",
+            "title": "Audiosamplerate",
+            "default": 16000
+          },
+          "audioChannelCount": {
+            "type": "integer",
+            "title": "Audiochannelcount",
+            "default": 1
+          },
+          "videoStartingFrame": {
+            "type": "integer",
+            "title": "Videostartingframe",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": ["simliAPIKey", "faceId", "audioBase64", "audioFormat"],
+        "title": "AudioToVideoRequest"
       }
     }
   }
