@@ -4,13 +4,13 @@ icon: comments
 ---
 
 
-## Introduction to Custom LLM
+## Introduction 
 
 Using Simli Auto (our end-to-end API) is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledge base, a RAG powered system, using your fine-tuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, you're in the right place.
 
 There's a fun trick that you may already know about if you're this deep into the weeds, if you look at the [Deepseek api docs](https://api-docs.deepseek.com/), you can see that they're using the OpenAI SDK as if it was their own! They just put in the base_url for their API and the API key and then it works as if nothing weird is going on.
 
-Well, this is a result of Deepseek, and a lot of LLM API providers copying most of OpenAI's homework in terms of API design, having the same endpoint naming scheme and Response body structure. OpenAI API has a lot going on; however, there are 3 essential parts that everyone copied: Request path, Request Structure, Response Structure.
+Well, this is a result of Deepseek, and a lot of LLM API providers copying most of OpenAI's homework in terms of API design, having the same endpoint naming scheme and Response . OpenAI API has a lot going on; however, there are 3 essential parts that everyone copied: Request path, , .
 
 TL;DR, If you have an OpenAI compatible API (test it out with the python or JS SDKs), pass [Simli the base url, an API key, and the model name](/api-reference/endpoint/simli-auto/startE2ESession#body-custom-llm-config-base-url) and you're golden!
 
@@ -47,7 +47,7 @@ and the response(s)
 }
 ```
 
-Response has the mimetype `text/eventstream` and the structure above is used for all chunks. You must ensure that the text body is correctly formatted. Additionally, you must indicate that your response is done by sending a DONE frame. All responses are followed by 2 newline delimiters. Using FastAPI for example, you would have an async generator looking like this:
+Response has the mimetype `text/eventstream` and  above is used for all chunks. You must ensure that the text body is correctly formatted. Additionally, you must indicate that your response is done by sending a DONE frame. All responses are followed by 2 newline delimiters. Using FastAPI for example, you would have an async generator looking like this:
 
 ```python
 import json
