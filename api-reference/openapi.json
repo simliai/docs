@@ -516,22 +516,6 @@
         }
       }
     },
-    "/audioToVideo": {
-      "post": {
-        "summary": "Audiotovideointerface",
-        "operationId": "audioToVideoInterface_audioToVideo_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       "get": {
         "summary": "Check Health",

@@ -3,7 +3,6 @@ title: "Custom LLM guide"
 icon: comments
 ---
 
-TL;DR, If you have an OpenAI compatible API (test it out with the python or JS SDKs), pass [Simli the base url, an API key, and the model name](/api-reference/endpoint/simli-auto/startE2ESession#body-custom-llm-config-base-url) and you're golden!
 
 ## Background
 
@@ -12,6 +11,8 @@ Using Simli Auto (our end-to-end API) is awesome! But it can be a bit difficult 
 There's a fun trick that you may already know about if you're this deep into the weeds, if you look at the [Deepseek api docs](https://api-docs.deepseek.com/), you can see that they're using the OpenAI SDK as if it was their own! They just put in the base_url for their API and the API key and then it works as if nothing weird is going on.
 
 Well, this is a result of Deepseek, and a lot of LLM API providers copying most of OpenAI's homework in terms of API design, having the same endpoint naming scheme and Response body structure. OpenAI API has a lot going on; however, there are 3 essential parts that everyone copied: Request path, Request Structure, Response Structure.
+
+TL;DR, If you have an OpenAI compatible API (test it out with the python or JS SDKs), pass [Simli the base url, an API key, and the model name](/api-reference/endpoint/simli-auto/startE2ESession#body-custom-llm-config-base-url) and you're golden!
 
 ## The basic OpenAI request
 
