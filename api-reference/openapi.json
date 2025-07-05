@@ -43,78 +43,6 @@
         }
       }
     },
-    "/startWebRTCSession": {
-      "post": {
-        "summary": "Startwebrtcsession",
-        "operationId": "StartWebRTCSession_startWebRTCSession_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RTCOffer"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/StartWebRTCSession": {
-      "post": {
-        "summary": "Startwebrtcsession",
-        "operationId": "StartWebRTCSession_StartWebRTCSession_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RTCOffer"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/textToVideoStream": {
       "post": {
         "summary": "Texttovideostream",
@@ -307,9 +235,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-
-                }
+                "schema": {}
               }
             }
           }
@@ -624,7 +550,9 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider"],
+        "required": [
+          "audioProvider"
+        ],
         "title": "CartesiaAudioGenAPIRequest"
       },
       "CustomLLMConfig": {
@@ -644,7 +572,10 @@
           }
         },
         "type": "object",
-        "required": ["baseURL", "llmAPIKey"],
+        "required": [
+          "baseURL",
+          "llmAPIKey"
+        ],
         "title": "CustomLLMConfig"
       },
       "ElevenLabsAudioGenAPIRequest": {
@@ -682,7 +613,9 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider"],
+        "required": [
+          "audioProvider"
+        ],
         "title": "ElevenLabsAudioGenAPIRequest"
       },
       "HTTPValidationError": {
@@ -706,12 +639,17 @@
           }
         },
         "type": "object",
-        "required": ["apiKey"],
+        "required": [
+          "apiKey"
+        ],
         "title": "IceRequest"
       },
       "LLM_Provider": {
         "type": "string",
-        "enum": ["OpenAI", "User"],
+        "enum": [
+          "OpenAI",
+          "User"
+        ],
         "title": "LLM_Provider"
       },
       "PlayHTAudioGenAPIRequest": {
@@ -771,7 +709,11 @@
           }
         },
         "type": "object",
-        "required": ["audioProvider", "text", "voice"],
+        "required": [
+          "audioProvider",
+          "text",
+          "voice"
+        ],
         "title": "PlayHTAudioGenAPIRequest"
       },
       "RTCOffer": {
@@ -786,7 +728,10 @@
           }
         },
         "type": "object",
-        "required": ["sdp", "type"],
+        "required": [
+          "sdp",
+          "type"
+        ],
         "title": "RTCOffer"
       },
       "SessionSecrets": {
@@ -846,10 +791,17 @@
             ],
             "title": "Originallowlist",
             "default": []
+          },
+          "createTranscript": {
+            "type": "boolean",
+            "title": "Simliapikey", 
+            "example": true
           }
         },
         "type": "object",
-        "required": ["simliAPIKey"],
+        "required": [
+          "simliAPIKey"
+        ],
         "title": "SessionSecrets"
       },
       "StartAgentRequest": {
@@ -943,7 +895,9 @@
           }
         },
         "type": "object",
-        "required": ["apiKey"],
+        "required": [
+          "apiKey"
+        ],
         "title": "StartAgentRequest"
       },
       "StartStreamingSessionRequest": {
@@ -1003,12 +957,20 @@
           }
         },
         "type": "object",
-        "required": ["faceId", "apiKey"],
+        "required": [
+          "faceId",
+          "apiKey"
+        ],
         "title": "StartStreamingSessionRequest"
       },
       "TTS_Provider": {
         "type": "string",
-        "enum": ["ElevenLabs", "PlayHT", "Cartesia", "User"],
+        "enum": [
+          "ElevenLabs",
+          "PlayHT",
+          "Cartesia",
+          "User"
+        ],
         "title": "TTS_Provider"
       },
       "TextToVideoRequest": {
@@ -1061,7 +1023,11 @@
           }
         },
         "type": "object",
-        "required": ["faceId", "simliAPIKey", "requestBody"],
+        "required": [
+          "faceId",
+          "simliAPIKey",
+          "requestBody"
+        ],
         "title": "TextToVideoRequest"
       },
       "ValidationError": {
@@ -1090,7 +1056,11 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       },
       "AudioToVideoRequest": {
@@ -1109,7 +1079,13 @@
           },
           "audioFormat": {
             "type": "string",
-            "enum": ["pcm16", "pcm32", "wav", "mp3", "ogg"],
+            "enum": [
+              "pcm16",
+              "pcm32",
+              "wav",
+              "mp3",
+              "ogg"
+            ],
             "title": "Audioformat"
           },
           "audioSampleRate": {
@@ -1129,7 +1105,12 @@
           }
         },
         "type": "object",
-        "required": ["simliAPIKey", "faceId", "audioBase64", "audioFormat"],
+        "required": [
+          "simliAPIKey",
+          "faceId",
+          "audioBase64",
+          "audioFormat"
+        ],
         "title": "AudioToVideoRequest"
       }
     }

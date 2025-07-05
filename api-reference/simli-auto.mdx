@@ -1,6 +1,6 @@
 ---
 title: Simli Auto
-icon: "code"
+icon: "bolt"
 iconType: "duotone"
 description: "Create interactive AI avatars with just a few API calls"
 ---
@@ -16,15 +16,15 @@ For changing the interaction languages, you can look at the support list on [Dee
 
 ## API Endpoints
 There are two ways to build with Simli Auto. The recommended way for most people is using session tokens to authenticate: 
-- **`POST /createE2ESessionToken`**: Creates a new session token for authentication. Requires your Simli API key and optionally a TTS API key.
-- **`GET /auto/session/{agent_id}`**: Starts a session using token in the header for authentication (see API reference).
+- **`POST /auto/token`**: Creates a new session token for authentication. Requires your Simli API key and optionally a TTS API key.
+- **`POST /auto/start/{agent_id}`**: Starts a session using token in the header for authentication (see API reference).
 
 An alternative way to start a session without creating a token first is to use this endpoint:
-- **`POST /startE2ESession`**: Initializes a new end-to-end interactive session with an AI avatar. Configure TTS provider, language, and other session parameters.
+- **`POST /auto/start/configurable`**: Initializes a new end-to-end interactive session with an AI avatar. Configure TTS provider, language, and other session parameters.
 
 
 For conversation transcripts: 
-- **`GET /getE2ETranscript/{sessionId}`**: Retrieves the conversation transcript for a specific session if transcript generation was enabled.
+- **`GET /auto/transcript/{sessionId}`**: Retrieves the conversation transcript for a specific session if transcript generation was enabled.
 
 ## Getting Started
 

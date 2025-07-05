@@ -22,45 +22,36 @@
             ]
           },
           {
-            "group": "Use Simli Widget",
-            "pages": [
-              "api-reference/widget"
-            ]
-          },
-          {
             "group": "Use Simli Auto",
             "pages": [
-              "api-reference/simli-auto"
+              "api-reference/simli-auto",
+              "widget",
+              "emotions"
             ]
           },
           {
-            "group": "Use an SDK",
+            "group": "Use Simli Compose",
             "pages": [
-              {
-                "group": "JavaScript",
-                "icon": "js",
-                "pages": [
-                  "api-reference/javascript",
-                  "api-reference/javascript-auth"
-                ]
-              },
-              "api-reference/python",
-              {
-                "group": "Starter repos",
-                "icon": "github",
-                "pages": [
-                  "api-reference/simli-agent",
-                  "api-reference/samples/openai",
-                  "api-reference/samples/elevenlabs",
-                  "api-reference/samples/all-samples"
-                ]
-              }
+              "simli-compose",
+              "api-reference/javascript",
+              "api-reference/javascript-auth",
+              "api-reference/python"
             ]
           },
           {
             "group": "Links",
             "pages": [
               "api-reference/discord"
+            ]
+          },
+          {
+            "group": "Starter repos",
+            "icon": "github",
+            "pages": [
+              "api-reference/create-simli-agent",
+              "api-reference/samples/openai",
+              "api-reference/samples/elevenlabs",
+              "api-reference/samples/all-samples"
             ]
           }
         ]
@@ -98,20 +89,22 @@
           {
             "group": "WebRTC API",
             "pages": [
+              "api-reference/simli-webrtc",
               {
                 "group": "WebRTC Guides",
                 "icon": "book",
                 "pages": [
-                  "api-reference/simli-webrtc",
-                  "api-reference/webrtc-signaling-guide",
-                  "api-reference/WSDC_Migration_Guide",
                   "api-reference/webrtc-info",
                   "api-reference/audio-info"
                 ]
               },
-              "api-reference/endpoint/webrtc/startWebRTCSession",
               "api-reference/endpoint/webrtc/startAudioToVideoSession",
-              "api-reference/endpoint/webrtc/getIceServers",
+              "api-reference/endpoint/webrtc/getIceServers"
+            ]
+          },
+          {
+            "group": "Content Creation",
+            "pages": [
               "api-reference/endpoint/webrtc/textToVideoStream",
               "api-reference/endpoint/webrtc/audioToVideoStream"
             ]
