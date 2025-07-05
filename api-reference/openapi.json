@@ -43,88 +43,6 @@
         }
       }
     },
-    "/textToVideoStream": {
-      "post": {
-        "summary": "Texttovideostream",
-        "description": "This endpoint takes a TextToVideoRequest object and returns a url of an HLS .m3u8 playlist file.",
-        "operationId": "textToVideoStream_textToVideoStream_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TextToVideoRequest"
-              },
-              "examples": {
-                "PlayHT": {
-                  "summary": "PlayHT",
-                  "description": "PlayHT",
-                  "value": {
-                    "ttsAPIKey": "",
-                    "simliAPIKey": "",
-                    "faceId": "tmp9i8bbq7c",
-                    "user_id": "",
-                    "requestBody": {
-                      "audioProvider": "PlayHT",
-                      "text": "Hello, my name is John Doe",
-                      "voice": "s3://voice-cloning-zero-shot/d9ff78ba-d016-47f6-b0ef-dd630f59414e/female-cs/manifest.json",
-                      "quality": "draft",
-                      "speed": 1,
-                      "sample_rate": 24000,
-                      "voice_engine": "PlayHT2.0-turbo",
-                      "output_format": "mp3",
-                      "emotion": "female_happy",
-                      "voice_guidance": 3,
-                      "style_guidance": 20,
-                      "text_guidance": 1
-                    }
-                  }
-                },
-                "ElevenLabs": {
-                  "summary": "ElevenLabs",
-                  "description": "ElevenLabs",
-                  "value": {
-                    "ttsAPIKey": "",
-                    "simliAPIKey": "",
-                    "faceId": "tmp9i8bbq7c",
-                    "requestBody": {
-                      "audioProvider": "ElevenLabs",
-                      "model_id": "eleven_turbo_v2_5",
-                      "voiceName": "21m00Tcm4TlvDq8ikWAM",
-                      "text": "Hello, my name is John Doe",
-                      "voice_settings": {
-                        "stability": 0.5,
-                        "similarity_boost": 0.8
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/mp4/{machineIP}/{file}": {
       "get": {
         "summary": "Hlstomp4",
@@ -415,27 +333,23 @@
     "/audioToVideoStream": {
       "post": {
         "summary": "Audiotovideointerface",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioToVideoRequest"
               }
             }
           }
-        }
-      }
-    },
-    "/audioToVideo": {
-      "post": {
-        "summary": "Audiotovideointerface",
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AudioToVideoResponse"
+                }
               }
             }
           }
@@ -794,7 +708,7 @@
           },
           "createTranscript": {
             "type": "boolean",
-            "title": "Simliapikey", 
+            "title": "Simliapikey",
             "example": true
           }
         },
@@ -1102,6 +1016,33 @@
             "type": "integer",
             "title": "Videostartingframe",
             "default": 0
+          },
+          "disableSuperRes": {
+            "type": "boolean",
+            "title": "Disablesuperres",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "simliAPIKey",
+          "faceId",
+          "audioBase64",
+          "audioFormat"
+        ],
+        "title": "AudioToVideoRequest"
+      },
+      "AudioToVideoResponse": {
+        "properties": {
+          "hls_url": {
+            "type": "string",
+            "title": "Hls Url",
+            "example": "http://api.simli.ai/hls/path-to-file/output.m3u8"
+          },
+          "mp4_url": {
+            "type": "string",
+            "title": "Mp4 Url",
+            "example": "http://api.simli.ai/mp4/path-to-file/output.mp4"
           }
         },
         "type": "object",

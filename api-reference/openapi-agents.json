@@ -354,6 +354,10 @@
             "description": "The URL of the custom LLM to use",
             "example": "https://api.example.com/v1/chat/completions"
           },
+          "llm_provider": {
+            "type": "string",
+            "example": "openai"
+          },
           "language": {
             "type": "string"
           },
@@ -362,6 +366,10 @@
           },
           "max_session_length": {
             "type": "integer"
+          },
+          "emotion": {
+            "type": "string",
+            "format": "uuid"
           },
           "created_at": {
             "type": "string",
