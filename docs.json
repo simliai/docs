@@ -19,13 +19,14 @@
               "overview",
               "api-reference/create-agent",
               "api-reference/preset-faces"
-            ]
+          ]
           },
           {
             "group": "Use Simli Auto",
             "pages": [
               "api-reference/simli-auto",
-              "widget"
+              "widget",
+              "emotions"
             ]
           },
           {

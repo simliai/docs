@@ -1,7 +1,7 @@
 ---
 title: Add Emotions
 icon: "masks-theater"
-description: "Add dynamic emotions to your Simli Avatar to create more engaging and expressive interactions."
+description: "Add dynamic emotions to your Simli Avatar to create more engaging and expressive interactions. This feature is only available in [Simli Auto](/api-reference/simli-auto)."
 ---
 
 ## Features
@@ -11,21 +11,20 @@ description: "Add dynamic emotions to your Simli Avatar to create more engaging 
 </Card>
 
 ### Supported Emotions
-The Simli app currently supports 5 distinct emotion categories that can be applied to your avatar, but our APIs support even more. 
+The Simli app currently supports 5 distinct emotions that can be applied to your avatar, but our APIs support even more. 
 
 ## Available Emotions
 
 Simli provides a comprehensive set of emotions to make your avatar more expressive and engaging. Each emotion has multiple variations to provide natural diversity in expressions.
 
-### Emotion Categories
+### Preset Emotions
 
-| Emotion | Description | Use Cases |
-|---------|-------------|-----------|
-| **Natural** | Default, calm expressions | General conversation, neutral responses |
-| **Happy** | Positive, joyful expressions | Celebrations, positive news, friendly greetings |
-| **Angry** | Frustrated, upset expressions | Disagreements, error responses, emphasis |
-| **Curious** | Inquisitive, interested expressions | Questions, learning moments, discovery |
-| **Doubtful** | Uncertain, skeptical expressions | Clarifications, hesitation, consideration |
+| Emotion | Description | 
+|---------|-------------|
+| **Natural** | Default, calm expressions | 
+| **Happy** | Positive, joyful expressions | 
+| **Angry** | Frustrated, upset expressions | 
+| **Doubtful** | Uncertain, skeptical expressions | 
 
 ### Emotion IDs
 
@@ -33,81 +32,20 @@ Each emotion has a unique UUID that you can use in your API calls:
 
 | Emotion Type | Emotion ID |
 |-------------|------------|
-| Natural (Variation 0) | `b4fcff6b-3072-45ad-89db-5a859287f3b2` |
-| Natural (Variation 1) | `278fc3b6-b70e-4a2e-ba15-16f6a4e770d2` |
-| Natural (Variation 2) | `6be22009-5406-4e83-be41-e70b8863d3dd` |
-| Natural (Variation 3) | `8cb2eeac-b54f-4d8a-bc90-9eeb5f8e8311` |
-| Natural (Variation 4) | `7713d99a-b786-4d62-9e4e-4c6f6f2ef2de` |
-| Natural (Variation 5) | `d985f836-e054-46c3-bcc1-a1010791b7e1` |
-| Natural (Variation 6) | `a8f318cf-efc4-4c80-a29a-e1a69bebca18` |
-| Natural (Variation 7) | `011443f2-eefd-49fc-a76c-dd1d5f0c4a3d` |
-| Happy (Variation 0) | `92f24a0c-f046-45df-8df0-af7449c04571` |
-| Happy (Variation 1) | `7a65257c-25b3-4dc1-889d-ff8a3d51ee01` |
-| Happy (Variation 2) | `e6cebb46-e415-4a59-8f82-85fe36e5f1b1` |
-| Angry (Variation 0) | `668f65f6-cf71-46b5-9876-40bd83fb18d2` |
-| Curious (Variation 0) | `c34d22b2-fe5c-4237-9de8-5d175de72288` |
-| Doubtful (Variation 0) | `7f5e31e8-0bf4-4a8f-97f9-76660b0f7aa1` |
-| Doubtful (Variation 1) | `c24cd218-b056-4ad4-afc7-57574c4339c2` |
+| Natural #0 | `b4fcff6b-3072-45ad-89db-5a859287f3b2` |
+| Natural #1 | `278fc3b6-b70e-4a2e-ba15-16f6a4e770d2` |
+| Natural #2 | `6be22009-5406-4e83-be41-e70b8863d3dd` |
+| Natural #3 | `8cb2eeac-b54f-4d8a-bc90-9eeb5f8e8311` |
+| Natural #4 | `7713d99a-b786-4d62-9e4e-4c6f6f2ef2de` |
+| Natural #5 | `d985f836-e054-46c3-bcc1-a1010791b7e1` |
+| Natural #6 | `a8f318cf-efc4-4c80-a29a-e1a69bebca18` |
+| Natural #7 | `011443f2-eefd-49fc-a76c-dd1d5f0c4a3d` |
+| Happy #0 | `92f24a0c-f046-45df-8df0-af7449c04571` |
+| Happy #1 | `7a65257c-25b3-4dc1-889d-ff8a3d51ee01` |
+| Happy #2 | `e6cebb46-e415-4a59-8f82-85fe36e5f1b1` |
+| Angry #1 | `668f65f6-cf71-46b5-9876-40bd83fb18d2` |
+| Doubtful #0 | `7f5e31e8-0bf4-4a8f-97f9-76660b0f7aa1` |
+| Doubtful #1 | `c24cd218-b056-4ad4-afc7-57574c4339c2` |
 
-## Using Emotions in Your Avatar
 
-### API Integration
 
-You can trigger emotions through the Simli API by including the emotion ID in your requests:
-
-```javascript
-// Example: Triggering a happy emotion
-const response = await fetch('https://api.simli.com/avatar/emotion', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${your_token}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    agentId: 'your-agent-id',
-    emotionId: 'e6cebb46-e415-4a59-8f82-85fe36e5f1b1', // Happy variation 2
-    duration: 3000 // Duration in milliseconds
-  })
-});
-```
-
-### Real-time Emotion Control
-
-Emotions can be triggered in real-time during conversations to create more natural and engaging interactions:
-
-```javascript
-// Example: Context-aware emotion triggers
-function triggerContextualEmotion(messageContent) {
-  let emotionId;
-  
-  if (messageContent.includes('great') || messageContent.includes('awesome')) {
-    emotionId = '92f24a0c-f046-45df-8df0-af7449c04571'; // Happy
-  } else if (messageContent.includes('?')) {
-    emotionId = 'c34d22b2-fe5c-4237-9de8-5d175de72288'; // Curious
-  } else if (messageContent.includes('error') || messageContent.includes('problem')) {
-    emotionId = '668f65f6-cf71-46b5-9876-40bd83fb18d2'; // Angry
-  } else {
-    emotionId = 'b4fcff6b-3072-45ad-89db-5a859287f3b2'; // Natural
-  }
-  
-  return emotionId;
-}
-```
-
-### Widget Integration
-
-When using the Simli Widget, emotions can be controlled through JavaScript:
-
-```javascript
-// Access the widget and trigger emotions
-const widget = document.querySelector('simli-widget');
-widget.setEmotion('e6cebb46-e415-4a59-8f82-85fe36e5f1b1'); // Happy
-```
-
-<Card title="Simli Agents API" icon="code" href="/api-reference/endpoint/agent/agent-update">
-  Start adding emotions to your Simli Avatar today.
-</Card>
-
-<Info>
-  Emotions are processed in real-time and will be visible immediately on your avatar. For best results, consider the context of your conversation when selecting emotions.
-</Info>
