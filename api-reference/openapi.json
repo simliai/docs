@@ -660,7 +660,8 @@
               }
             ],
             "title": "Expirystamp",
-            "default": -1
+            "default": -1,
+            "description": "The expiry stamp uses Unix timestamps so make sure you have a valid timestamp in your request"
           },
           "simliAPIKey": {
             "type": "string",
