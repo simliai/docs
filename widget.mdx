@@ -1,7 +1,8 @@
 ---
 title: Embed a Widget
 icon: "message-smile"
-description: "Embed a Simli Avatar on your website in a few minutes using Simli Auto."
+description: "Embed a Simli Avatar on your website in a few minutes using Simli Auto. <br></br>
+Just navigate to the widget section after clicking your avatar and you'll find readymade widget code you can add to any html page!"
 ---
 
 <Frame>
@@ -66,12 +67,13 @@ The Simli Widget can be customized using various parameters in the embed code. H
   overlay="false"
 >
 </simli-widget>
+<script src="https://app.simli.com/simli-widget/index.js" async type="text/javascript"></script>
 ```
 
 ### Parameters
 
-- `token` (required): Your Simli API token for authentication
-- `agentid` (required): The unique identifier of your Simli Agent
+- `token` (required): Your Simli API token for authentication. <br></br> Refer to our [API doc](/api-reference/endpoint/simli-auto/token) for retrieving the token
+- `agentid` (required): The unique identifier of your Simli Agent. <br></br> You can find your agent ID by clicking an avatar
 
 #### Default Mode
 - `position`: Controls the widget's position on the page
@@ -93,6 +95,7 @@ The Simli Widget can be customized using various parameters in the embed code. H
   overlay="true"
 >
 </simli-widget>
+<script src="https://app.simli.com/simli-widget/index.js" async type="text/javascript"></script>
 ```
 
 <Card title="Simli Widget" icon="code" href="https://app.simli.com">
