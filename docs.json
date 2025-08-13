@@ -22,15 +22,14 @@
           ]
           },
           {
-            "group": "Use Simli Auto",
+            "group": "Integrations",
             "pages": [
-              "api-reference/simli-auto",
-              "widget",
-              "emotions"
+              "api-reference/pipecat",
+              "api-reference/livekit"
             ]
           },
           {
-            "group": "Use Simli Compose",
+            "group": "Simli Compose",
             "pages": [
               "simli-compose",
               "api-reference/javascript",
@@ -43,15 +42,6 @@
             "pages": [
               "api-reference/discord"
             ]
-          },
-          {
-            "group": "Starter repos",
-            "icon": "github",
-            "pages": [
-              "api-reference/create-simli-agent",
-              "api-reference/samples/openai",
-              "api-reference/samples/all-samples"
-            ]
           }
         ]
       },
@@ -59,32 +49,37 @@
         "tab": "API Reference",
         "pages": [
           {
-            "group": "Simli Auto",
-            "pages": [
-              "api-reference/endpoint/simli-auto/token",
-              "api-reference/endpoint/simli-auto/start",
-              "api-reference/endpoint/simli-auto/start-configurable",
-              "api-reference/endpoint/simli-auto/transcript",
-              "api-reference/endpoint/simli-auto/customLLM"
-            ]
-          },
-          {
             "group": "Face ID Creation",
             "pages": [
               "api-reference/endpoint/generateFaceID",
               "api-reference/endpoint/getRequestStatus"
             ]
           },
+    
           {
-            "group": "Agents",
+            "group": "Content Creation",
             "pages": [
-              "api-reference/endpoint/agent/agent-create",
-              "api-reference/endpoint/agent/agent-update",
-              "api-reference/endpoint/agent/agent-delete",
-              "api-reference/endpoint/agent/agent-get",
-              "api-reference/endpoint/agent/agent-list"
+              "api-reference/endpoint/webrtc/audioToVideoStream"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Video Tutorials",
+        "pages": [
+          {
+            "group": "Videos",
+            "pages": [
+              "video-section/tutorials",
+              "video-section/usecases"
             ]
           },
+          "video-section/feature-your-video"
+        ]
+      },
+      {
+        "tab": "Legacy APIs",
+        "pages": [
           {
             "group": "WebRTC API",
             "pages": [
@@ -102,31 +97,34 @@
             ]
           },
           {
-            "group": "Content Creation",
+            "group": "Simli Auto",
             "pages": [
-              "api-reference/endpoint/webrtc/audioToVideoStream"
+              "api-reference/endpoint/simli-auto/token",
+              "api-reference/endpoint/simli-auto/start",
+              "api-reference/endpoint/simli-auto/start-configurable",
+              "api-reference/endpoint/simli-auto/transcript",
+              "api-reference/endpoint/simli-auto/customLLM"
             ]
           },
           {
-            "group": "Integrate with Simli",
+            "group": "Agents",
             "pages": [
-              "api-reference/samples/pipecat",
-              "api-reference/samples/livekit"
+              "api-reference/endpoint/agent/agent-create",
+              "api-reference/endpoint/agent/agent-update",
+              "api-reference/endpoint/agent/agent-delete",
+              "api-reference/endpoint/agent/agent-get",
+              "api-reference/endpoint/agent/agent-list"
+            ]
+          }, 
+          {
+            "group": "Starter repos",
+            "icon": "github",
+            "pages": [
+              "api-reference/create-simli-agent",
+              "api-reference/samples/openai",
+              "api-reference/samples/all-samples"
             ]
           }
-        ]
-      },
-      {
-        "tab": "Video Tutorials",
-        "pages": [
-          {
-            "group": "Videos",
-            "pages": [
-              "video-section/tutorials",
-              "video-section/usecases"
-            ]
-          },
-          "video-section/feature-your-video"
         ]
       }
     ]
