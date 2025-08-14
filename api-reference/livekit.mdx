@@ -1,16 +1,94 @@
 ---
-title: "LiveKit"
+title: "Livekit"
 icon: "pickaxe"
 ---
 
-## Overview
-
 LiveKit is a realtime communication platform that allows you to create voice and video chat applications.
 
-Go to [livekit.io](https://livekit.io) to get started building with LiveKit.
+## Build your AI video agent with LiveKit
 
-## Getting started
+We recommend using LiveKit to run your Simli agent. below is a guide to set up your environment and dependencies.
 
-```bash
-npm install @livekit/sdk
+1. **Create a new project**:
+
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   touch livekit-simli.py
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   pip install \
+   "livekit-agents[openai]" \
+   "livekit-plugins-simli" \
+   "python-dotenv"
+   ... etc
+   ```
+
+3. **Set up your .env file**:
+   Create a `.env` file in your project directory and add your api keys for Simli, Livekit, and other services. For example:
+
+   ```
+   LIVEKIT_URL=wss://...
+   LIVEKIT_API_KEY=...
+   LIVEKIT_API_SECRET=...
+
+   OPENAI_API_KEY=...
+
+   SIMLI_API_KEY=...
+   SIMLI_FACE_ID=...
+   ```
+
+4. **Fill in your LiveKit runner code**:
+   Here's a simple example of a `LiveKit-simli.py` file. Ensure your `.env` file is in the same directory as this file.
+
+```python livekit-simli.py
+import logging
+import os
+
+from dotenv import load_dotenv
+
+from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, WorkerType, cli
+from livekit.plugins import openai, simli
+
+# from livekit.plugins import deepgram, elevenlabs, silero
+
+logger = logging.getLogger("simli-avatar-example")
+logger.setLevel(logging.INFO)
+
+load_dotenv()
+
+
+async def entrypoint(ctx: JobContext):
+    session = AgentSession(
+        llm=openai.realtime.RealtimeModel(voice="alloy"),
+    )
+
+    simliAPIKey = os.getenv("SIMLI_API_KEY")
+    simliFaceID = os.getenv("SIMLI_FACE_ID")
+
+    simli_avatar = simli.AvatarSession(
+        simli_config=simli.SimliConfig(
+            api_key=simliAPIKey,
+            face_id=simliFaceID,
+        ),
+    )
+    await simli_avatar.start(session, room=ctx.room)
+
+    # start the agent, it will join the room and wait for the avatar to join
+    await session.start(
+        agent=Agent(instructions="Talk to me!"),
+        room=ctx.room,
+    )
+
 ```
+
+5. **Run your bot**:
+   ```bash
+   python3 livekit-simli.py
+   ```
+   and visit `http://localhost:7860` to talk to your agent in the LiveKit sandbox.
+6. **Learn more**:
+   For detailed documentation, visit [LiveKit's guide to Simli](https://LiveKit.ai) or keep exploring Simli docs for more insights.

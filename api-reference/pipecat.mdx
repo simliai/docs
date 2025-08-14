@@ -4,11 +4,11 @@ icon: "cat"
 ---
 
 
-Pipecat is a realtime communication platform that allows you to create voice and video chat applications.
+Pipecat is a realtime communication platform that allows you to create voice and video chat applications. Pipecat has it's own [documentation](https://docs.pipecat.ai/server/services/video/simli) for Simli, but we've included a guide below to get you started.
 
-## Build your AI video agent with pipecat
+## Build your AI video agent with Pipecat
 
-We recommend using pipecat to run your Simli agent. below is a guide to set up your environment and dependencies.
+We recommend using Pipecat to run your Simli agent. below is a guide to set up your environment and dependencies.
 
 1. **Create a new project**:
    ```bash
@@ -31,7 +31,7 @@ We recommend using pipecat to run your Simli agent. below is a guide to set up y
 
 3. **Set up your .env file**: 
    Create a `.env` file in your project directory and add your api keys for Simli and other AI services. For example:
-   ```
+   ```bash .env
    CARTESIA_API_KEY=...
    CARTESIA_VOICE_ID=...
    DEEPGRAM_API_KEY=...
@@ -42,10 +42,10 @@ We recommend using pipecat to run your Simli agent. below is a guide to set up y
    SIMLI_FACE_ID=...
    ```
 
-4. **Create your Pipecat pipeline**:
-   Here's a simple example of a `pipecat-simli.py` file using Simli. ensure your `.env` file is in the same directory as this file.
+4. **Fill in your Pipecat runner code**:
+   Here's a simple example of a Pipecat runner file. Ensure your `.env` file is in the same directory as this file.
 
-```python
+```python pipecat-simli.py
 import os
 
 from dotenv import load_dotenv
@@ -173,3 +173,6 @@ if __name__ == "__main__":
     
 6. **Learn more**: 
    For detailed documentation, visit [Pipecat's guide to Simli](https://pipecat.ai) or keep exploring Simli docs for more insights.
+
+
+   

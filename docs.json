@@ -24,8 +24,8 @@
           {
             "group": "Integrations",
             "pages": [
-              "api-reference/pipecat",
-              "api-reference/livekit"
+              "api-reference/livekit",
+              "api-reference/pipecat"
             ]
           },
           {
