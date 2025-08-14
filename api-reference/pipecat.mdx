@@ -3,14 +3,173 @@ title: "Pipecat"
 icon: "cat"
 ---
 
-## Overview
 
 Pipecat is a realtime communication platform that allows you to create voice and video chat applications.
 
-Go to [pipecat.ai](https://pipecat.ai) to get started building with Pipecat.
+## Build your AI video agent with pipecat
 
-## Getting started
+We recommend using pipecat to run your Simli agent. below is a guide to set up your environment and dependencies.
 
-```bash
-pip install "pipecat-ai[simli]"
+1. **Create a new project**:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   touch pipecat-simli.py
+   ```
+
+2. **Install dependencies**: 
+   ```bash
+   pip install "pipecat-ai[simli]"
+   pip install "pipecat-ai[deepgram]"
+   pip install "pipecat-ai[cartesia]"
+   pip install "pipecat-ai[openai]"
+   pip install "pipecat-ai[elevenlabs]"
+   pip install "pipecat-ai[webrtc]"
+   pip install fastapi dotenv loguru
+   ... etc
+   ```
+
+3. **Set up your .env file**: 
+   Create a `.env` file in your project directory and add your api keys for Simli and other AI services. For example:
+   ```
+   CARTESIA_API_KEY=...
+   CARTESIA_VOICE_ID=...
+   DEEPGRAM_API_KEY=...
+   ELEVENLABS_API_KEY=...
+   ELEVENLABS_VOICE_ID=...
+   OPENAI_API_KEY=...
+   SIMLI_API_KEY=...
+   SIMLI_FACE_ID=...
+   ```
+
+4. **Create your Pipecat pipeline**:
+   Here's a simple example of a `pipecat-simli.py` file using Simli. ensure your `.env` file is in the same directory as this file.
+
+```python
+import os
+
+from dotenv import load_dotenv
+from loguru import logger
+from simli import SimliConfig
+
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.pipeline.pipeline import Pipeline
+from pipecat.pipeline.runner import PipelineRunner
+from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
+from pipecat.runner.types import RunnerArguments
+from pipecat.runner.utils import create_transport
+from pipecat.services.cartesia.tts import CartesiaTTSService
+from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.services.openai.llm import OpenAILLMService
+from pipecat.services.simli.video import SimliVideoService
+from pipecat.transports.base_transport import BaseTransport, TransportParams
+from pipecat.transports.services.daily import DailyParams
+
+load_dotenv(override=True)
+
+transport_params = {
+    "daily": lambda: DailyParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        video_out_enabled=True,
+        video_out_is_live=True,
+        video_out_width=512,
+        video_out_height=512,
+        vad_analyzer=SileroVADAnalyzer(),
+    ),
+    "webrtc": lambda: TransportParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        video_out_enabled=True,
+        video_out_is_live=True,
+        video_out_width=512,
+        video_out_height=512,
+        vad_analyzer=SileroVADAnalyzer(),
+    ),
+}
+
+
+async def run_bot(transport: BaseTransport, runner_args: RunnerArguments):
+    logger.info(f"Starting bot")
+
+    stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY"))
+
+    tts = CartesiaTTSService(
+        api_key=os.getenv("CARTESIA_API_KEY"),
+        voice_id=os.getenv("CARTESIA_VOICE_ID"),
+    )
+    simli_ai = SimliVideoService(
+        SimliConfig(os.getenv("SIMLI_API_KEY"), os.getenv("SIMLI_FACE_ID")),
+    )
+
+
+    llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
+    print("OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
+
+    messages = [
+        {
+        "role": "system",
+        "content": "You are a helpful LLM in a WebRTC call. Your goal is to demonstrate your capabilities in a succinct way."
+        },
+    ]
+
+    context = OpenAILLMContext(messages)
+    context_aggregator = llm.create_context_aggregator(context)
+
+    pipeline = Pipeline(
+        [
+            transport.input(),
+            stt,
+            context_aggregator.user(),
+            llm,
+            tts,
+            simli_ai,
+            transport.output(),
+            context_aggregator.assistant(),
+        ]
+    )
+
+    task = PipelineTask(
+        pipeline,
+        params=PipelineParams(
+            enable_metrics=True,
+            enable_usage_metrics=True,
+        ),
+        idle_timeout_secs=runner_args.pipeline_idle_timeout_secs,
+    )
+
+    @transport.event_handler("on_client_connected")
+    async def on_client_connected(transport, client):
+        logger.info(f"Client connected")
+        await task.queue_frames([context_aggregator.user().get_context_frame()])
+
+    @transport.event_handler("on_client_disconnected")
+    async def on_client_disconnected(transport, client):
+        logger.info(f"Client disconnected")
+        await task.cancel()
+
+    runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)
+    await runner.run(task)
+
+
+async def bot(runner_args: RunnerArguments):
+    """Main bot entry point compatible with Pipecat Cloud."""
+    transport = await create_transport(runner_args, transport_params)
+    await run_bot(transport, runner_args)
+
+
+if __name__ == "__main__":
+    from pipecat.runner.run import main
+
+    main()
 ```
+
+5. **Run your bot**:
+    ```bash
+    python3 pipecat-simli.py
+    ```
+    and visit `http://localhost:7860` to talk to your agent in the Pipecat sandbox.
+    
+6. **Learn more**: 
+   For detailed documentation, visit [Pipecat's guide to Simli](https://pipecat.ai) or keep exploring Simli docs for more insights.
