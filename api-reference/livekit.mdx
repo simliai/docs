@@ -9,7 +9,13 @@ LiveKit is a realtime communication platform that allows you to create voice and
 
 We recommend using LiveKit to run your Simli agent. below is a guide to set up your environment and dependencies.
 
-1. **Create a new project**:
+0. **Set up a LiveKit account at [LiveKit.io](https://livekit.io).**
+
+ You're gonna a "Video conference" Sandbox project and 3 environment variables from your settings page for later.
+
+![LiveKit Logo](../images/livekit-tutorial.png)
+
+1. **Create a new folder on your computer**:
 
    ```bash
    python3 -m venv .venv
@@ -89,6 +95,7 @@ async def entrypoint(ctx: JobContext):
    ```bash
    python3 livekit-simli.py
    ```
-   and visit `http://localhost:7860` to talk to your agent in the LiveKit sandbox.
+   and visit your Sandbox in `LiveKit.io` to talk to your agent in the browser. You can of course build your own clients that plug into the LiveKit pipeline! 
+
 6. **Learn more**:
-   For detailed documentation, visit [LiveKit's guide to Simli](https://LiveKit.ai) or keep exploring Simli docs for more insights.
+   For detailed documentation, visit [LiveKit's guide to Simli](https://docs.livekit.io/agents/integrations/avatar/simli/) or keep exploring Simli docs for more insights.
