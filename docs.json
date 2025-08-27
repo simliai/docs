@@ -29,9 +29,9 @@
             ]
           },
           {
-            "group": "Simli Compose",
+            "group": "Simli SDKs",
             "pages": [
-              "simli-compose",
+              "simli-sdks",
               "api-reference/javascript",
               "api-reference/javascript-auth",
               "api-reference/python"
