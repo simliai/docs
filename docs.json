@@ -1,148 +1,165 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Simli",
-  "colors": {
-    "primary": "#000000",
-    "light": "#FFFFFF",
-    "dark": "#000000"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Documentation",
-        "pages": [
-          {
-            "group": "Get Started",
-            "pages": [
-              "overview",
-              "api-reference/create-agent",
-              "api-reference/preset-faces"
-          ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "api-reference/livekit",
-              "api-reference/pipecat"
-            ]
-          },
-          {
-            "group": "Simli SDKs",
-            "pages": [
-              "simli-sdks",
-              "api-reference/javascript",
-              "api-reference/javascript-auth",
-              "api-reference/python"
-            ]
-          },
-          {
-            "group": "Other APIs",
-            "pages": [
-              "api-reference/endpoint/generateFaceID",
-              "api-reference/endpoint/getRequestStatus",
-              "api-reference/endpoint/webrtc/audioToVideoStream"
-            ]
-          },
-          {
-            "group": "Links",
-            "pages": [
-              "api-reference/discord"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "pages": [
-
-        ]
-      },
-      {
-        "tab": "Video Tutorials",
-        "pages": [
-          {
-            "group": "Videos",
-            "pages": [
-              "video-section/tutorials",
-              "video-section/usecases"
-            ]
-          },
-          "video-section/feature-your-video"
-        ]
-      },
-      {
-        "tab": "Legacy APIs",
-        "pages": [
-          {
-            "group": "WebRTC API",
-            "pages": [
-              "api-reference/simli-webrtc",
-              {
-                "group": "WebRTC Guides",
-                "icon": "book",
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "Simli",
+    "colors": {
+        "primary": "#000000",
+        "light": "#FFFFFF",
+        "dark": "#000000"
+    },
+    "favicon": "/favicon.svg",
+    "navigation": {
+        "tabs": [
+            {
+                "tab": "Documentation",
                 "pages": [
-                  "api-reference/webrtc-info",
-                  "api-reference/audio-info"
+                    {
+                        "group": "Get Started",
+                        "pages": [
+                            "overview",
+                            "api-reference/create-agent",
+                            "api-reference/preset-faces"
+                        ]
+                    },
+                    {
+                        "group": "Integrations",
+                        "pages": [
+                            "api-reference/livekit",
+                            "api-reference/pipecat"
+                        ]
+                    },
+                    {
+                        "group": "Simli SDKs",
+                        "pages": [
+                            "simli-sdks",
+                            "api-reference/javascript",
+                            "api-reference/javascript-auth",
+                            "api-reference/python"
+                        ]
+                    },
+                    {
+                        "group": "Other APIs",
+                        "pages": [
+                            "api-reference/endpoint/generateFaceID",
+                            "api-reference/endpoint/getRequestStatus",
+                            "api-reference/endpoint/webrtc/audioToVideoStream"
+                        ]
+                    },
+                    {
+                        "group": "Links",
+                        "pages": [
+                            "api-reference/discord"
+                        ]
+                    }
                 ]
-              },
-              "api-reference/endpoint/webrtc/startAudioToVideoSession",
-              "api-reference/endpoint/webrtc/getIceServers"
-            ]
-          },
-          {
-            "group": "Simli Auto",
-            "pages": [
-              "api-reference/endpoint/simli-auto/token",
-              "api-reference/endpoint/simli-auto/start",
-              "api-reference/endpoint/simli-auto/start-configurable",
-              "api-reference/endpoint/simli-auto/transcript",
-              "api-reference/endpoint/simli-auto/customLLM"
-            ]
-          },
-          {
-            "group": "Agents",
-            "pages": [
-              "api-reference/endpoint/agent/agent-create",
-              "api-reference/endpoint/agent/agent-update",
-              "api-reference/endpoint/agent/agent-delete",
-              "api-reference/endpoint/agent/agent-get",
-              "api-reference/endpoint/agent/agent-list"
-            ]
-          }, 
-          {
-            "group": "Starter repos",
-            "icon": "github",
-            "pages": [
-              "api-reference/create-simli-agent",
-              "api-reference/samples/openai",
-              "api-reference/samples/all-samples"
-            ]
-          }
+            },
+            {
+                "tab": "REST API",
+                "groups": [
+                    {
+                        "group": "Endpoints",
+                        "openapi": {
+                            "source": "/api-reference/openapi.yaml",
+                            "directory": "api-reference"
+                        }
+                    }
+                ]
+            },
+            {
+                "tab": "WebSockets",
+                "groups": [
+                    {
+                        "group": "AsyncAPI",
+                        "asyncapi": {
+                            "source": "/api-reference/asyncapi.yaml",
+                            "directory": "api-reference"
+                        }
+                    }
+                ]
+            },
+            {
+                "tab": "Video Tutorials",
+                "pages": [
+                    {
+                        "group": "Videos",
+                        "pages": [
+                            "video-section/tutorials",
+                            "video-section/usecases"
+                        ]
+                    },
+                    "video-section/feature-your-video"
+                ]
+            },
+            {
+                "tab": "Legacy APIs",
+                "pages": [
+                    {
+                        "group": "WebRTC API",
+                        "pages": [
+                            "api-reference/simli-webrtc",
+                            {
+                                "group": "WebRTC Guides",
+                                "icon": "book",
+                                "pages": [
+                                    "api-reference/webrtc-info",
+                                    "api-reference/audio-info"
+                                ]
+                            },
+                            "api-reference/endpoint/webrtc/startAudioToVideoSession",
+                            "api-reference/endpoint/webrtc/getIceServers"
+                        ]
+                    },
+                    {
+                        "group": "Simli Auto",
+                        "pages": [
+                            "api-reference/endpoint/simli-auto/token",
+                            "api-reference/endpoint/simli-auto/start",
+                            "api-reference/endpoint/simli-auto/start-configurable",
+                            "api-reference/endpoint/simli-auto/transcript",
+                            "api-reference/endpoint/simli-auto/customLLM"
+                        ]
+                    },
+                    {
+                        "group": "Agents",
+                        "pages": [
+                            "api-reference/endpoint/agent/agent-create",
+                            "api-reference/endpoint/agent/agent-update",
+                            "api-reference/endpoint/agent/agent-delete",
+                            "api-reference/endpoint/agent/agent-get",
+                            "api-reference/endpoint/agent/agent-list"
+                        ]
+                    },
+                    {
+                        "group": "Starter repos",
+                        "icon": "github",
+                        "pages": [
+                            "api-reference/samples/openai",
+                            "api-reference/samples/all-samples"
+                        ]
+                    }
+                ]
+            }
         ]
-      }
-    ]
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "appearance": {
-    "default": "dark",
-    "strict": true
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Join our Discord",
-        "href": "https://discord.gg/yQx49zNF4d"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Simli Dashboard",
-      "href": "https://app.simli.com/"
+    },
+    "logo": {
+        "light": "/logo/light.svg",
+        "dark": "/logo/dark.svg"
+    },
+    "appearance": {
+        "default": "dark",
+        "strict": true
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "Join our Discord",
+                "href": "https://discord.gg/yQx49zNF4d"
+            }
+        ],
+        "primary": {
+            "type": "button",
+            "label": "Simli Dashboard",
+            "href": "https://app.simli.com/"
+        }
     }
-  }
 }

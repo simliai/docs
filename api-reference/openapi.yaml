@@ -1,0 +1,1263 @@
+openapi: 3.1.0
+info:
+    title: Simli
+    version: 1.0.0
+security:
+    - ApiKeyAuth: []
+servers:
+    - url: https://api.simli.ai
+      description: API server
+
+paths:
+    /compose/ice:
+        get:
+            summary: Get Ice Servers
+            description: Create a new set of temporary ICE Server Credentials for WebRTC P2P session
+            operationId: getIceServers_compose_ice_get
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /compose/token:
+        post:
+            summary: Compose Session Token
+            description: Create a temporary Simli Compose Session Token
+            operationId: start_audio_to_video_session_compose_token_post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/StartStreamingSessionRequest"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /static/audio:
+        post:
+            summary: Generate Static Video
+            description: Generate and stream a static video file from a given audio sample
+            operationId: audioToVideoInterface_static_audio_post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/AudioToVideoRequest"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema:
+                                contentMediaType: application/json
+                                properties:
+                                    hls_url:
+                                        type: string
+                                        example: "https://api.simli.ai/hls/path-to-file/output.m3u8"
+                                    mp4_url:
+                                        type: string
+                                        example: "https://api.simli.ai/mp4/path-to-file/output.mp4"
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /static/hls/{destination}/{file}:
+        get:
+            summary: Get HLS Segment
+            description: Get HLS Stream of Generated Video
+            operationId: getCachedVideo_static_hls__machineIP___file__get
+            parameters:
+                - name: destination
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                - name: file
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      title: File
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/x-mpegURL:
+                            schema: {}
+                        video/MP2T:
+                            schema: {}
+                "404":
+                    description: File not found
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /static/mp4/{destination}/{file}:
+        get:
+            summary: Get MP4 of Generated Video
+            operationId: getCachedVideoMp4_static_mp4__machineIP___file__get
+            parameters:
+                - name: destination
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                - name: file
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      title: File
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        video/mp4:
+                            schema: {}
+                "404":
+                    description: File not found
+
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /face/{id}:
+        delete:
+            summary: Delete a face
+            description: Removes a face. This can not be undone. All agents connected to this face_id will be broken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "204":
+                    description: Face deleted successfully
+                "400":
+                    description: Invalid input
+                "401":
+                    description: Unauthorized
+    /faces:
+        get:
+            summary: Get all faces
+            responses:
+                "200":
+                    description: List of faces
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/FacesResponse"
+
+    /faces/trinity:
+        post:
+            summary: Generate Trinity Face
+            operationId: enqueueGSAGeneration_faces_gs_create_post
+            parameters:
+                - name: gsVersion
+                  in: query
+                  required: false
+                  schema:
+                      allOf:
+                          - $ref: "#/components/schemas/TrinityVersion"
+                      default: GSA_1.0
+                - name: face_name
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      default: untitled_avatar
+                      title: Face Name
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            $ref: "#/components/schemas/Body_enqueueGSAGeneration_faces_gs_create_post"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /faces/trinity/generation_status:
+        get:
+            summary: Check Trinity Generation Status
+            operationId: getRequestStatus_faces_gs_status_get
+            parameters:
+                - name: face_id
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      title: Face Id
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+
+    /integrations/livekit/agents:
+        post:
+            summary: Start Livekit Agents Session
+            operationId: init_integrations_livekit_agents_post
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/LiveKitInitializationRequest"
+                required: true
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    status:
+                                        type: string
+                                    session_id:
+                                        type: string
+                                        format: uuid
+                                    destination:
+                                        type: string
+                                        format: base64
+                "400":
+                    description: Session Failed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+
+    /history/sessions:
+        get:
+            summary: Retrieve session history
+            description: Returns a list of session history records for the authenticated user
+            parameters:
+                - name: start
+                  in: query
+                  description: Filter records from this Unix timestamp
+                  required: false
+                  schema:
+                      type: integer
+                      example: 1745750387
+                - name: end
+                  in: query
+                  description: Filter records until this Unix timestamp
+                  required: false
+                  schema:
+                      type: integer
+                      example: 1745750408
+            responses:
+                "200":
+                    description: A list of session history records
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    sessions:
+                                        type: array
+                                        items:
+                                            $ref: "#/components/schemas/HistoryRecord"
+                "401":
+                    description: Unauthorized - Invalid API key
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                "500":
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+
+    /ratelimiter/sessions:
+        get:
+            summary: Active Session Count
+            responses:
+                "200":
+                    description: "Active session Count"
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    currentUsage:
+                                        type: integer
+                "401":
+                    description: Unauthorized - Invalid API key
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /faces/legacy:
+        post:
+            summary: Generate Legacy Face
+            deprecated: true
+            operationId: generateFaceIDAPI_faces_legacy_create_post
+            parameters:
+                - name: characterVersion
+                  in: query
+                  required: false
+                  schema:
+                      allOf:
+                          - $ref: "#/components/schemas/CharacterVersion"
+                      default: "1.5"
+                - name: face_name
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      default: untitled_avatar
+                      title: Face Name
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            $ref: "#/components/schemas/Body_generateFaceIDAPI_faces_legacy_create_post"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+
+    /faces/legacy/generation_status:
+        get:
+            deprecated: true
+            summary: Get Legacy Face Generation Status
+            operationId: getRequestStatus_faces_legacy_status_get
+            parameters:
+                - name: face_id
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                      title: Face Id
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+
+    /auto/agent:
+        post:
+            deprecated: true
+            summary: Create New Agent
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/AgentRequest"
+            responses:
+                "201":
+                    description: Agent created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/AgentResponse"
+                "400":
+                    description: Invalid input
+    /auto/agents:
+        get:
+            deprecated: true
+            summary: Get All Agents
+            responses:
+                "200":
+                    description: List of agents
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/AgentResponse"
+    /auto/agent/{id}:
+        parameters:
+            - name: id
+              required: true
+              in: path
+              schema:
+                  type: string
+                  format: uuid
+        get:
+            deprecated: true
+            summary: Get Agent
+            responses:
+                "200":
+                    description: A single agent
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/AgentResponse"
+        put:
+            summary: Update Agent
+            deprecated: true
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/AgentUpdate"
+            responses:
+                "200":
+                    description: Agent updated successfully
+                "404":
+                    description: Agent not found
+        delete:
+            summary: Delete Agent
+            deprecated: true
+            responses:
+                "204":
+                    description: Agent deleted successfully
+                "404":
+                    description: Agent not found
+    /auto/token:
+        post:
+            summary: Create Simli Auto Session Token
+            description: Create a temporary session token for Simli Auto Sessions
+            deprecated: true
+            operationId: createPipecatSessionToken_auto_token_post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/TokenRequest"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /auto/start/configurable:
+        post:
+            summary: Start Auto Session
+            description: Start new Simli Auto Session without preconfigured agent
+            deprecated: true
+            operationId: startPipecatSession_auto_start_configurable_post
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ConfigurableSessionRequest"
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SessionDetails"
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /auto/start/{agent_id}/{session_token}:
+        get:
+            summary: Start Auto Session from config
+            deprecated: true
+            operationId: startAgentIDQuery_auto_start__agent_id___session_token__post
+            parameters:
+                - name: agent_id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      title: Agent Id
+                - name: session_token
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      title: Session Token
+                - name: redirect
+                  in: query
+                  required: false
+                  schema:
+                      type: boolean
+                      default: false
+                      title: Redirect
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SessionDetails"
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+    /auto/transcript/{session_id}:
+        get:
+            summary: Get Simli Auto Transcript
+            deprecated: true
+            operationId: getE2ETranscript_auto_transcript__session_id__get
+            parameters:
+                - name: session_id
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      title: Sessionid
+            responses:
+                "200":
+                    description: Successful Response
+                    content:
+                        application/json:
+                            schema: {}
+                "422":
+                    description: Validation Error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/HTTPValidationError"
+
+components:
+    securitySchemes:
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: x-simli-api-key
+
+    schemas:
+        FacesRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: "Unique identifier for the face, generated by the MySQL service"
+                owner_id:
+                    type: string
+                    description: "Unique identifier for the owner of the face"
+                simli_version:
+                    type: integer
+                    description: "Version of the Simli model used for the face"
+                    example: 1
+            required:
+                - id
+                - owner_id
+        FacesResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: "Unique identifier for the face, generated by the MySQL service"
+                owner_id:
+                    type: string
+                    description: "Unique identifier for the owner of the face"
+                simli_version:
+                    type: integer
+                    description: "Version of the Simli model used for the face"
+                    example: 1
+                created_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the face was created"
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the face was last updated"
+            required:
+                - id
+                - owner_id
+                - simli_version
+                - created_at
+                - updated_at
+        AgentResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: "Unique identifier for the agent, generated by the MySQL service"
+                face_id:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                    default: "Untitled Agent"
+                first_message:
+                    type: string
+                prompt:
+                    type: string
+                voice_provider:
+                    type: string
+                    enum: ["elevenlabs", "cartesia"]
+                voice_id:
+                    type: string
+                    format: uuid
+                voice_model:
+                    type: string
+                    example: sonic-english
+                language:
+                    type: string
+                emotion:
+                    type: string
+                    format: uuid
+                llm_model:
+                    type: string
+                    example: gpt-4o-mini
+                llm_endpoint:
+                    type: string
+                    description: "The URL of the custom LLM to use"
+                    example: https://api.example.com/v1/chat/completions
+                max_idle_time:
+                    type: integer
+                    default: 300
+                max_session_length:
+                    type: integer
+                    default: 3600
+                owner_id:
+                    type: string
+                    description: "Unique identifier for the owner of the agent"
+                llm_provider:
+                    type: string
+                    enum: ["openai", "google", "user"]
+                    description: "The provider of the LLM used by the agent"
+                simli_version:
+                    type: integer
+                    description: "Version of the Simli model used for the face"
+                    example: 1
+                created_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was created"
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was last updated"
+            required:
+                - id
+                - face_id
+                - name
+                - first_message
+                - prompt
+                - voice_provider
+                - voice_id
+                - voice_model
+                - language
+                - emotion
+                - llm_model
+                - llm_endpoint
+                - max_idle_time
+                - max_session_length
+                - owner_id
+                - llm_provider
+                - created_at
+                - updated_at
+        AgentRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                face_id:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                    default: "Untitled Agent"
+                first_message:
+                    type: string
+                prompt:
+                    type: string
+                voice_provider:
+                    type: string
+                    enum: ["elevenlabs", "cartesia"]
+                voice_id:
+                    type: string
+                    format: uuid
+                voice_model:
+                    type: string
+                    example: sonic-english
+                owner_id:
+                    type: string
+                    description: "Unique identifier for the owner of the agent"
+                language:
+                    type: string
+                emotion:
+                    type: string
+                    format: uuid
+                llm_model:
+                    type: string
+                    example: gpt-4o-mini
+                llm_endpoint:
+                    type: string
+                    description: "The URL of the custom LLM to use"
+                    example: https://api.example.com/v1/chat/completions
+                max_idle_time:
+                    type: integer
+                    default: 300
+                max_session_length:
+                    type: integer
+                    default: 3600
+                llm_provider:
+                    type: string
+                    enum: ["openai", "google", "user"]
+                    description: "The provider of the LLM used by the agent"
+                created_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was created"
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was updated"
+            required:
+                - face_id
+                - name
+        AgentUpdate:
+            type: object
+            additionalProperties: false
+            properties:
+                face_id:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                first_message:
+                    type: string
+                prompt:
+                    type: string
+                voice_provider:
+                    type: string
+                    enum: ["elevenlabs", "cartesia"]
+                voice_id:
+                    type: string
+                    format: uuid
+                voice_model:
+                    type: string
+                    example: sonic-english
+                llm_model:
+                    type: string
+                    example: gpt-4o-mini
+                llm_endpoint:
+                    type: string
+                    description: "The URL of the custom LLM to use"
+                    example: https://api.example.com/v1/chat/completions
+                language:
+                    type: string
+                emotion:
+                    type: string
+                    format: uuid
+                max_idle_time:
+                    type: integer
+                max_session_length:
+                    type: integer
+                llm_provider:
+                    type: string
+                    enum: ["openai", "google", "user"]
+                    description: "The provider of the LLM used by the agent"
+                created_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was created"
+                updated_at:
+                    type: string
+                    format: date-time
+                    description: "Timestamp when the agent was updated"
+        AudioToVideoRequest:
+            properties:
+                faceId:
+                    type: string
+                    title: Faceid
+                audioBase64:
+                    type: string
+                    title: Audiobase64
+                audioFormat:
+                    type: string
+                    enum:
+                        - pcm16
+                        - pcm32
+                        - wav
+                        - mp3
+                        - ogg
+                    title: Audioformat
+                audioSampleRate:
+                    type: integer
+                    title: Audiosamplerate
+                    default: 16000
+                audioChannelCount:
+                    type: integer
+                    title: Audiochannelcount
+                    default: 1
+                videoStartingFrame:
+                    type: integer
+                    title: Videostartingframe
+                    default: 0
+                disableSuperRes:
+                    type: boolean
+                    title: Disablesuperres
+                    default: false
+            type: object
+            required:
+                - faceId
+                - audioBase64
+                - audioFormat
+            title: AudioToVideoRequest
+        ConfigurableSessionRequest:
+            properties:
+                faceId:
+                    type: string
+                    title: Faceid
+                    default: tmp9i8bbq7c
+                ttsProvider:
+                    allOf:
+                        - $ref: "#/components/schemas/TTS_Provider"
+                    default: Cartesia
+                ttsAPIKey:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Ttsapikey
+                ttsModel:
+                    type: string
+                    title: Ttsmodel
+                    default: sonic-turbo-2025-03-07
+                voiceId:
+                    type: string
+                    title: Voiceid
+                    default: a167e0f3-df7e-4d52-a9c3-f949145efdab
+                systemPrompt:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Systemprompt
+                    default: You are Chatbot, a friendly, helpful robot. Your goal is to demonstrate
+                        your capabilities in a succinct way. Your output will be converted
+                        to audio so don't include special characters in your answers.
+                        Respond to what the user said in a creative and helpful way, but
+                        keep your responses brief.
+                firstMessage:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Firstmessage
+                maxSessionLength:
+                    type: integer
+                    title: Maxsessionlength
+                    default: 3600
+                maxIdleTime:
+                    type: integer
+                    title: Maxidletime
+                    default: 300
+                language:
+                    type: string
+                    title: Language
+                    default: en
+                customLLMConfig:
+                    anyOf:
+                        - $ref: "#/components/schemas/CustomLLMConfig"
+                        - type: "null"
+                llmConfig:
+                    allOf:
+                        - $ref: "#/components/schemas/LLMConfig"
+                    default:
+                        model: gpt-4o-mini
+                        provider: OpenAI
+                createTranscript:
+                    type: boolean
+                    title: Createtranscript
+                    default: false
+                disableSuperRes:
+                    type: boolean
+                    title: Disablesuperres
+                    default: false
+                model:
+                    allOf:
+                        - $ref: "#/components/schemas/SimliModels"
+                    default: artalk
+            type: object
+            title: ConfigurableSessionRequest
+        CustomLLMConfig:
+            properties:
+                model:
+                    type: string
+                    title: Model
+                baseURL:
+                    type: string
+                    title: Baseurl
+                llmAPIKey:
+                    type: string
+                    title: Llmapikey
+            type: object
+            required:
+                - model
+                - baseURL
+                - llmAPIKey
+            title: CustomLLMConfig
+        Google_Models:
+            type: string
+            enum:
+                - gemini-2.5-pro
+                - gemini-2.5-flash
+                - gemini-2.5-flash-lite-preview-06-17
+            title: Google_Models
+        HTTPValidationError:
+            properties:
+                detail:
+                    items:
+                        $ref: "#/components/schemas/ValidationError"
+                    type: array
+                    title: Detail
+            type: object
+            title: HTTPValidationError
+        LLMConfig:
+            properties:
+                model:
+                    anyOf:
+                        - $ref: "#/components/schemas/OpenAI_Models"
+                        - $ref: "#/components/schemas/Google_Models"
+                        - type: string
+                    title: Model
+                    default: gpt-4o-mini
+                provider:
+                    allOf:
+                        - $ref: "#/components/schemas/LLM_Provider"
+                    default: OpenAI
+                apiKey:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Apikey
+                baseURL:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Baseurl
+            type: object
+            title: LLMConfig
+        LLM_Provider:
+            type: string
+            enum:
+                - OpenAI
+                - Google
+                - User
+            title: LLM_Provider
+        LiveKitInitializationRequest:
+            properties:
+                session_token:
+                    type: string
+                    title: Session Token
+                livekit_token:
+                    type: string
+                    title: Livekit Token
+                livekit_url:
+                    type: string
+                    title: Livekit Url
+            type: object
+            required:
+                - session_token
+                - livekit_token
+                - livekit_url
+            title: LiveKitInitializationRequest
+        OpenAI_Models:
+            type: string
+            enum:
+                - gpt-4o
+                - gpt-4o-mini
+                - gpt-4.1
+                - gpt-4.1-mini
+                - gpt-4.1-nano
+            title: OpenAI_Models
+        SessionDetails:
+            properties:
+                roomUrl:
+                    type: string
+                    title: Roomurl
+                sessionId:
+                    type: string
+                    title: Sessionid
+            type: object
+            required:
+                - roomUrl
+                - sessionId
+            title: SessionDetails
+        SimliModels:
+            type: string
+            enum:
+                - fasttalk
+                - artalk
+            title: SimliModels
+        StartStreamingSessionRequest:
+            properties:
+                faceId:
+                    type: string
+                    title: Faceid
+                apiVersion:
+                    type: string
+                    title: Apiversion
+                    default: v2
+                isJPG:
+                    type: boolean
+                    title: Isjpg
+                    default: false
+                syncAudio:
+                    type: boolean
+                    title: Syncaudio
+                    default: false
+                audioInputFormat:
+                    type: string
+                    title: Audioinputformat
+                    default: pcm16
+                sessionAggregator:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Sessionaggregator
+                batchSize:
+                    type: integer
+                    title: Batchsize
+                    default: 1
+                handleSilence:
+                    type: boolean
+                    title: Handlesilence
+                    default: true
+                maxSessionLength:
+                    type: integer
+                    title: Maxsessionlength
+                    default: 3600
+                maxIdleTime:
+                    type: integer
+                    title: Maxidletime
+                    default: 300
+                preloadAvatar:
+                    type: boolean
+                    title: Preloadavatar
+                    default: false
+                disableSuperRes:
+                    type: boolean
+                    title: Disablesuperres
+                    default: false
+                force256:
+                    type: boolean
+                    title: Force256
+                    default: false
+                startFrame:
+                    type: integer
+                    title: Startframe
+                    default: 0
+            type: object
+            required:
+                - faceId
+            title: StartStreamingSessionRequest
+        TTS_Provider:
+            type: string
+            enum:
+                - ElevenLabs
+                - PlayHT
+                - Cartesia
+                - User
+            title: TTS_Provider
+        TokenRequest:
+            properties:
+                expiryStamp:
+                    anyOf:
+                        - type: integer
+                        - type: "null"
+                    title: Expirystamp
+                    default: -1
+                simliAPIKey:
+                    type: string
+                    title: Simliapikey
+                llmAPIKey:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Llmapikey
+                    default: ""
+                ttsAPIKey:
+                    anyOf:
+                        - type: string
+                        - type: "null"
+                    title: Ttsapikey
+                    default: ""
+                createTranscript:
+                    type: boolean
+                    title: Createtranscript
+                    default: false
+                originAllowList:
+                    anyOf:
+                        - items:
+                              type: string
+                          type: array
+                          uniqueItems: true
+                        - type: "null"
+                    title: Originallowlist
+                    default: []
+            type: object
+            required:
+                - simliAPIKey
+            title: TokenRequest
+        ValidationError:
+            properties:
+                loc:
+                    items:
+                        anyOf:
+                            - type: string
+                            - type: integer
+                    type: array
+                    title: Location
+                msg:
+                    type: string
+                    title: Message
+                type:
+                    type: string
+                    title: Error Type
+            type: object
+            required:
+                - loc
+                - msg
+                - type
+            title: ValidationError
+        HistoryRecord:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    description: Firebase unique identifier for the session
+                userId:
+                    type: string
+                    description: Firebase user id
+                endUserAggregator:
+                    type: string
+                    description: (optional) Aggregation identifier provided in request by customer for grouping their end-users
+                apiKeyName:
+                    type: string
+                    description: (optional) Name of the API key used for this session
+                sessionTotalTime:
+                    type: number
+                    format: double
+                    description: Total session duration in seconds
+                startTime:
+                    type: integer
+                    description: Session start time as Unix timestamp
+                endTime:
+                    type: integer
+                    description: Session end time as Unix timestamp
+            required:
+                - id
+                - sessionTotalTime
+                - startTime
+                - endTime
+        Error:
+            type: object
+            properties:
+                error:
+                    type: string
+                    description: Error message
+                code:
+                    type: string
+                    description: Error code
+            required:
+                - error
+        Body_generateFaceIDAPI_faces_legacy_create_post:
+            properties:
+                image:
+                    type: string
+                    format: binary
+                    title: Image
+            type: object
+            required:
+                - image
+            title: Body_generateFaceIDAPI_faces_legacy_create_post
+        CharacterVersion:
+            type: string
+            enum:
+                - "1.5"
+                - "2.5"
+                - "1.5"
+                - "2.5"
+            title: CharacterVersion
+        Body_enqueueGSAGeneration_faces_gs_create_post:
+            properties:
+                image:
+                    type: string
+                    format: binary
+                    title: Image
+            type: object
+            required:
+                - image
+            title: Body_enqueueGSAGeneration_faces_gs_create_post
+        TrinityVersion:
+            type: string
+            enum:
+                - GSA_1.0
+            title: GSVersion
