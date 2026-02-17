@@ -34,14 +34,14 @@ from simli import SimliClient, SimliConfig
 from simli.renderers import FileRenderer
 async def main():
     connection =  SimliClient(
+        api_key="YOUR_SIMLI_API_KEY",  # API Key
         SimliConfig(
-            apiKey="YOUR_SIMLI_API_KEY",  # API Key
             faceId="YOUR_FACE_ID",  # Face ID
             maxSessionLength=20,
             maxIdleTime=10,
         )
     )
-    await connection.Initialize()
+    await connection.start()
 
 asyncio.run(main())
 ```
