@@ -74,7 +74,7 @@
                     {
                         "group": "AsyncAPI",
                         "asyncapi": {
-                            "source": "https://api.simli.ai/asyncapi.yaml",
+                            "source": "/api-reference/asyncapi.yaml",
                             "directory": "api-reference"
                         }
                     }
