@@ -13,17 +13,19 @@ Simli Auto now supports [custom LLMs](/api-reference/endpoint/simli-auto/customL
 
 For changing the interaction languages, you can look at the support list on [Deepgram's website](https://developers.deepgram.com/docs/models-languages-overview)
 
-
 ## API Endpoints
-There are two ways to build with Simli Auto. The recommended way for most people is using session tokens to authenticate: 
+
+There are two ways to build with Simli Auto. The recommended way for most people is using session tokens to authenticate:
+
 - **`POST /auto/token`**: Creates a new session token for authentication. Requires your Simli API key and optionally a TTS API key.
 - **`POST /auto/start/{agent_id}`**: Starts a session using token in the header for authentication (see API reference).
 
 An alternative way to start a session without creating a token first is to use this endpoint:
+
 - **`POST /auto/start/configurable`**: Initializes a new end-to-end interactive session with an AI avatar. Configure TTS provider, language, and other session parameters.
 
+For conversation transcripts:
 
-For conversation transcripts: 
 - **`GET /auto/transcript/{sessionId}`**: Retrieves the conversation transcript for a specific session if transcript generation was enabled.
 
 ## Getting Started
@@ -39,8 +41,9 @@ To start using the Simli Auto API, you'll need:
 Here's a basic flow to get started:
 
 1. Create a session token:
+
 ```bash
-POST /createE2ESessionToken
+POST /auto/token
 {
   "simliAPIKey": "your-api-key",
   "ttsAPIKey": "your-tts-api-key"  // Optional
@@ -48,12 +51,13 @@ POST /createE2ESessionToken
 ```
 
 2. Start an end-to-end session:
+
 ```bash
-POST /startE2ESession
+POST /auto/start/configurable
 {
   "apiKey": "your-api-key",
   "faceId": "your-face-id",
-  "ttsProvider": "Cartesia",  // Or "ElevenLabs"
+  "ttsProvider": "ElevenLabs"
   "language": "en",
   "createTranscript": false
 }
@@ -65,11 +69,11 @@ Simli Auto supports integration with any OpenAI-compatible LLM API. To use your 
 
 ```json
 {
-  "customLLMConfig": {
-    "model": "your-model-name",
-    "baseURL": "https://your-llm-api-endpoint.com",
-    "llmAPIKey": "your-llm-api-key"
-  }
+	"customLLMConfig": {
+		"model": "your-model-name",
+		"baseURL": "https://your-llm-api-endpoint.com",
+		"llmAPIKey": "your-llm-api-key"
+	}
 }
 ```
 
@@ -85,16 +89,16 @@ You can customize various session parameters:
 ## Best Practices
 
 1. **Session Management**
-   - Keep track of session tokens and handle expiration appropriately
-   - Configure idle times based on your use case
+    - Keep track of session tokens and handle expiration appropriately
+    - Configure idle times based on your use case
 
 2. **Resource Optimization**
-   - Use appropriate batch sizes for audio processing
-   - Handle session cleanup when no longer needed
+    - Use appropriate batch sizes for audio processing
+    - Handle session cleanup when no longer needed
 
 3. **Error Handling**
-   - Implement proper error handling for API responses
-   - Monitor session status and handle timeouts gracefully
+    - Implement proper error handling for API responses
+    - Monitor session status and handle timeouts gracefully
 
 ## Rate Limits and Quotas
 

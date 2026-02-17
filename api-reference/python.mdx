@@ -64,43 +64,61 @@ Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
 
 ### simli.SimliConfig
 
-This is a dataclass that represents the config sent to [https://api.simli.ai/startAudioVideoSession] to get a session_token
+This is a dataclass that represents the config sent to [this endpoint](/api-reference/compose-session-token) to get a session_token
 
-- `apiKey`: str. Your API key you get from [https://app.simli.com/profile]
-- `faceId`: str # FaceID you can get from [https://docs.simli.com/api-reference/available-faces] or create your own on [https://app.simli.com]
-- `syncAudio`: bool. Specify whether your want to receive the audio back (Leave true if unsure)
-- `handleSilence`: bool. Specify whether you want to keep the Simli Avatar Moving when you don't send in Audio
+- `faceId`: str # FaceID you can get from [default avatars](/api-reference/available-faces) or create your own on the [simli website](https://app.simli.com/create/select)
+- `handleSilence`: bool. Specify whether you want to keep the Simli Avatar Moving when you don't send in Audio default true. Set to false for absolute control (difficult to get response time right)
 - `maxSessionLength`: int. A hard time limit (in seconds) after which the session will disconnect
 - `maxIdleTime`: int. A soft time limit (in seconds) that disconnects the session after a period of not sending in data
 
 ### simli.SimliClient
 
-- `class SimlClient(config: SimliConfig, useTurnServer: bool = False, latencyInterval: int = 60)`
-  - SimliClient constructor
-    - config: refer to [SimliConfig](#simli-simliconfig)
-    - useTurnServer: When set to True, it uses a Turn server to connect to Simli API, useful if behing a NATed firewall or using mobile data. Turn on if you're having connectivity issues
-    - latencyInterval: delay (in seconds) between ping calls to calculate latency between your machine and simli server. Set to 0 to disable.
-- `async def Initialize()`: Initializes the SimliClient with the provided configuration and starts the WebRTC Connection
+- `class SimlClient(api_key: str, config: SimliConfig, simliURL: str = "https://api.simli.ai",retry_count: int = 3, retry_timeout: float = 15.0, enableSFU: bool = True, transport_mode: TransportMode = TransportMode.P2P)`
+    - SimliClient constructor
+        - `api_key`: str. Your API key you get from [this page](https://app.simli.com/apiKey)
+        - `config`: refer to [SimliConfig](#simli-simliconfig)
+        - `simliURL`: str. Used if you're setting up a proxy for Simli Backend. Not useful for most
+        - `retry_count`: int = 3. How many reconnection attempts before an error is thrown
+        - `retry_timeout`: float. Time between retry attempts
+        - `enableSFU`: bool. Only works for TransportMode.P2P. Specifies whether traffic should run through cloudflare network or not
+        - `transport_mode`: TransportMode. Transport Mode. Livekit or Peer to Peer
+
+- `async def start()`: Initializes the SimliClient with the provided configuration and starts the WebRTC Connection
 - `async close()`: Closes the WebRTC connection and cleans up resources.
+- `registerEventCallback(event: SimliEvent,async_callback: Callable[[], Awaitable[None]])`. Register a callback to a [SimliEvent](#simlievent)
 - `async send(data: bytes | string)`: Sends audio data or control signals to the server.
-- `async sedSilence(duration: float= 0.1875)`: Sends the specified duration to the server as silent audio, used mostly in Idle mode.
+- `async sendImmediate(data: bytes)`: Sends audio data for immediate playback. Clears all previous audio in the buffer.
+- `async sendSilence(duration: float= 0.1875)`: Sends the specified duration to the server as silent audio, used mostly in Idle mode.
 - `async clearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
 - `async getNextVideoFrame()`: returns the following [PyAV](https://pyav.basswood-io.com/docs/stable/) VideoFrame.
 - `async getNextAudioFrame()`: returns the following PyAV AudioFrame.
 - `async getVideoStreamIterator(targetFormat:str)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
-  - `targetFormat`: specify what format you want the frames to be in, defaults to RGB.
+    - `targetFormat`: specify what format you want the frames to be in, defaults to RGB.
 - `async getAudioStreamIterator(targetSampleRate)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
-  - `targetSampleRate: int`: specify the sampling rate of the output audio, specify if you want to use the audio in something else that has specific sampling rate constraints
+    - `targetSampleRate: int`: specify the sampling rate of the output audio, specify if you want to use the audio in something else that has specific sampling rate constraints
+
+### SimliEvent
+
+Possible signals that are sent from the server. Can be used for callbacks. You can refer to [JS SDK](/api-reference/javascript#events)for an explanation of the events
+
+```py
+class SimliEvent(StrEnum):
+    START = auto()
+    STOP = auto()
+    ERROR = auto()
+    SILENT = auto()
+    SPEAK = auto()
+    ANSWER = auto()
+    VIDEO_META = auto()
+    DESTINATION = auto()
+    UNKNOWN = auto()
+    ACK = auto()
+```
 
 ### Fork and Contribute to simli-client
 
-<Card
-  title="simli-ai"
-  icon="github"
-  href="https://github.com/simliai/simli-client-py"
->
-  Fork and contribute to the simli-client repository on GitHub or clone for your
-  own usecase.
+<Card title="simli-ai" icon="github" href="https://github.com/simliai/simli-client-py">
+	Fork and contribute to the simli-client repository on GitHub or clone for your own usecase.
 </Card>
 
 ## Troubleshooting

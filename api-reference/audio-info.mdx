@@ -1,7 +1,7 @@
 ---
-title: 'Audio formats'
-icon: 'circle-info'
-description: 'Audio and the forgotten knowledge of the past'
+title: "Audio formats"
+icon: "circle-info"
+description: "Audio and the forgotten knowledge of the past"
 ---
 
 ## Purpose of the document
@@ -40,7 +40,7 @@ So let's dissect this command:
 
 - `ffmpeg`: The command to run the ffmpeg program
 - `-i`: tells ffmpeg that what follows is the input file. FFMPEG can automatically deduce all metadata about the file to decode it properly unless the input is either a raw audio file or it is piped from another program or stdin.
-- `** INPUT FILE PATH **`:  The path to the input file. This can be a local file or a remote file (URL) and a lot more. FFMPEG can handle a ton of different input modes refer to the [documentation](https://ffmpeg.org/ffmpeg.html) for more information.
+- `** INPUT FILE PATH **`: The path to the input file. This can be a local file or a remote file (URL) and a lot more. FFMPEG can handle a ton of different input modes refer to the [documentation](https://ffmpeg.org/ffmpeg.html) for more information.
 - `-f`: means that the following arguments specify the formatting of the output
 - `s16le`: specifies that the output format is PCM signed Int16 little endian.
 - `-acodec`: specifies the audio codec to use. In this case, we're using the PCM codec. While not a codec on its own, it's listed under codecs for generality

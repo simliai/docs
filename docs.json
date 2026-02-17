@@ -17,7 +17,7 @@
                         "group": "Get Started",
                         "pages": [
                             "overview",
-                            "api-reference/create-agent",
+                            "api-reference/create-avatar",
                             "api-reference/preset-faces"
                         ]
                     },
@@ -33,16 +33,31 @@
                         "pages": [
                             "simli-sdks",
                             "api-reference/javascript",
-                            "api-reference/javascript-auth",
                             "api-reference/python"
                         ]
                     },
                     {
-                        "group": "Other APIs",
+                        "group": "Starter repos",
+                        "icon": "github",
                         "pages": [
-                            "api-reference/endpoint/generateFaceID",
-                            "api-reference/endpoint/getRequestStatus",
-                            "api-reference/endpoint/webrtc/audioToVideoStream"
+                            "api-reference/samples/openai",
+                            "api-reference/samples/all-samples"
+                        ]
+                    },
+                    {
+                        "group": "Advanced: Custom Simli Client",
+                        "pages": [
+                            "api-reference/simli-webrtc",
+                            {
+                                "group": "WebRTC Guides",
+                                "icon": "book",
+                                "pages": [
+                                    "api-reference/webrtc-info",
+                                    "api-reference/audio-info"
+                                ]
+                            },
+                            "api-reference/endpoint/webrtc/startAudioToVideoSession",
+                            "api-reference/endpoint/webrtc/getIceServers"
                         ]
                     },
                     {
@@ -54,24 +69,24 @@
                 ]
             },
             {
-                "tab": "REST API",
+                "tab": "WebSockets",
                 "groups": [
                     {
-                        "group": "Endpoints",
-                        "openapi": {
-                            "source": "/api-reference/openapi.yaml",
+                        "group": "AsyncAPI",
+                        "asyncapi": {
+                            "source": "https://api.simli.ai/asyncapi.yaml",
                             "directory": "api-reference"
                         }
                     }
                 ]
             },
             {
-                "tab": "WebSockets",
+                "tab": "REST API",
                 "groups": [
                     {
-                        "group": "AsyncAPI",
-                        "asyncapi": {
-                            "source": "/api-reference/asyncapi.yaml",
+                        "group": "Endpoints",
+                        "openapi": {
+                            "source": "https://api.simli.ai/openapi.yaml",
                             "directory": "api-reference"
                         }
                     }
@@ -88,55 +103,6 @@
                         ]
                     },
                     "video-section/feature-your-video"
-                ]
-            },
-            {
-                "tab": "Legacy APIs",
-                "pages": [
-                    {
-                        "group": "WebRTC API",
-                        "pages": [
-                            "api-reference/simli-webrtc",
-                            {
-                                "group": "WebRTC Guides",
-                                "icon": "book",
-                                "pages": [
-                                    "api-reference/webrtc-info",
-                                    "api-reference/audio-info"
-                                ]
-                            },
-                            "api-reference/endpoint/webrtc/startAudioToVideoSession",
-                            "api-reference/endpoint/webrtc/getIceServers"
-                        ]
-                    },
-                    {
-                        "group": "Simli Auto",
-                        "pages": [
-                            "api-reference/endpoint/simli-auto/token",
-                            "api-reference/endpoint/simli-auto/start",
-                            "api-reference/endpoint/simli-auto/start-configurable",
-                            "api-reference/endpoint/simli-auto/transcript",
-                            "api-reference/endpoint/simli-auto/customLLM"
-                        ]
-                    },
-                    {
-                        "group": "Agents",
-                        "pages": [
-                            "api-reference/endpoint/agent/agent-create",
-                            "api-reference/endpoint/agent/agent-update",
-                            "api-reference/endpoint/agent/agent-delete",
-                            "api-reference/endpoint/agent/agent-get",
-                            "api-reference/endpoint/agent/agent-list"
-                        ]
-                    },
-                    {
-                        "group": "Starter repos",
-                        "icon": "github",
-                        "pages": [
-                            "api-reference/samples/openai",
-                            "api-reference/samples/all-samples"
-                        ]
-                    }
                 ]
             }
         ]

@@ -5,7 +5,7 @@ info:
 security:
     - ApiKeyAuth: []
 servers:
-    - url: https://api.simli.ai
+    - url: https://api.simli.ai/
       description: API server
 
 paths:
@@ -19,7 +19,19 @@ paths:
                     description: Successful Response
                     content:
                         application/json:
-                            schema: {}
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    minProperties: 1
+                                    properties:
+                                        urls:
+                                            type: string
+                                        username:
+                                            type: string
+                                        credential:
+                                            type: string
+
                 "422":
                     description: Validation Error
                     content:
@@ -42,7 +54,25 @@ paths:
                     description: Successful Response
                     content:
                         application/json:
-                            schema: {}
+                            schema:
+                                type: object
+                                properties:
+                                    session_token:
+                                        type: string
+                "400":
+                    description: Invalid Data
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    session_token:
+                                        type: string
+                                        description: FAIL TOKEN
+                                    detail:
+                                        type: string
+                                        description: Fail Reason
+
                 "422":
                     description: Validation Error
                     content:
@@ -83,6 +113,7 @@ paths:
     /static/hls/{destination}/{file}:
         get:
             summary: Get HLS Segment
+            security: []
             description: Get HLS Stream of Generated Video
             operationId: getCachedVideo_static_hls__machineIP___file__get
             parameters:
@@ -117,6 +148,7 @@ paths:
         get:
             summary: Get MP4 of Generated Video
             operationId: getCachedVideoMp4_static_mp4__machineIP___file__get
+            security: []
             parameters:
                 - name: destination
                   in: path
@@ -144,37 +176,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/HTTPValidationError"
-    /face/{id}:
-        delete:
-            summary: Delete a face
-            description: Removes a face. This can not be undone. All agents connected to this face_id will be broken
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                      type: string
-                      format: uuid
-            responses:
-                "204":
-                    description: Face deleted successfully
-                "400":
-                    description: Invalid input
-                "401":
-                    description: Unauthorized
-    /faces:
-        get:
-            summary: Get all faces
-            responses:
-                "200":
-                    description: List of faces
-                    content:
-                        application/json:
-                            schema:
-                                type: array
-                                items:
-                                    $ref: "#/components/schemas/FacesResponse"
-
     /faces/trinity:
         post:
             summary: Generate Trinity Face
@@ -235,9 +236,40 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/HTTPValidationError"
+    /faces:
+        get:
+            summary: Get all faces
+            responses:
+                "200":
+                    description: List of faces
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/FacesResponse"
 
+    /faces/trinity/{id}:
+        delete:
+            summary: Delete a face
+            description: Removes a face. This can not be undone. All agents connected to this face_id will be broken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "204":
+                    description: Face deleted successfully
+                "400":
+                    description: Invalid input
+                "401":
+                    description: Unauthorized
     /integrations/livekit/agents:
         post:
+            security: []
             summary: Start Livekit Agents Session
             operationId: init_integrations_livekit_agents_post
             requestBody:
@@ -375,6 +407,26 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/HTTPValidationError"
+
+    /faces/legacy/{id}:
+        delete:
+            deprecated: true
+            summary: Delete a face
+            description: Removes a face. This can not be undone. All agents connected to this face_id will be broken
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "204":
+                    description: Face deleted successfully
+                "400":
+                    description: Invalid input
+                "401":
+                    description: Unauthorized
 
     /faces/legacy/generation_status:
         get:
@@ -524,6 +576,7 @@ paths:
                                 $ref: "#/components/schemas/HTTPValidationError"
     /auto/start/{agent_id}/{session_token}:
         get:
+            security: []
             summary: Start Auto Session from config
             deprecated: true
             operationId: startAgentIDQuery_auto_start__agent_id___session_token__post
@@ -861,10 +914,6 @@ components:
                     type: integer
                     title: Videostartingframe
                     default: 0
-                disableSuperRes:
-                    type: boolean
-                    title: Disablesuperres
-                    default: false
             type: object
             required:
                 - faceId
@@ -934,10 +983,6 @@ components:
                 createTranscript:
                     type: boolean
                     title: Createtranscript
-                    default: false
-                disableSuperRes:
-                    type: boolean
-                    title: Disablesuperres
                     default: false
                 model:
                     allOf:
@@ -1063,28 +1108,12 @@ components:
                 apiVersion:
                     type: string
                     title: Apiversion
-                    default: v2
-                isJPG:
-                    type: boolean
-                    title: Isjpg
-                    default: false
-                syncAudio:
-                    type: boolean
-                    title: Syncaudio
-                    default: false
-                audioInputFormat:
-                    type: string
-                    title: Audioinputformat
-                    default: pcm16
+                    const: v2
                 sessionAggregator:
                     anyOf:
                         - type: string
                         - type: "null"
                     title: Sessionaggregator
-                batchSize:
-                    type: integer
-                    title: Batchsize
-                    default: 1
                 handleSilence:
                     type: boolean
                     title: Handlesilence
@@ -1097,22 +1126,14 @@ components:
                     type: integer
                     title: Maxidletime
                     default: 300
-                preloadAvatar:
-                    type: boolean
-                    title: Preloadavatar
-                    default: false
-                disableSuperRes:
-                    type: boolean
-                    title: Disablesuperres
-                    default: false
-                force256:
-                    type: boolean
-                    title: Force256
-                    default: false
                 startFrame:
                     type: integer
                     title: Startframe
                     default: 0
+                audioInputFormat:
+                    type: string
+                    title: Audioinputformat
+                    default: pcm16
             type: object
             required:
                 - faceId
@@ -1242,9 +1263,6 @@ components:
             type: string
             enum:
                 - "1.5"
-                - "2.5"
-                - "1.5"
-                - "2.5"
             title: CharacterVersion
         Body_enqueueGSAGeneration_faces_gs_create_post:
             properties:

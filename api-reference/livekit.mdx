@@ -11,41 +11,41 @@ We recommend using LiveKit to run your Simli agent. below is a guide to set up y
 
 0. **Set up a LiveKit account at [LiveKit.io](https://livekit.io).**
 
- You're gonna a "Video conference" Sandbox project and 3 environment variables from your settings page for later.
+You're gonna a "Video conference" Sandbox project and 3 environment variables from your settings page for later.
 
 ![LiveKit Logo](../images/livekit-tutorial.png)
 
 1. **Create a new folder on your computer**:
 
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   touch livekit-simli.py
-   ```
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    touch livekit-simli.py
+    ```
 
 2. **Install dependencies**:
 
-   ```bash
-   pip install \
-   "livekit-agents[openai]" \
-   "livekit-plugins-simli" \
-   "python-dotenv"
-   ... etc
-   ```
+    ```bash
+    pip install \
+    "livekit-agents[openai]" \
+    "livekit-plugins-simli" \
+    "python-dotenv"
+    ... etc
+    ```
 
 3. **Set up your .env file**:
    Create a `.env` file in your project directory and add your api keys for Simli, Livekit, and other services. For example:
 
-   ```
-   LIVEKIT_URL=wss://...
-   LIVEKIT_API_KEY=...
-   LIVEKIT_API_SECRET=...
+    ```
+    LIVEKIT_URL=wss://...
+    LIVEKIT_API_KEY=...
+    LIVEKIT_API_SECRET=...
 
-   OPENAI_API_KEY=...
+    OPENAI_API_KEY=...
 
-   SIMLI_API_KEY=...
-   SIMLI_FACE_ID=...
-   ```
+    SIMLI_API_KEY=...
+    SIMLI_FACE_ID=...
+    ```
 
 4. **Fill in your LiveKit runner code**:
    Here's a simple example of a `livekit-simli.py` file. Ensure your `.env` file is in the same directory as this file.
@@ -92,10 +92,15 @@ async def entrypoint(ctx: JobContext):
 ```
 
 5. **Run your bot**:
-   ```bash
-   python3 livekit-simli.py
-   ```
-   and visit your Sandbox in `LiveKit.io` to talk to your agent in the browser. You can of course build your own clients that plug into the LiveKit pipeline! 
 
-6. **Learn more**:
+    ```bash
+    python3 livekit-simli.py
+    ```
+
+    and visit your Sandbox in `LiveKit.io` to talk to your agent in the browser. You can of course build your own clients that plug into the LiveKit pipeline!
+
+6. **Deploy**:
+   You can self host livekit agents by running the command in a macbook in a closet. However, we recommend that you check [livekit cloud](https://docs.livekit.io/deploy/agents/). To make your frontend instead of the sandboxes, you can checkout the [livekit docs for agent frontends](https://docs.livekit.io/frontends/components/agents-ui/)
+
+7. **Learn more**:
    For detailed documentation, visit [LiveKit's guide to Simli](https://docs.livekit.io/agents/integrations/avatar/simli/) or keep exploring Simli docs for more insights.

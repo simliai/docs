@@ -1,11 +1,11 @@
 ---
-title: Custom WebRTC Client
+title: Custom JS Simli Client
 description: "Get started creating using Simli WebRTC API"
 ---
 
 # Simli WebRTC API basics
 
-This is a quick and shallow guide on how to use the Simli WebRTC API. This won't explain how WebRTC works or go into the details of the audio. You can check the following articles for that: [WebRTC](./webrtc.md), [Audio](./audio.md). In this article, we're assuming you have a basic understanding of javascript, python, HTTP requests, and how to use APIs. Full codes will be posted at the end of this document.
+This is a quick and shallow guide on how to use the Simli WebRTC API. This won't explain how WebRTC works or go into the details of the audio. You can check the following articles for that: [WebRTC](/api-reference/webrtc-info), [Audio](/api-reference/audio-info). In this article, we're assuming you have a basic understanding of javascript, python, HTTP requests, and how to use APIs. Full codes will be posted at the end of this document.
 
 ## What's the Simli API?
 
@@ -29,40 +29,106 @@ The HTML file is pretty simple. It has a video element to display the talking he
 ```html filename="index.html"
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebRTC demo</title>
-  </head>
-  <body>
-    <button id="start" onclick="start()">Start</button>
-    <button id="stop" style="display: none" onclick="stop()">Stop</button>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>WebRTC demo</title>
+		<style>
+			button {
+				padding: 8px 16px;
+			}
 
-    <h2>State</h2>
-    <p>ICE gathering state: <span id="ice-gathering-state"></span></p>
-    <p>ICE connection state: <span id="ice-connection-state"></span></p>
-    <p>Signaling state: <span id="signaling-state"></span></p>
+			pre {
+				overflow-x: hidden;
+				overflow-y: auto;
+			}
 
-    <div id="media" style="display: none">
-      <h2>Media</h2>
+			video {
+				width: 100%;
+			}
 
-      <audio id="audio" autoplay="true "></audio>
-      <video id="video" autoplay="true" playsinline="true"></video>
-    </div>
+			.option {
+				margin-bottom: 8px;
+			}
 
-    <h2>Data channel</h2>
-    <pre id="data-channel" style="height: 200px;"></pre>
+			#media {
+				max-width: 1280px;
+			}
+		</style>
+	</head>
 
-    <h2>SDP</h2>
+	<body>
+		<h2>Options</h2>
 
-    <h3>Offer</h3>
-    <pre id="offer-sdp"></pre>
+		<div class="option">
+			<label for="apiKey">API key</label>
+			<input id="apiKey" type="text" value="" />
+		</div>
 
-    <h3>Answer</h3>
-    <pre id="answer-sdp"></pre>
+		<div class="option">
+			<label for="faceId">Face ID</label>
+			<input id="faceId" type="text" value="tmp9i8bbq7c" />
+		</div>
+		<div class="option">
+			<label for="model">model</label>
+			<input id="model" type="text" value="fasttalk" />
+		</div>
+		<div class="option">
+			<input id="use-sfu" checked="checked" type="checkbox" />
+			<label for="use-sfu">Use sfu</label>
+		</div>
+		<div class="option">
+			<input id="use-stun" type="checkbox" checked="checked" />
+			<label for="use-stun">Use STUN server</label>
+		</div>
+		<div class="option">
+			<input id="handle-silence" type="checkbox" checked="checked" />
+			<label for="handle-silence">Server handles no input case</label>
+		</div>
 
-    <script src="client.js"></script>
-  </body>
+		<div class="option">
+			<label for="maxSessionLength">maxSessionLength</label>
+			<input id="maxSessionLength" value="3600" />
+		</div>
+		<div class="option">
+			<label for="maxIdleTime">maxIdleTime</label>
+			<input id="maxIdleTime" value="300" />
+		</div>
+
+		<button id="start" onclick="start()">Start</button>
+		<button id="stop" style="display: none" onclick="stop()">Stop</button>
+		<label id="startTime">Startup Time: </label>
+
+		<h2>State</h2>
+		<p>ICE gathering state: <span id="ice-gathering-state"></span></p>
+		<p>ICE connection state: <span id="ice-connection-state"></span></p>
+		<p>Signaling state: <span id="signaling-state"></span></p>
+		<input type="file" id="fileInput" />
+		<input type="number" id="chunkSize" value="6000" />
+		<button id="sendFile" onclick="sendFile()">Send file</button>
+		<button id="playImmediate" onclick="playImmediate()">Play Immediate</button>
+		<button id="playImmediateAndChunk" onclick="playImmediateAndChunk()">Play Immediate and chunk</button>
+		<button id="sendZeros" onclick="sendZeros()">Send Zeros</button>
+		<button id="skip" onclick="skip()">skip buffer</button>
+		<div id="media" style="display: none">
+			<h2>Media</h2>
+			<audio id="audio" autoplay="true "></audio>
+			<video id="video" autoplay="true" playsinline="true"></video>
+		</div>
+
+		<h2>Data channel</h2>
+		<pre id="data-channel" style="height: 200px"></pre>
+
+		<h2>SDP</h2>
+
+		<h3>Offer</h3>
+		<pre id="offer-sdp"></pre>
+
+		<h3>Answer</h3>
+		<pre id="answer-sdp"></pre>
+
+		<script src="client.js"></script>
+	</body>
 </html>
 ```
 
@@ -75,9 +141,9 @@ The javascript file handles the WebRTC connection, sends the audio stream to the
 ```javascript
 // get DOM elements
 var dataChannelLog = document.getElementById("data-channel"),
-  iceConnectionLog = document.getElementById("ice-connection-state"),
-  iceGatheringLog = document.getElementById("ice-gathering-state"),
-  signalingLog = document.getElementById("signaling-state");
+	iceConnectionLog = document.getElementById("ice-connection-state"),
+	iceGatheringLog = document.getElementById("ice-gathering-state"),
+	signalingLog = document.getElementById("signaling-state");
 ```
 
 This block of code gets the DOM elements that will be used to display the state of the connection and the data channel messages.
@@ -86,66 +152,62 @@ This block of code gets the DOM elements that will be used to display the state 
 // peer connection
 var pc = null;
 
-// data channel
-var dc = null,
-  dcInterval = null;
 wsConnection = null;
 
 function createPeerConnection() {
-  var config = {
-    sdpSemantics: "unified-plan",
-  };
+	var config = {
+		sdpSemantics: "unified-plan",
+	};
 
-  config.iceServers = [{ urls: ["stun:stun.l.google.com:19302"] }];
+	config.iceServers = [{urls: ["stun:stun.l.google.com:19302"]}];
 
-  pc = new RTCPeerConnection(config);
-  // register some listeners to help debugging
-  pc.addEventListener(
-    "icegatheringstatechange",
-    () => {
-      iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
-    },
-    false
-  );
-  iceGatheringLog.textContent = pc.iceGatheringState;
+	pc = new RTCPeerConnection(config);
+	// register some listeners to help debugging
+	pc.addEventListener(
+		"icegatheringstatechange",
+		() => {
+			iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
+		},
+		false,
+	);
+	iceGatheringLog.textContent = pc.iceGatheringState;
 
-  pc.addEventListener(
-    "iceconnectionstatechange",
-    () => {
-      iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
-    },
-    false
-  );
-  iceConnectionLog.textContent = pc.iceConnectionState;
+	pc.addEventListener(
+		"iceconnectionstatechange",
+		() => {
+			iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
+		},
+		false,
+	);
+	iceConnectionLog.textContent = pc.iceConnectionState;
 
-  pc.addEventListener(
-    "signalingstatechange",
-    () => {
-      signalingLog.textContent += " -> " + pc.signalingState;
-    },
-    false
-  );
-  signalingLog.textContent = pc.signalingState;
+	pc.addEventListener(
+		"signalingstatechange",
+		() => {
+			signalingLog.textContent += " -> " + pc.signalingState;
+		},
+		false,
+	);
+	signalingLog.textContent = pc.signalingState;
 
-  // connect audio / video
-  pc.addEventListener("track", (evt) => {
-    if (evt.track.kind == "video")
-      document.getElementById("video").srcObject = evt.streams[0];
-    else document.getElementById("audio").srcObject = evt.streams[0];
-  });
+	// connect audio / video
+	pc.addEventListener("track", (evt) => {
+		if (evt.track.kind == "video") document.getElementById("video").srcObject = evt.streams[0];
+		else document.getElementById("audio").srcObject = evt.streams[0];
+	});
 
-  pc.onicecandidate = (event) => {
-    if (event.candidate === null) {
-      console.log(JSON.stringify(pc.localDescription));
-    } else {
-      console.log(event.candidate);
-      //   console.log(JSON.stringify(pc.localDescription));
-      candidateCount += 1;
-      //   console.log(candidateCount);
-    }
-  };
+	pc.onicecandidate = (event) => {
+		if (event.candidate === null) {
+			console.log(JSON.stringify(pc.localDescription));
+		} else {
+			console.log(event.candidate);
+			//   console.log(JSON.stringify(pc.localDescription));
+			candidateCount += 1;
+			//   console.log(candidateCount);
+		}
+	};
 
-  return pc;
+	return pc;
 }
 ```
 
@@ -155,28 +217,25 @@ This block of code defines the function that creates the peer connection and reg
 let candidateCount = 0;
 let prevCandidateCount = -1;
 function CheckIceCandidates() {
-  if (
-    pc.iceGatheringState === "complete" ||
-    candidateCount === prevCandidateCount
-  ) {
-    console.log(pc.iceGatheringState, candidateCount);
-    connectToRemotePeer();
-  } else {
-    prevCandidateCount = candidateCount;
-    setTimeout(CheckIceCandidates, 250);
-  }
+	if (pc.iceGatheringState === "complete" || candidateCount === prevCandidateCount) {
+		console.log(pc.iceGatheringState, candidateCount);
+		connectToRemotePeer();
+	} else {
+		prevCandidateCount = candidateCount;
+		setTimeout(CheckIceCandidates, 250);
+	}
 }
 
 function negotiate() {
-  return pc
-    .createOffer()
-    .then((offer) => {
-      return pc.setLocalDescription(offer);
-    })
-    .then(() => {
-      prevCandidateCount = candidateCount;
-      setTimeout(CheckIceCandidates, 250);
-    });
+	return pc
+		.createOffer()
+		.then((offer) => {
+			return pc.setLocalDescription(offer);
+		})
+		.then(() => {
+			prevCandidateCount = candidateCount;
+			setTimeout(CheckIceCandidates, 250);
+		});
 }
 ```
 
@@ -184,58 +243,74 @@ This block of code defines the function that initiates the negotiation process. 
 
 ```javascript
 async function connectToRemotePeer() {
-  var offer = pc.localDescription;
-  var codec;
-  document.getElementById("offer-sdp").textContent = offer.sdp;
+	var offer = pc.localDescription;
+	document.getElementById("offer-sdp").textContent = offer.sdp;
 
-  const ws = new WebSocket("wss://api.simli.ai/startWebRTCSession");
-  wsConnection = ws;
-  ws.addEventListener("open", () => {
-    ws.send(
-      JSON.stringify({
-        sdp: offer.sdp,
-        type: offer.type,
-      })
-    );
-  });
-  let answer = null;
-  ws.addEventListener("message", async (evt) => {
-    dataChannelLog.textContent += "< " + evt.data + "\n";
-    if (evt.data === "START") {
-      dcZeroAudio = setTimeout(() => {
-        var message = new Uint8Array(64000);
-        wsConnection.send(message);
-        console.log("SEND");
-      }, 100);
-      return;
-    }
-    if (evt.data === "STOP") {
-      stop();
-      return;
-    } else if (evt.data.slice(0, 4) === "pong") {
-      console.log("PONG");
-      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-    } else {
-      try {
-        const message = JSON.parse(evt.data);
-        if (message.type !== "answer") {
-          return;
-        }
-        answer = message;
-        document.getElementById("answer-sdp").textContent = answer.sdp;
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  });
-  ws.addEventListener("close", () => {
-    console.log("Websocket closed");
-  });
-  while (answer === null) {
-    await new Promise((r) => setTimeout(r, 10));
-  }
-  await pc.setRemoteDescription(answer);
+	const faceId = document.getElementById("faceId").value;
+	if (faceId === "") {
+		alert("Please enter faceId");
+		return;
+	}
+
+	const metadata = {
+		faceId: faceId,
+		maxSessionLength: parseInt(document.getElementById("maxSessionLength").value),
+		maxIdleTime: parseInt(document.getElementById("maxIdleTime").value),
+	};
+	console.log(metadata);
+	console.log(parseInt(document.getElementById("maxSessionLength").value));
+
+	const sessionPromise = await fetch("/compose/token", {
+		method: "POST",
+		body: JSON.stringify(metadata),
+		headers: {
+			"Content-Type": "application/json",
+			"x-simli-api-key": document.getElementById("apiKey").value,
+		},
+	});
+	session_token = await sessionPromise.json();
+	wsURL = new URL(window.location.origin + "/compose/webrtc/p2p");
+	wsURL.searchParams.set("session_token", session_token.session_token);
+	const ws = new WebSocket(wsURL);
+	wsConnection = ws;
+	ws.addEventListener("message", async (evt) => {
+		dataChannelLog.textContent += "< " + evt.data + "\n";
+		if (evt.data === "START") {
+			dcZeroAudio = setTimeout(() => {
+				var message = new Uint8Array(64000);
+				wsConnection.send(message);
+				console.log("SEND");
+			}, 100);
+			return;
+		}
+		if (evt.data === "STOP") {
+			stop();
+			return;
+		} else if (evt.data.slice(0, 4) === "pong") {
+			console.log("PONG");
+			var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
+			dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
+		} else {
+			try {
+				const message = JSON.parse(evt.data);
+				if (message.type !== "answer") {
+					return;
+				}
+				answer = message;
+				document.getElementById("answer-sdp").textContent = answer.sdp;
+			} catch (e) {
+				console.log(e);
+			}
+		}
+	});
+	ws.addEventListener("close", () => {
+		console.log("Websocket closed");
+	});
+	let answer = null;
+	while (answer === null) {
+		await new Promise((r) => setTimeout(r, 10));
+	}
+	await pc.setRemoteDescription(answer);
 }
 ```
 
@@ -243,156 +318,66 @@ This block of code defines the function that connects to the remote peer. It sen
 
 ```javascript
 function start() {
-  document.getElementById("start").style.display = "none";
+	document.getElementById("start").style.display = "none";
 
-  pc = createPeerConnection();
+	pc = createPeerConnection();
 
-  var time_start = null;
+	var time_start = null;
 
-  const current_stamp = () => {
-    if (time_start === null) {
-      time_start = new Date().getTime();
-      return 0;
-    } else {
-      return new Date().getTime() - time_start;
-    }
-  };
+	const current_stamp = () => {
+		if (time_start === null) {
+			time_start = new Date().getTime();
+			return 0;
+		} else {
+			return new Date().getTime() - time_start;
+		}
+	};
 
-  var parameters = { ordered: true };
-  dc = pc.createDataChannel("datachannel", parameters);
+	// Build media constraints.
 
-  dc.addEventListener("error", (err) => {
-    console.error(err);
-  });
+	const constraints = {
+		audio: true,
+		video: true,
+	};
 
-  dc.addEventListener("close", () => {
-    clearInterval(dcInterval);
-    dataChannelLog.textContent += "- close\n";
-  });
+	// Acquire media and start negotiation.
 
-  dc.addEventListener("open", async () => {
-    console.log(dc.id);
-    const metadata = {
-      faceId: "tmp9i8bbq7c", // Simli face ID
-      isJPG: false,
-      apiKey: "SIMLI_API_KEY", // Simli API key
-      syncAudio: true,
-    };
-
-    const response = await fetch(
-      "https://api.simli.ai/startAudioToVideoSession",
-      {
-        method: "POST",
-        body: JSON.stringify(metadata),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const resJSON = await response.json();
-    wsConnection.send(resJSON.session_token);
-
-    dataChannelLog.textContent += "- open\n";
-    dcInterval = setInterval(() => {
-      var message = "ping " + current_stamp();
-      dataChannelLog.textContent += "> " + message + "\n";
-      wsConnection.send(message);
-    }, 1000);
-    await setTimeout(() => {}, 100);
-    var message = new Uint8Array(16000); // 0.5 second silence to start the audio (Optional)
-    wsConnection.send(message);
-    initializeWebsocketDecoder();
-  });
-  dc.addEventListener("message", (evt) => {
-    dataChannelLog.textContent += "< " + evt.data + "\n";
-
-    if (evt.data.substring(0, 4) === "pong") {
-      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-    }
-  });
-
-  // Build media constraints.
-
-  const constraints = {
-    audio: true,
-    video: true,
-  };
-
-  // Acquire media and start negotiation.
-
-  document.getElementById("media").style.display = "block";
-  navigator.mediaDevices.getUserMedia(constraints).then(
-    (stream) => {
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-      return negotiate();
-    },
-    (err) => {
-      alert("Could not acquire media: " + err);
-    }
-  );
-  document.getElementById("stop").style.display = "inline-block";
+	document.getElementById("media").style.display = "block";
+	navigator.mediaDevices.getUserMedia(constraints).then(
+		(stream) => {
+			stream.getTracks().forEach((track) => {
+				pc.addTrack(track, stream);
+			});
+			return negotiate();
+		},
+		(err) => {
+			alert("Could not acquire media: " + err);
+		},
+	);
+	document.getElementById("stop").style.display = "inline-block";
 }
 
 function stop() {
-  document.getElementById("stop").style.display = "none";
+	document.getElementById("stop").style.display = "none";
 
-  // close data channel
-  if (dc) {
-    dc.close();
-  }
+	// close transceivers
+	if (pc.getTransceivers) {
+		pc.getTransceivers().forEach((transceiver) => {
+			if (transceiver.stop) {
+				transceiver.stop();
+			}
+		});
+	}
 
-  // close transceivers
-  if (pc.getTransceivers) {
-    pc.getTransceivers().forEach((transceiver) => {
-      if (transceiver.stop) {
-        transceiver.stop();
-      }
-    });
-  }
+	// close local audio / video
+	pc.getSenders().forEach((sender) => {
+		sender.track.stop();
+	});
 
-  // close local audio / video
-  pc.getSenders().forEach((sender) => {
-    sender.track.stop();
-  });
-
-  // close peer connection
-  setTimeout(() => {
-    pc.close();
-  }, 500);
-}
-
-async function initializeWebsocketDecoder() {
-  ws = new WebSocket("ws://localhost:8080/");
-  ws.onopen = function (event) {
-    console.log("connected");
-  };
-  ws.onmessage = function (event) {
-    wsConnection.send(event.data);
-  };
-  ws.binaryType = "arraybuffer";
-  while (dc.readyState !== "open") {
-    await setTimeout(() => {}, 100);
-  }
-  response = await fetch("https://radio.talksport.com/stream");
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  const reader = response.body.getReader();
-  function read() {
-    return reader.read().then(({ done, value }) => {
-      if (done) {
-        console.log("Stream complete");
-        return;
-      }
-      ws.send(value);
-      return read();
-    });
-  }
-
-  return read();
+	// close peer connection
+	setTimeout(() => {
+		pc.close();
+	}, 500);
 }
 ```
 
@@ -400,310 +385,454 @@ This block of code defines the functions that start and stop the connection. The
 
 ```javascript
 async function initializeWebsocketDecoder() {
-  ws = new WebSocket("ws://localhost:8080/");
-  ws.onopen = function (event) {
-    console.log("connected");
-  };
-  ws.onmessage = function (event) {
-    dc.send(event.data);
-  };
-  ws.binaryType = "arraybuffer";
-  while (dc.readyState !== "open") {
-    await setTimeout(() => {}, 100);
-  }
-  response = await fetch("https://radio.talksport.com/stream");
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  const reader = response.body.getReader();
-  function read() {
-    return reader.read().then(({ done, value }) => {
-      if (done) {
-        console.log("Stream complete");
-        return;
-      }
-      ws.send(value);
-      return read();
-    });
-  }
+	ws = new WebSocket("ws://localhost:8080/");
+	ws.onopen = function (event) {
+		console.log("connected");
+	};
+	ws.onmessage = function (event) {
+		dc.send(event.data);
+	};
+	ws.binaryType = "arraybuffer";
+	while (dc.readyState !== "open") {
+		await setTimeout(() => {}, 100);
+	}
+	response = await fetch("https://radio.talksport.com/stream");
+	if (!response.ok) {
+		throw new Error("Network response was not ok");
+	}
+	const reader = response.body.getReader();
+	function read() {
+		return reader.read().then(({done, value}) => {
+			if (done) {
+				console.log("Stream complete");
+				return;
+			}
+			ws.send(value);
+			return read();
+		});
+	}
 
-  return read();
+	return read();
 }
 ```
 
 The last block of code defines the function that initializes the websocket decoder. It creates a websocket connection to the python server, sends the audio stream to the data channel, and reads the audio stream from the radio station.
 
-and Here's everything together
+and Here's an improved version used in our benchmark
 
 ```javascript filename="client.js"
 // get DOM elements
 var dataChannelLog = document.getElementById("data-channel"),
-  iceConnectionLog = document.getElementById("ice-connection-state"),
-  iceGatheringLog = document.getElementById("ice-gathering-state"),
-  signalingLog = document.getElementById("signaling-state");
+	iceConnectionLog = document.getElementById("ice-connection-state"),
+	iceGatheringLog = document.getElementById("ice-gathering-state"),
+	signalingLog = document.getElementById("signaling-state");
+
+let wsConnection = null;
+let answer = null;
+let offer = null;
+let startStamp = null;
 
 // peer connection
 var pc = null;
 
-// data channel
-var dc = null,
-  dcInterval = null;
+var session_token = null;
+async function createPeerConnection() {
+	var config = {
+		sdpSemantics: "unified-plan",
+	};
 
-function createPeerConnection() {
-  var config = {
-    sdpSemantics: "unified-plan",
-  };
+	if (document.getElementById("use-stun").checked) {
+		// Fetch ICE servers first
+		try {
+			const sfu = document.getElementById("use-sfu").checked;
+			const faceId = document.getElementById("faceId").value;
+			if (faceId === "") {
+				alert("Please enter faceId");
+				return;
+			}
 
-  config.iceServers = [{ urls: ["stun:stun.l.google.com:19302"] }];
+			const metadata = {
+				// faceId: "tmp9i8bbq7c",
+				faceId: faceId,
+				handleSilence: document.getElementById("handle-silence").checked,
+				maxSessionLength: parseInt(document.getElementById("maxSessionLength").value),
+				maxIdleTime: parseInt(document.getElementById("maxIdleTime").value),
+			};
+			console.log(metadata);
+			console.log(parseInt(document.getElementById("maxSessionLength").value));
 
-  pc = new RTCPeerConnection(config);
-  // register some listeners to help debugging
-  pc.addEventListener(
-    "icegatheringstatechange",
-    () => {
-      iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
-    },
-    false
-  );
-  iceGatheringLog.textContent = pc.iceGatheringState;
+			const sessionPromise = await fetch("/compose/token", {
+				method: "POST",
+				body: JSON.stringify(metadata),
+				headers: {
+					"Content-Type": "application/json",
+					"x-simli-api-key": document.getElementById("apiKey").value,
+				},
+			});
+			session_token = await sessionPromise.json();
+			wsURL = new URL(window.location.origin + "/compose/webrtc/p2p");
+			wsURL.searchParams.set("session_token", session_token.session_token);
+			wsURL.searchParams.set("enableSFU", sfu);
 
-  pc.addEventListener(
-    "iceconnectionstatechange",
-    () => {
-      iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
-    },
-    false
-  );
-  iceConnectionLog.textContent = pc.iceConnectionState;
+			const ws = new WebSocket(wsURL);
+			wsConnection = ws;
+			ws.addEventListener("open", async () => {
+				while (!offer) {
+					await new Promise((r) => setTimeout(r, 10));
+				}
 
-  pc.addEventListener(
-    "signalingstatechange",
-    () => {
-      signalingLog.textContent += " -> " + pc.signalingState;
-    },
-    false
-  );
-  signalingLog.textContent = pc.signalingState;
+				ws.send(
+					JSON.stringify({
+						sdp: offer.sdp,
+						type: offer.type,
+					}),
+				);
+				// wsConnection.send(session_token.session_token);
+			});
+			ws.addEventListener("message", async (evt) => {
+				dataChannelLog.textContent += "< " + evt.data + "\n";
+				if (evt.data === "START") {
+					dcZeroAudio = setTimeout(() => {
+						var message = new Uint8Array(64000);
+						wsConnection.send(message);
+						console.log("SEND");
+					}, 100);
+					return;
+				}
+				if (evt.data === "STOP") {
+					stop();
+					return;
+				} else if (evt.data.slice(0, 4) === "pong") {
+					console.log("PONG");
+					var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
+					dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
+				} else {
+					try {
+						const message = JSON.parse(evt.data);
+						if (message.type !== "answer") {
+							return;
+						}
+						answer = message;
+						document.getElementById("answer-sdp").textContent = answer.sdp;
+					} catch (e) {
+						console.log(e);
+					}
+				}
+			});
+			ws.addEventListener("close", () => {
+				console.log("Websocket closed");
+			});
 
-  // connect audio / video
-  pc.addEventListener("track", (evt) => {
-    if (evt.track.kind == "video")
-      document.getElementById("video").srcObject = evt.streams[0];
-    else document.getElementById("audio").srcObject = evt.streams[0];
-  });
+			const icePromise = await fetch("/compose/ice", {
+				headers: {
+					"Content-Type": "application/json",
+				},
+				method: "GET",
+				headers: {
+					"x-simli-api-key": document.getElementById("apiKey").value,
+				},
+			});
+			// iceServers = await response.json();
 
-  pc.onicecandidate = (event) => {
-    if (event.candidate === null) {
-      console.log(JSON.stringify(pc.localDescription));
-    } else {
-      console.log(event.candidate);
-      candidateCount += 1;
-    }
-  };
+			const results = await Promise.all([icePromise]);
+			console.log(results);
+			config.iceServers = await results[0].json();
+		} catch (error) {
+			console.error("Error fetching ICE servers:", error);
+			// Fallback to Google STUN server if fetch fails
+			config.iceServers = [{urls: ["stun:stun.l.google.com:19302"]}];
+		}
+	}
 
-  return pc;
+	console.log(config);
+	pc = new RTCPeerConnection(config);
+	// register some listeners to help debugging
+	pc.addEventListener(
+		"icegatheringstatechange",
+		() => {
+			iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
+		},
+		false,
+	);
+	iceGatheringLog.textContent = pc.iceGatheringState;
+
+	pc.addEventListener(
+		"iceconnectionstatechange",
+		() => {
+			iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
+		},
+		false,
+	);
+	iceConnectionLog.textContent = pc.iceConnectionState;
+
+	pc.addEventListener(
+		"signalingstatechange",
+		() => {
+			signalingLog.textContent += " -> " + pc.signalingState;
+		},
+		false,
+	);
+	signalingLog.textContent = pc.signalingState;
+
+	// connect audio / video
+	pc.addEventListener("track", (evt) => {
+		if (evt.track.kind == "video") {
+			document.getElementById("video").srcObject = evt.streams[0];
+			document.getElementById("video").requestVideoFrameCallback(() => {
+				const startupDuration = (new Date().getTime() - startStamp) / 1000;
+				console.log("First video frame rendered!", startupDuration);
+				document.getElementById("startTime").textContent += startupDuration.toString() + "s";
+			});
+			document;
+		} else {
+			document.getElementById("audio").srcObject = evt.streams[0];
+		}
+	});
+
+	pc.onicecandidate = (event) => {
+		if (event.candidate === null) {
+			console.log(JSON.stringify(pc.localDescription));
+		} else {
+			console.log(event.candidate);
+			//   console.log(JSON.stringify(pc.localDescription));
+			candidateCount += 1;
+			//   console.log(candidateCount);
+		}
+	};
+
+	return pc;
+}
+
+function enumerateInputDevices() {
+	const populateSelect = (select, devices) => {
+		let counter = 1;
+		devices.forEach((device) => {
+			const option = document.createElement("option");
+			option.value = device.deviceId;
+			option.text = device.label || "Device #" + counter;
+			select.appendChild(option);
+			counter += 1;
+		});
+	};
+
+	navigator.mediaDevices
+		.enumerateDevices()
+		.then((devices) => {
+			populateSelect(
+				document.getElementById("audio-input"),
+				devices.filter((device) => device.kind == "audioinput"),
+			);
+			populateSelect(
+				document.getElementById("video-input"),
+				devices.filter((device) => device.kind == "videoinput"),
+			);
+		})
+		.catch((e) => {
+			alert(e);
+		});
 }
 
 let candidateCount = 0;
 let prevCandidateCount = -1;
 function CheckIceCandidates() {
-  if (
-    pc.iceGatheringState === "complete" ||
-    candidateCount === prevCandidateCount
-  ) {
-    console.log(pc.iceGatheringState, candidateCount);
-    connectToRemotePeer();
-  } else {
-    prevCandidateCount = candidateCount;
-    setTimeout(CheckIceCandidates, 250);
-  }
+	if (pc.iceGatheringState === "complete" || candidateCount === prevCandidateCount) {
+		console.log(pc.iceGatheringState, candidateCount);
+		connectToRemotePeer().catch();
+	} else {
+		prevCandidateCount = candidateCount;
+		setTimeout(CheckIceCandidates, 250);
+	}
 }
 
 function negotiate() {
-  return pc
-    .createOffer()
-    .then((offer) => {
-      return pc.setLocalDescription(offer);
-    })
-    .then(() => {
-      prevCandidateCount = candidateCount;
-      setTimeout(CheckIceCandidates, 250);
-    });
+	return pc
+		.createOffer()
+		.then((offer) => {
+			return pc.setLocalDescription(offer);
+		})
+		.then(() => {
+			prevCandidateCount = candidateCount;
+			setTimeout(CheckIceCandidates, 250);
+		});
 }
 
-function connectToRemotePeer() {
-  var offer = pc.localDescription;
-  var codec;
-  document.getElementById("offer-sdp").textContent = offer.sdp;
+async function connectToRemotePeer() {
+	offer = pc.localDescription;
 
- const ws = new WebSocket("wss://api.simli.ai/startWebRTCSession");
-  wsConnection = ws;
-  ws.addEventListener("open", () => {
-    ws.send(
-      JSON.stringify({
-        sdp: offer.sdp,
-        type: offer.type,
-      })
-    );
-  });
-  let answer = null;
-  ws.addEventListener("message", async (evt) => {
-    dataChannelLog.textContent += "< " + evt.data + "\n";
-    if (evt.data === "START") {
-      dcZeroAudio = setTimeout(() => {
-        var message = new Uint8Array(64000);
-        wsConnection.send(message);
-        console.log("SEND");
-      }, 100);
-      return;
-    }
-    if (evt.data === "STOP") {
-      stop();
-      return;
-    } else if (evt.data.slice(0, 4) === "pong") {
-      console.log("PONG");
-      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-    } else {
-      try {
-        const message = JSON.parse(evt.data);
-        if (message.type !== "answer") {
-          return;
-        }
-        answer = message;
-        document.getElementById("answer-sdp").textContent = answer.sdp;
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  });
-  ws.addEventListener("close", () => {
-    console.log("Websocket closed");
-  });
-  while (answer === null) {
-    await new Promise((r) => setTimeout(r, 10));
-  }
-  await pc.setRemoteDescription(answer);
+	while (answer === null) {
+		await new Promise((r) => setTimeout(r, 10));
+	}
+	console.log(answer);
+	await pc.setRemoteDescription(answer);
 }
+
+var time_start = null;
+const current_stamp = () => {
+	if (time_start === null) {
+		time_start = new Date().getTime();
+		return 0;
+	} else {
+		return new Date().getTime() - time_start;
+	}
+};
 
 function start() {
-  document.getElementById("start").style.display = "none";
+	startStamp = new Date().getTime();
+	document.getElementById("start").style.display = "none";
 
-  pc = createPeerConnection();
+	pc = createPeerConnection().then((pc) => {
+		document.getElementById("media").style.display = "block";
+		pc.addTransceiver("audio", {direction: "recvonly"});
+		pc.addTransceiver("video", {direction: "recvonly"});
+		negotiate();
 
-  var time_start = null;
+		document.getElementById("stop").style.display = "inline-block";
+	});
+}
 
-  const current_stamp = () => {
-    if (time_start === null) {
-      time_start = new Date().getTime();
-      return 0;
-    } else {
-      return new Date().getTime() - time_start;
-    }
-  };
+function sendZeros() {
+	// Add event listener for file input change event
 
-  var parameters = { ordered: true };
-  dc = pc.createDataChannel("datachannel", parameters);
+	if (dc && dc.readyState === "open") {
+		wsConnection.send(new Uint8Array(64000));
+		console.log("SEND ZEROS", Date.now());
+	}
+	dataChannelLog.textContent += "- Sent Zeros: " + "64000" + "\n";
+}
 
-  dc.addEventListener("error", (err) => {
-    console.error(err);
-  });
+function sendFile() {
+	// Add event listener for file input change event
 
-  dc.addEventListener("close", () => {
-    clearInterval(dcInterval);
-    dataChannelLog.textContent += "- close\n";
-  });
+	var file = document.getElementById("fileInput").files[0];
+	var reader = new FileReader();
+	reader.onload = async function (e) {
+		var arrayBuffer = e.target.result;
+		var uint8Array = new Uint8Array(arrayBuffer);
+		var button = document.getElementById("sendFile");
+		let chunkSize = parseInt(document.getElementById("chunkSize").value);
+		// console.log(uint8Array)
+		if (dc && dc.readyState === "open") {
+			// for (var x = 0; x < 600; x++)
+			{
+				for (var i = 0; i < uint8Array.length; i += chunkSize) {
+					wsConnection.send(uint8Array.slice(i, i + chunkSize));
+					console.log("SEND", Date.now());
+					button.textContent = "Sending...";
+				}
+				await new Promise((r) => setTimeout(r, 200));
+			}
+			// dc.send(uint8Array);
+			// console.log("SUNEN");
+			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
+			button.textContent = "Sent";
+		}
+	};
 
-  dc.addEventListener("open", async () => {
-    console.log(dc.id);
-    const metadata = {
-      faceId: "tmp9i8bbq7c", // Simli face ID
-      isJPG: false,
-      apiKey: "SIMLI_API_KEY", // Simli API key
-      syncAudio: true,
-    };
+	reader.readAsArrayBuffer(file);
+}
 
-    const response = await fetch(
-      "https://api.simli.ai/startAudioToVideoSession",
-      {
-        method: "POST",
-        body: JSON.stringify(metadata),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const resJSON = await response.json();
-    wsConnection.send(resJSON.session_token);
+function playImmediate() {
+	// Add event listener for file input change event
 
-    dataChannelLog.textContent += "- open\n";
+	var file = document.getElementById("fileInput").files[0];
+	var reader = new FileReader();
+	reader.onload = async function (e) {
+		const arrayBuffer = new Uint8Array(e.target.result);
+		const asciiStr = "PLAY_IMMEDIATE";
+		const encoder = new TextEncoder(); // Default is utf-8
+		const strBytes = encoder.encode(asciiStr); // Uint8Array of " World!"
 
-    await setTimeout(()=>{}, 100);
-    var message = new Uint8Array(16000)  // 0.5 second silence to start the audio (Optional)
-    wsConnection.send(message);
-    initializeWebsocketDecoder()
-  });
+		var uint8Array = new Uint8Array(strBytes.length + arrayBuffer.length);
+		uint8Array.set(strBytes, 0);
+		uint8Array.set(arrayBuffer, strBytes.length);
+		var button = document.getElementById("playImmediate");
+		// let chunkSize = parseInt(document.getElementById("chunkSize").value);
+		// console.log(uint8Array)
+		if (dc && dc.readyState === "open") {
+			// for (var x = 0; x < 600; x++)
+			wsConnection.send(uint8Array);
+			// dc.send(uint8Array);
+			// console.log("SUNEN");
+			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
+			button.textContent = "Sent";
+		}
+	};
 
-  dc.addEventListener("message", (evt) => {
-    dataChannelLog.textContent += "< " + evt.data + "\n";
+	reader.readAsArrayBuffer(file);
+}
 
-    if (evt.data.substring(0, 4) === "pong") {
-      var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-      dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-    }
-  });
+function playImmediateAndChunk() {
+	// Add event listener for file input change event
 
-  // Build media constraints.
+	var file = document.getElementById("fileInput").files[0];
+	var reader = new FileReader();
+	reader.onload = async function (e) {
+		const arrayBuffer = new Uint8Array(e.target.result);
+		const asciiStr = "PLAY_IMMEDIATE";
+		const encoder = new TextEncoder(); // Default is utf-8
+		const strBytes = encoder.encode(asciiStr); // Uint8Array of " World!"
 
-  const constraints = {
-    audio: true,
-    video: true,
-  };
+		const firstChunkSize = 16000 * 2 * 4;
+		const firstSlice = arrayBuffer.slice(0, Math.min(firstChunkSize, arrayBuffer.length));
 
-  // Acquire media and start negotiation.
+		var uint8Array = new Uint8Array(strBytes.length + firstSlice.length);
+		uint8Array.set(strBytes, 0);
+		uint8Array.set(firstSlice, strBytes.length);
+		var button = document.getElementById("playImmediateAndChunk");
+		let chunkSize = parseInt(document.getElementById("chunkSize").value);
+		// console.log(uint8Array)
 
-  document.getElementById("media").style.display = "block";
-  navigator.mediaDevices.getUserMedia(constraints).then(
-    (stream) => {
-      stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
-      });
-      return negotiate();
-    },
-    (err) => {
-      alert("Could not acquire media: " + err);
-    }
-  );
-  document.getElementById("stop").style.display = "inline-block";
+		if (dc && dc.readyState === "open") {
+			// for (var x = 0; x < 600; x++)
+			wsConnection.send(uint8Array);
+			// await new Promise((r) => setTimeout(r, 1000));
+			if (arrayBuffer.length > firstChunkSize) {
+				for (var i = firstChunkSize; i < arrayBuffer.length; i += chunkSize) {
+					wsConnection.send(arrayBuffer.slice(i, i + chunkSize));
+					console.log("SEND", Date.now());
+					button.textContent = "Sending...";
+				}
+			}
+
+			// dc.send(uint8Array);
+			// console.log("SUNEN");
+			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
+			button.textContent = "Sent";
+		}
+	};
+
+	reader.readAsArrayBuffer(file);
+}
+
+function skip() {
+	wsConnection.send("SKIP");
 }
 
 function stop() {
-  document.getElementById("stop").style.display = "none";
+	if (wsConnection) {
+		wsConnection.send("DONE");
+	}
+	// close transceivers
+	if (pc.getTransceivers()) {
+		pc.getTransceivers().forEach((transceiver) => {
+			if (transceiver.stop) {
+				transceiver.stop();
+			}
+		});
+	}
 
-  // close data channel
-  if (dc) {
-    dc.close();
-  }
+	// close local audio / video
+	pc.getSenders().forEach((sender) => {
+		sender.track.stop();
+	});
 
-  // close transceivers
-  if (pc.getTransceivers) {
-    pc.getTransceivers().forEach((transceiver) => {
-      if (transceiver.stop) {
-        transceiver.stop();
-      }
-    });
-  }
-
-  // close local audio / video
-  pc.getSenders().forEach((sender) => {
-    sender.track.stop();
-  });
-
-  // close peer connection
-  setTimeout(() => {
-    pc.close();
-  }, 500);
+	// close peer connection
+	pc.close();
 }
+
+addEventListener("beforeunload", (event) => {
+	stop();
+});
 ```
 
 ### server.py
