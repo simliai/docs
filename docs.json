@@ -33,6 +33,7 @@
                         "pages": [
                             "simli-sdks",
                             "api-reference/javascript",
+                            "api-reference/javascript_upgrade_guide",
                             "api-reference/python"
                         ]
                     },
@@ -85,6 +86,12 @@
             {
                 "tab": "REST API",
                 "groups": [
+                    {
+                        "group": "Migration Guide",
+                        "pages": [
+                            "api-reference/api_migration_guide"
+                        ]
+                    },
                     {
                         "group": "Endpoints",
                         "openapi": {

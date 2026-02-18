@@ -1,0 +1,32 @@
+---
+title: API Migration Guide
+icon: "angles-up"
+---
+
+We've done an overhaul for the Simli API to improve the overall system reliability, readability, and consistency (note: some names were really confusing and didn't allow for endpoint grouping). As part of this redesign, some endpoints will be removed completely, others renamed, and most will be slightly different. Here, you will find the changes for each endpoint and how you should update your code
+
+## General Changes
+
+All authenticated requests now use the header `x-simli-api-key` instead of the various body/api-key headers that were used over time. Additionally, all endpoint names are lowercase unless Base64 is being used (currently only for [`POST /static/audio` endpoint](/api-reference/generate-static-video)).
+
+Simli Auto Endpoints have not changed however, some previously deprecated endpoints will be removed soon. It is recommended that you review the latest Auto endpoints (even though they're marked as deprecated as Simli Auto Development has ceased for now).
+
+## Endpoint Changes
+
+- `GET /getIceServers` => [`GET /compose/ice`](/api-reference/get-ice-servers)
+
+- `POST /startAudioToVideoSession` => [`POST /compose/token`](/api-reference/compose-session-token)
+
+- `POST /audioToVideoStream` => [`POST /static/audio`](/api-reference/generate-static-video)
+
+- `POST /textToVideoStream` => REMOVED. Please generate the TTS yourself and use the audio with [`POST /static/audio`](/api-reference/generate-static-video)
+
+- `POST /generateFaceID` => [`POST /faces/legacy`](/api-reference/generate-legacy-face)
+
+- `POST /getRequestStatus` => [`GET /faces/legacy/generation_status`](/api-reference/get-legacy-face-generation-status)
+
+- `GET /mp4` => [`GET /static/mp4`](/api-reference/get-mp4-of-generated-video)
+
+- `GET /hls` => [`GET /static/hls`](/api-reference/get-hls-segment)
+
+- `POST /StartLivekitAgentsSession` => [`POST /integrations/livekit/agents`](/api-reference/start-livekit-agents-session)

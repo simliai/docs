@@ -1,0 +1,71 @@
+---
+title: JavaScript SDK 3.*.* Migration Guide
+icon: "js"
+---
+
+[SimliClient](https://github.com/simliai/simli-client) got upgraded to match our latest API Spec. Since the API upgrade was so significant, we also had to rethink a lot about how the SimliClient SDK was built. This led to a few critical changes on how you interact with the SDK.
+
+## 1. SimliClient is not reusable between reconnects
+
+Previously, our guides had SimliClient being instantiated in the beginning of the script and then we need to call `Initialize` and `start` separately. This led to a lot of confusion and contamination between callbacks on reconnection. So, We've decided to eliminate the `Initialize` call all together and move what it did to the `SimliClient` constructor call. This ensures proper cleanup between reconnection attempts.
+
+So previously your code may have looked something like this:
+
+```tsx
+import {SimliClient} from "simli-client";
+
+const simliClient = new SimliClient();
+
+function initialize(face_id: string, videoRef: HTMLVideoElement, audioRef: HTMLAudioElement) {
+	const SimliConfig = {
+		apiKey: process.env.NEXT_PUBLIC_SIMLI_API_KEY,
+		faceID: face_id,
+		videoRef: videoRef,
+		audioRef: audioRef,
+	};
+
+	simliClient.Initialize(SimliConfig as any);
+}
+async function start() {
+	await simliClient.start();
+}
+```
+
+Where you have some logic to call both the initialize and start (like a react useCallback like in this [OLD EXAMPLE](https://github.com/simliai/create-simli-app-openai/blob/770bbbf7285b4d31e9a94422b1667323afbf2cb9/app/SimliOpenAI.tsx#L349C23-L349C34)). With the new SimliClient flow. You should use this flow:
+
+```tsx
+import {SimliClient} from "simli-client";
+
+async function InitializeSimliConnection(session_token: string, videoRef: HTMLVideoElement, audioRef: HTMLAudioElement): SimliClient {
+	simliClient = new SimliClient(session_token, videoRef.current, audioRef.current);
+	await simliClient.start();
+	return simliClient;
+}
+```
+
+There are a few key differences. First, SimliClient no longer allows an API Key for initialization. Since SimliClient MUST be a client-side component, this created a security concern that was addressed with an alternative flow that allowed passing a session token directly. While it was an appropriate solution, it was confusing and not secure by design. So here, we can see that it can ONLY take in a session_token. Another thing to notice is that this function creates a new instance of SimliClient and returns it. If invalid data is passed, the `SimliClient` constructor would throw. If SimliClient fails to connect, `start` would also throw. You can see how we're handling this creation flow in the [same updated sample repository](https://github.com/simliai/create-simli-app-openai/blob/main/app/SimliOpenAI.tsx#L65)
+
+## 2. SessionToken and IceConfig functions
+
+Previously, These supporting API calls were implicitly handled by SimliClient. This made it more annoying to introduce security measures where these calls are obfuscated behind a backend (or Server Actions or similar concepts in the WebDev world). You can still opt into doing everything client side, but now this is a more concious choice you have to make. You can find a detailed description of the new fuctions [here](/api-reference/javascript#step-2-create-a-session-token)
+
+## 3. More accurate events
+
+More events have been added and they have been internally revised to show a more accurate state of `SimliClient`. For example, start event is now triggered on frame render, not on the server side signal `"START"`. This avoids a class of errors where the websocket is properly connected but the WebRTC connection failed for any reason. Some events have been also removed, renamed, or split into multiple events.
+
+`disconnected` got split into `stop`, `error`, `startup_error`
+
+`stop` is when the server decides to terminate a connection for reaching an end condition (client sending done signal, maxIdleTime reached, maxSessionlength reached)
+`error` is when a server side error happens post initialization
+`startup_error` is when a server side error happens as the connection is beginning
+All these events contain the reason as reported by Simli so it will make logging and debugging easier.
+
+Check the [full list of events](https://github.com/simliai/simli-client/blob/main/lib/events.ts)
+
+## 4. Peer To Peer or Livekit mode
+
+For the 2.0.0 update, we migrated from using base peer to peer WebRTC to using Livekit as they proved to have a more reliable client. However, this introduced some issues where some users were unable to use the livekit client sdk. So, we're introducing the ability to connect directly via WebRTC as an OPT-IN solution for slightly lower latency.
+
+## 5. Log Level
+
+`SimliClient` was too noisy, were every event printed something to the console and we had only one mechanism to fully disable the logs. Again, this made production debugging a nightmare cause most people just disabled it after deploying. Now, you can choose what level of logging do you need. `INFO` is the default logging level and should give us enough information if something goes wrong and we have to work together on identifying it.

@@ -1,0 +1,18 @@
+---
+title: Python SDK
+icon: "python"
+---
+
+Not as much changed here on the interface compared to the [Javascript SDK](/api-reference/javascript_upgrade_guide.mdx). However, there are still a few changes you might like to know about!
+
+## 1. Initialize got renamed to start
+
+Not that big of a difference, it's just to unify function names between SDKs. If you're using the `async with` flow, you shouldn't notice any difference
+
+## 2. API Key is now passed to SimliClient directly, not with the config
+
+This matches the new API style. SimliConfig maps directly to the body of [API Endpoint for creating session token.](/api-reference/compose-session-token) So, when we changed where the api key is passed to that endpoint, it changed in the SDK
+
+## 3. Logging
+
+We're now using python default logger instead of writing directly to stdout. This should make handling logs a lot easier. The logger is named `simli_client`.
