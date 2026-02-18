@@ -67,8 +67,8 @@
                         "group": "Links",
                         "pages": [
                             "api-reference/discord",
-                            "api-reference/openapi",
-                            "api-reference/asyncapi"
+                            "api-reference/openapi_doc",
+                            "api-reference/asyncapi_doc"
                         ]
                     }
                 ]

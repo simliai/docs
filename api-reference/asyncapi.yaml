@@ -12,7 +12,7 @@ servers:
 
 defaultContentType: text/plain
 channels:
-  p2p:
+  peer_to_peer:
     summary: |
       Peer to Peer WebRTC 
 
@@ -21,7 +21,7 @@ channels:
       enableSFU is a query parameter boolean to opt into sending the traffic through cloudflare network for improved reliability
 
       First message must be offer. Offer must be provided within 30 seconds of opening the websocket. Once offer is sent, a corresponding answer will be sent from the server which can be used as described [here](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/setRemoteDescription)
-    address: /compose/webrtc/peer_to_peer
+    address: /compose/webrtc/p2p
     messages:
       offer:
         $ref: "#/components/messages/rtc_offer"
