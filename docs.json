@@ -43,6 +43,7 @@
                         "icon": "github",
                         "pages": [
                             "api-reference/samples/openai",
+                            "api-reference/samples/elevenlabs",
                             "api-reference/samples/all-samples"
                         ]
                     },
@@ -99,6 +100,12 @@
                             "source": "https://api.simli.ai/openapi.yaml",
                             "directory": "api-reference"
                         }
+                    },
+                    {
+                        "group": "Simli Auto Guides",
+                        "pages": [
+                            "api-reference/endpoint/simli-auto/customLLM"
+                        ]
                     }
                 ]
             },
