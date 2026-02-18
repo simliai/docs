@@ -11,7 +11,14 @@ All authenticated requests now use the header `x-simli-api-key` instead of the v
 
 Simli Auto Endpoints have not changed however, some previously deprecated endpoints will be removed soon. It is recommended that you review the latest Auto endpoints (even though they're marked as deprecated as Simli Auto Development has ceased for now).
 
-## Endpoint Changes
+## WebSockets Changes
+
+Both WebSockets endpoints now take in the [session_token](/api-reference/compose-session-token) as a query param of the same name (i.e. session_token).
+
+- `WSS /StartWebRTCSession` => `WSS /compose/webrtc/p2p`
+- `WSS /StartWebRTCSessionLivekit` => `WSS /compose/webrtc/livekit`
+
+## REST Endpoint Changes
 
 - `GET /getIceServers` => [`GET /compose/ice`](/api-reference/get-ice-servers)
 
