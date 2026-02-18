@@ -66,9 +66,7 @@
                     {
                         "group": "Links",
                         "pages": [
-                            "api-reference/discord",
-                            "api-reference/openapi_doc",
-                            "api-reference/asyncapi_doc"
+                            "api-reference/discord"
                         ]
                     }
                 ]
@@ -91,13 +89,20 @@
                         }
                     },
                     {
+                        "group": "OpenAPI Specs (Agent Friendly Format)",
+                        "pages": [
+                            "api-reference/openapi_doc",
+                            "api-reference/asyncapi_doc"
+                        ]
+                    },
+                    {
                         "group": "Migration Guide",
                         "pages": [
                             "api-reference/api_migration_guide"
                         ]
                     },
                     {
-                        "group": "Simli Auto Guides",
+                        "group": "Simli Auto Guides (deprecated)",
                         "pages": [
                             "api-reference/endpoint/simli-auto/customLLM"
                         ]
