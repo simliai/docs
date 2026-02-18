@@ -34,7 +34,8 @@
                             "simli-sdks",
                             "api-reference/javascript",
                             "api-reference/javascript_upgrade_guide",
-                            "api-reference/python"
+                            "api-reference/python",
+                            "api-reference/python_upgrade_guide"
                         ]
                     },
                     {
