@@ -21,7 +21,7 @@ channels:
       enableSFU is a query parameter boolean to opt into sending the traffic through cloudflare network for improved reliability
 
       First message must be offer. Offer must be provided within 30 seconds of opening the websocket. Once offer is sent, a corresponding answer will be sent from the server which can be used as described [here](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/setRemoteDescription)
-    address: /compose/webrtc/p2p
+    address: /compose/webrtc/peer_to_peer
     messages:
       offer:
         $ref: "#/components/messages/rtc_offer"
@@ -64,88 +64,81 @@ channels:
 
 operations:
   sendOffer:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/offer"
-    reply:
-      messages:
-        - $ref: "#/channels/peer_to_peer/messages/answer"
-      channel:
-        $ref: "#/channels/peer_to_peer"
   recvAnswer:
-    action: send
+    action: receive
     messages:
       - $ref: "#/channels/peer_to_peer/messages/answer"
     channel:
       $ref: "#/channels/peer_to_peer"
-
   sendAudioChunk_peer_to_peer:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/audio_chunk"
-
   clearBuffer_peer_to_peer:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/clear_buffer"
   finalMessage_peer_to_peer:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/final_message"
   event_peer_to_peer:
-    action: send
+    action: receive
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/event"
   error_peer_to_peer:
-    action: send
+    action: receive
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/error"
 
   recvLivekitInfo:
-    action: send
+    action: receive
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/livekit_join_info"
   sendAudioChunk_livekit:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/audio_chunk"
 
   clearBuffer_livekit:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/clear_buffer"
   finalMessage_livekit:
-    action: receive
+    action: send
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/final_message"
   event_livekit:
-    action: send
+    action: receive
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/event"
   error_livekit:
-    action: send
+    action: receive
     channel:
       $ref: "#/channels/livekit"
     messages:
