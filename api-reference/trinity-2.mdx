@@ -1,0 +1,225 @@
+---
+title: "Trinity-2 Avatars"
+icon: "camera"
+description: "Make Trinity-2 avatars, size the video to fit your layout, and move the camera while the session runs"
+---
+
+Trinity-2 is our newest avatar generation. A Trinity-2 avatar is built waist-up, torso and both hands included, from a single photo. Its sessions can also do things the older generations can't:
+
+- **Pick the video's size and shape.** Square, landscape or portrait, at any size from 512 pixels up.
+- **Place the avatar on the canvas.** Put it anywhere on the frame instead of in the bottom centre.
+- **Set a starting camera, then move it live.** Zoom, pan, tilt, roll and orbit around the avatar, as a cut or as a smooth glide.
+- **Play an intro animation** when a Simli Auto session opens.
+
+Everything else works as before: the same session token, the same WebSockets and the same audio format (PCM16, 16 kHz, mono). Trinity-1 and legacy faces ignore every setting on this page and keep their own frame size (512x512 for Trinity-1).
+
+## Making a Trinity-2 face
+
+Trinity-2 faces are made with the same endpoints as Trinity-1 faces. Pass `gsVersion=GSA_2.0` to both calls; leaving it out makes a Trinity-1 face.
+
+<Steps>
+	<Step title="Reframe the photo">
+		Send the photo to [`POST /faces/trinity/preprocess`](/api-reference/preprocess-trinity-face-image). For Trinity-2 it is reframed to show the person waist-up, with the torso and both hands, on the photo's own background.
+
+		The photo must be a JPEG, PNG or WEBP under 5MB and at least 512x512. It needs a person facing the camera, and their head must be at least 15% of the image height. If there are several people, the largest camera-facing head is used.
+
+		```bash
+		curl -X POST "https://api.simli.ai/faces/trinity/preprocess?gsVersion=GSA_2.0" \
+			-H "x-simli-api-key: $SIMLI_API_KEY" \
+			-F "image=@portrait.jpg" \
+			-D headers.txt -o framed.png
+		```
+
+		The response body is the reframed PNG. Keep its `TARGET-RATIO` header for the next step. Trinity-2 always returns `0` here; pass it back anyway. The `warnings` header is a JSON array of advice; the image can still be used when it isn't empty.
+
+		Not happy with the result? Run it again with `retry=true` to render at higher quality. That takes about 160 seconds instead of 25.
+	</Step>
+	<Step title="Start the generation">
+		Post the reframed image to [`POST /faces/trinity`](/api-reference/generate-trinity-face), with the `TARGET-RATIO` value in the `target-ratio` header. Use the same `gsVersion` as the preprocess call, because the two generations frame the image differently.
+
+		```bash
+		RATIO=$(grep -i '^target-ratio:' headers.txt | cut -d' ' -f2 | tr -d '\r')
+		curl -X POST "https://api.simli.ai/faces/trinity?gsVersion=GSA_2.0&face_name=my_avatar" \
+			-H "x-simli-api-key: $SIMLI_API_KEY" \
+			-H "target-ratio: $RATIO" \
+			-F "image=@framed.png"
+		```
+
+		```json
+		{
+			"message": "<place in the queue>",
+			"face_id": "<new face id>",
+			"dispatch_after": 1792412345,
+			"warnings": []
+		}
+		```
+
+		You can skip the preprocess step and post a photo without a `target-ratio` header. The image is then framed here first, which adds about 25 seconds.
+	</Step>
+	<Step title="Wait for it to finish">
+		Poll [`GET /faces/trinity/generation_status`](/api-reference/check-trinity-generation-status) with the `face_id` until `status` is `completed` (or `failed`). The states are `pending`, `processing`, `completed`, `failed` and `not_found`.
+
+		```bash
+		curl "https://api.simli.ai/faces/trinity/generation_status?face_id=$FACE_ID" \
+			-H "x-simli-api-key: $SIMLI_API_KEY"
+		```
+
+		```json
+		{
+			"status": "pending",
+			"queue_position": 2,
+			"face_id": "<face id>",
+			"generations": [
+				{"face_id": "<face id>", "status": "pending", "queue_position": 2, "dispatch_after": 1792412345}
+			]
+		}
+		```
+
+		Without `face_id`, `generations` lists every generation of yours that is still tracked, oldest first. The top-level fields only describe the most recent one, so if you run several generations at once, read `generations`. Completed and failed generations stay in the list for 24 hours.
+	</Step>
+</Steps>
+
+### Trinity-2 generations and spacing
+
+- **They use Trinity-2 generations, not face slots.** Trinity-1 faces take one of your plan's face slots. Trinity-2 faces use your Trinity-2 generations instead: one is used when the face is built, and a failed build uses none. A generation that is still queued or building holds one until it finishes. When you have none left, both calls return `403`.
+- **Generations start at least 10 minutes apart.** Each account's Trinity-2 generations start at least 10 minutes apart. A request sent sooner is still accepted straight away, but it waits in the queue. While it waits, `dispatch_after` gives the Unix time (in seconds) when it can start. The field is left out when the generation isn't held.
+
+## Framing the video
+
+Four fields set the video's size and where the avatar sits in it. They are accepted by:
+
+- [`POST /compose/token`](/api-reference/compose-session-token)
+- [`POST /static/audio`](/api-reference/generate-static-video)
+- [`POST /auto/token`](/api-reference/create-simli-auto-session-token)
+- [`POST /auto/start/configurable`](/api-reference/start-auto-session)
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `streaming_width` | `768` | Width of the video in pixels, at least 512 |
+| `streaming_height` | `768` | Height of the video in pixels, at least 512 |
+| `avatar_position_x` | `0.5` | Where the avatar sits across the canvas, from 0 (left) to 1 (right) |
+| `avatar_position_y` | `1.0` | Where the avatar sits down the canvas, from 0 (top) to 1 (bottom) |
+
+Width and height together must make a 1:1, 16:9 or 9:16 frame. They only need to be within a pixel of the exact ratio, so 1366x768 counts as 16:9. Any other shape, a side under 512 or a position outside 0 to 1 gets a `422`, even for faces that ignore framing. A canvas larger than the avatar's frame is filled out with the avatar's background, and a smaller one crops a window out of it.
+
+```json POST /compose/token
+{
+	"faceId": "YOUR_TRINITY_2_FACE_ID",
+	"streaming_width": 1366,
+	"streaming_height": 768,
+	"avatar_position_x": 0.3,
+	"camera": {"zoom": 1.2, "orbit_y_off": 15}
+}
+```
+
+<Note>Simli Auto agents don't store framing. To frame an agent's session, put the framing fields in its [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request. The session uses the framing from its token.</Note>
+
+## The camera
+
+The `camera` field in the requests above sets the camera a session or video starts with. Each value is an offset from the avatar's own framing. Every field is optional, and a field you leave out has no effect (0, or 1 for `zoom`). If you leave `camera` out entirely, the avatar keeps its own framing.
+
+| Field | What it does | Supported range |
+| --- | --- | --- |
+| `pos_x_off` | Moves the avatar right, in half canvas widths | -10 to 10 |
+| `pos_y_off` | Moves the avatar down, in half canvas heights | -10 to 10 |
+| `pos_z_off` | Metres the camera backs away from the avatar (negative moves in) | -5 to 5 |
+| `zoom` | Multiplies the avatar's zoom; 1 is no change | above 0, up to 4 |
+| `rot_x_off` | Degrees the camera tilts up (pitch) | -180 to 180 |
+| `rot_y_off` | Degrees the camera pans right (yaw) | -180 to 180 |
+| `rot_z_off` | Degrees the camera rolls clockwise | -180 to 180 |
+| `orbit_x_off` | Degrees the camera orbits up over the avatar's head (elevation) | -80 to 80 |
+| `orbit_y_off` | Degrees the camera orbits round to its right (azimuth) | -180 to 180 |
+
+Values outside their supported range are not clamped. They are applied as sent, and the response's `warnings` array gets an entry for each one, for example `camera zoom 6.0 is outside its supported range (0.0, 4.0]; applied as is`. The token or video is still made. Only NaN and infinity are rejected, with a `422`.
+
+## Moving the camera during a session
+
+Both session WebSockets, [`/compose/webrtc/p2p`](/api-reference/websockets/peer_to_peer) and [`/compose/webrtc/livekit`](/api-reference/websockets/livekit), accept a binary `CAM_` message. It is the ASCII prefix `CAM_` followed by little-endian float32 values, in this order. Note that y comes before x:
+
+```
+pos_y_off, pos_x_off, pos_z_off, zoom, rot_x_off, rot_y_off, rot_z_off, orbit_x_off, orbit_y_off
+```
+
+- **Values:** send the first 4, the first 7 or all 9 values. Any you leave off have no effect.
+- **Replacement:** each message replaces the whole camera, including the starting `camera` from the token. Values are offsets from the avatar's own framing, not from the previous message. Sending `0, 0, 0, 1, 0, 0, 0, 0, 0` goes back to the avatar's own framing.
+- **Gliding:** the camera cuts to the new setting. To glide instead, add the ASCII tag `LERP` and one more float32: the number of seconds the move takes. The glide starts from wherever the camera is now, even partway through an earlier glide. A value of 0 or less is a cut.
+- **Size:** a message is 20, 32 or 40 bytes long, or 28, 40 or 48 bytes with `LERP`.
+
+<CodeGroup>
+
+```javascript JavaScript
+const CAMERA_FIELDS = [
+	"pos_y_off", "pos_x_off", "pos_z_off", "zoom",
+	"rot_x_off", "rot_y_off", "rot_z_off",
+	"orbit_x_off", "orbit_y_off",
+];
+
+// ws is the session's WebSocket. Fields left out of `camera` are neutral.
+function sendCamera(ws, camera = {}, lerpSeconds = 0) {
+	const values = CAMERA_FIELDS.map((field) => camera[field] ?? (field === "zoom" ? 1 : 0));
+	const lerpAt = 4 + 4 * values.length;
+	const message = new Uint8Array(lerpAt + (lerpSeconds > 0 ? 8 : 0));
+	const view = new DataView(message.buffer);
+	message.set(new TextEncoder().encode("CAM_"), 0);
+	values.forEach((value, i) => view.setFloat32(4 + 4 * i, value, true));
+	if (lerpSeconds > 0) {
+		message.set(new TextEncoder().encode("LERP"), lerpAt);
+		view.setFloat32(lerpAt + 4, lerpSeconds, true);
+	}
+	ws.send(message);
+}
+
+// Orbit 20 degrees to the right and zoom in a little, over 1.5 seconds
+sendCamera(ws, {orbit_y_off: 20, zoom: 1.3}, 1.5);
+// Cut back to the avatar's own framing
+sendCamera(ws);
+```
+
+```python Python
+import struct
+
+CAMERA_FIELDS = (
+    "pos_y_off", "pos_x_off", "pos_z_off", "zoom",
+    "rot_x_off", "rot_y_off", "rot_z_off",
+    "orbit_x_off", "orbit_y_off",
+)
+
+
+def camera_message(lerp_seconds: float = 0.0, **camera: float) -> bytes:
+    values = [camera.get(field, 1.0 if field == "zoom" else 0.0) for field in CAMERA_FIELDS]
+    message = b"CAM_" + struct.pack(f"<{len(values)}f", *values)
+    if lerp_seconds > 0:
+        message += b"LERP" + struct.pack("<f", lerp_seconds)
+    return message
+
+
+# With the Python SDK, send() passes the message through as is
+await connection.send(camera_message(orbit_y_off=20, zoom=1.3, lerp_seconds=1.5))
+```
+
+</CodeGroup>
+
+The server answers some camera messages with a text message. None of these replies end the session:
+
+| Reply | Meaning |
+| --- | --- |
+| `WARNING: camera <field> <value> is outside its supported range [...]; applied as is` | Some values were outside their supported range and were applied as sent. If several are, the warnings are separated by `; `. |
+| `Invalid camera override received` | The message was the wrong length or held NaN or infinity. The camera didn't move. |
+| `Selected model does not support camera overrides` | The face isn't Trinity-2. The camera didn't move. |
+
+## Intro animation (Simli Auto)
+
+[`POST /auto/start/configurable`](/api-reference/start-auto-session) takes an `introAnimation`. The avatar plays it when the user joins, together with `firstMessage` if there is one. It's off by default, and faces other than Trinity-2 ignore it.
+
+| `introAnimation` |
+| --- |
+| `wave` |
+| `g003_wave_goodbye_solo` |
+| `speaking_hands_explaining` |
+
+```bash
+curl -X POST "https://api.simli.ai/auto/start/configurable" \
+	-H "x-simli-api-key: $SIMLI_API_KEY" \
+	-H "Content-Type: application/json" \
+	-d '{"faceId": "YOUR_TRINITY_2_FACE_ID", "firstMessage": "Hi there!", "introAnimation": "wave"}'
+```

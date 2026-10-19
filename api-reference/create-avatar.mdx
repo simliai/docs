@@ -16,3 +16,7 @@ description: "Create your own Simli avatar"
 1. Upload an image of the face you want to use to [create avatar](https://app.simli.com/create/select).
 2. Wait for the avatar to be created. This can take a couple of hours. If you don't want to wait, use one of our [Default Faces](/api-reference/preset-faces)
 3. Find your avatar in the [Your Avatars](https://app.simli.com) section.
+
+### Creating avatars with the API
+
+You can also create avatars with the API. Upload a photo to [`POST /faces/trinity/preprocess`](/api-reference/preprocess-trinity-face-image), pass the result to [`POST /faces/trinity`](/api-reference/generate-trinity-face), then poll [`GET /faces/trinity/generation_status`](/api-reference/check-trinity-generation-status). Add `gsVersion=GSA_2.0` to both calls to make a [Trinity-2 avatar](/api-reference/trinity-2), which is built waist-up and supports custom video sizes and camera moves.

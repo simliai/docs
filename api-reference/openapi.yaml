@@ -59,6 +59,13 @@ paths:
                 properties:
                   session_token:
                     type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      Starting camera fields outside their supported range, and region
+                      overrides. The token is minted regardless.
         "400":
           description: Invalid Data
           content:
@@ -104,6 +111,13 @@ paths:
                   mp4_url:
                     type: string
                     example: "https://api.simli.ai/mp4/path-to-file/output.mp4"
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      Camera fields outside their supported range. The video is made
+                      with them regardless.
         "422":
           description: Validation Error
           content:
@@ -181,9 +195,33 @@ paths:
       summary: Generate Trinity Face
       operationId: enqueueGSAGeneration_faces_gs_create_post
       parameters:
+        - name: target-ratio
+          in: header
+          required: false
+          description: >-
+            The TARGET-RATIO header returned by POST /faces/trinity/preprocess,
+            passed back together with the image that call returned. Its presence
+            means the image is already framed, so it is used as-is. Omit it when
+            posting an image that has not been through preprocess: the image is
+            then framed here first, which adds roughly 25 seconds, and the ratio
+            is measured rather than taken from you. Preprocess with the same
+            gsVersion as this call: the two frame the image differently.
+          schema:
+            type: number
+            format: float
+            title: Target Ratio
         - name: gsVersion
           in: query
           required: false
+          description: >-
+            The avatar generation to make. GSA_1.0 (the default) makes a
+            Trinity-1 face and takes one of your plan's face slots. GSA_2.0
+            makes a Trinity-2 face and runs on your Trinity-2 generations: one
+            is used when the face is built (a failed build uses none), and each
+            generation still queued or building holds one meanwhile. One
+            account's GSA_2.0 generations start at least 10 minutes apart; a
+            request inside that window is accepted at once and held in the
+            queue, and the response's dispatch_after says until when.
           schema:
             allOf:
               - $ref: "#/components/schemas/TrinityVersion"
@@ -206,7 +244,34 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: The generation's place in the queue, and how long it is held, if it is.
+                  face_id:
+                    type: string
+                    description: The new face's ID. Poll GET /faces/trinity/generation_status with it.
+                  dispatch_after:
+                    type: integer
+                    description: >-
+                      GSA_2.0 only, when the generation is held by the 10 minutes
+                      between one account's GSA_2.0 generations: the Unix time
+                      (seconds) it may start. Absent otherwise.
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - message
+                  - face_id
+                  - warnings
+        "403":
+          description: >-
+            Out of avatars for this gsVersion: with GSA_1.0, every face slot of
+            your plan is taken; with GSA_2.0, you have no Trinity-2 generations
+            left.
         "422":
           description: Validation Error
           content:
@@ -217,11 +282,25 @@ paths:
     post:
       summary: Preprocess Trinity Face Image
       description: >-
-        Reframes a portrait to the framing Trinity expects: the head centred with
-        equal padding above and below, squared to the camera, on a simplified
-        version of the image's own background. Returns the reframed PNG.
+        Reframes a portrait to the framing its generation expects, and returns the
+        reframed PNG. GSA_1.0: the head centred with equal padding above and
+        below, squared to the camera, on a simplified version of the image's own
+        background. GSA_2.0: the person waist-up, with the torso and both hands,
+        on the image's own background. Either way, the image needs someone facing
+        the camera.
       operationId: preprocess_image_faces_trinity_preprocess_post
       parameters:
+        - name: gsVersion
+          in: query
+          required: false
+          description: >-
+            The avatar generation the image is for. Pass the same one to POST
+            /faces/trinity. Checks that the account has a face slot (GSA_1.0) or
+            a Trinity-2 generation (GSA_2.0) left, as that call does.
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/TrinityVersion"
+            default: GSA_1.0
         - name: retry
           in: query
           required: false
@@ -239,14 +318,59 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/Body_preprocess_image_faces_trinity_preprocess_post"
+      responses:
+        "200":
+          description: >-
+            The reframed image. Pass TARGET-RATIO back to POST /faces/trinity as
+            the target-ratio header, along with this image, to generate from it.
+          headers:
+            TARGET-RATIO:
+              description: >-
+                Tracker ratio measured off the returned image: how much frame
+                surrounds the head. Pass it verbatim to POST /faces/trinity as the
+                target-ratio header - that call needs it to track the face, and
+                its presence also tells the API this image is already framed.
+                GSA_2.0 measures none and returns 0; pass it back all the same.
+              schema:
+                type: number
+                format: float
+            warnings:
+              description: >-
+                JSON array of advisory strings. Empty when there is nothing to
+                report; the image is still usable when it is not.
+              schema:
+                type: string
+            required-padding:
+              description: >-
+                JSON object of the padding added around the head, keyed up, down,
+                left, right. Always zero now that framing is done by cropping.
+              schema:
+                type: string
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "403":
+          description: >-
+            Out of avatars for this gsVersion: with GSA_1.0, every face slot of
+            your plan is taken; with GSA_2.0, you have no Trinity-2 generations
+            left.
   /faces/trinity/generation_status:
     get:
       summary: Check Trinity Generation Status
+      description: >-
+        Status of the caller's Trinity generations. `generations` lists every one
+        still tracked, oldest first; the top-level status, queue_position and
+        face_id describe the most recent of them. Accounts that generate in
+        parallel should read `generations` - the top-level fields only ever
+        describe one of several in flight.
       operationId: getRequestStatus_faces_gs_status_get
       parameters:
         - name: face_id
           in: query
           required: false
+          description: Limit the response to a single generation.
           schema:
             type: string
             title: Face Id
@@ -255,7 +379,8 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/TrinityGenerationStatus"
         "422":
           description: Validation Error
           content:
@@ -298,6 +423,18 @@ paths:
       security: []
       summary: Start Livekit Agents Session
       operationId: init_integrations_livekit_agents_post
+      parameters:
+        - name: session_token
+          in: query
+          required: false
+          description: >-
+            The same Simli session token carried in the request body. Supplying
+            it here as well lets the edge route the request without reading the
+            body; the body field remains authoritative for older clients, and
+            this value takes precedence when both are sent.
+          schema:
+            type: string
+            title: Session Token
       requestBody:
         content:
           application/json:
@@ -568,7 +705,19 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: object
+                properties:
+                  session_token:
+                    type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      Starting camera fields outside their supported range. The token
+                      is minted regardless.
+
         "422":
           description: Validation Error
           content:
@@ -639,18 +788,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+  /auto/start/{agent_id}:
+    get:
+      security: []
+      summary: Start Auto Session from config (token in header)
+      description: >-
+        Same as /auto/start/{agent_id}/{session_token}, with the session token
+        sent in the session-token header instead of the path.
+      deprecated: true
+      operationId: startAgentIDHeader_auto_start__agent_id__get
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Agent Id
+        - name: session-token
+          in: header
+          required: true
+          schema:
+            type: string
+            title: Session-Token
+        - name: redirect
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+            title: Redirect
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionDetails"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
   /auto/transcript/{session_id}:
     get:
       summary: Get Simli Auto Transcript
       deprecated: true
       operationId: getE2ETranscript_auto_transcript__session_id__get
+      security: []
       parameters:
         - name: session_id
-          in: query
+          in: path
           required: true
           schema:
             type: string
             title: Sessionid
+        - name: api-key
+          in: header
+          required: true
+          description: Your Simli API key
+          schema:
+            type: string
+            title: Api-Key
       responses:
         "200":
           description: Successful Response
@@ -739,10 +938,10 @@ components:
           type: string
         voice_provider:
           type: string
-          enum: ["elevenlabs", "cartesia"]
+          enum: ["elevenlabs", "cartesia", "inworld"]
         voice_id:
           type: string
-          format: uuid
+          description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
           example: sonic-english
@@ -753,7 +952,7 @@ components:
           format: uuid
         llm_model:
           type: string
-          example: gpt-4o-mini
+          example: gpt-6-luna
         llm_endpoint:
           type: string
           description: "The URL of the custom LLM to use"
@@ -818,10 +1017,10 @@ components:
           type: string
         voice_provider:
           type: string
-          enum: ["elevenlabs", "cartesia"]
+          enum: ["elevenlabs", "cartesia", "inworld"]
         voice_id:
           type: string
-          format: uuid
+          description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
           example: sonic-english
@@ -835,7 +1034,7 @@ components:
           format: uuid
         llm_model:
           type: string
-          example: gpt-4o-mini
+          example: gpt-6-luna
         llm_endpoint:
           type: string
           description: "The URL of the custom LLM to use"
@@ -876,16 +1075,16 @@ components:
           type: string
         voice_provider:
           type: string
-          enum: ["elevenlabs", "cartesia"]
+          enum: ["elevenlabs", "cartesia", "inworld"]
         voice_id:
           type: string
-          format: uuid
+          description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
           example: sonic-english
         llm_model:
           type: string
-          example: gpt-4o-mini
+          example: gpt-6-luna
         llm_endpoint:
           type: string
           description: "The URL of the custom LLM to use"
@@ -940,12 +1139,105 @@ components:
           type: integer
           title: Videostartingframe
           default: 0
+        disableSuperRes:
+          type: boolean
+          title: Disablesuperres
+          default: false
+          description: Turns off the face restoration pass on legacy faces.
+        streaming_width:
+          type: integer
+          title: Streaming Width
+          default: 768
+          minimum: 512
+          description: >-
+            Width of the video in pixels, Trinity-2 faces only (the others
+            keep their own frame size). At least 512, and with
+            streaming_height one of 1:1, 16:9 or 9:16, otherwise a 422. A
+            canvas larger than the avatar's frame is padded with its
+            background; a smaller one crops a window out of it.
+        streaming_height:
+          type: integer
+          title: Streaming Height
+          default: 768
+          minimum: 512
+          description: Height of the video in pixels. See streaming_width.
+        avatar_position_x:
+          type: number
+          title: Avatar Position X
+          default: 0.5
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits across the canvas, from 0 (left) to 1
+            (right). Trinity-2 only.
+        avatar_position_y:
+          type: number
+          title: Avatar Position Y
+          default: 1.0
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits down the canvas, from 0 (top) to 1
+            (bottom). Trinity-2 only.
+        camera:
+          anyOf:
+            - $ref: "#/components/schemas/CameraSetting"
+            - type: "null"
+          description: >-
+            The camera the video starts with, on top of the avatar's own
+            framing. Trinity-2 only. Leave it out to keep the avatar's
+            framing.
       type: object
       required:
         - faceId
         - audioBase64
         - audioFormat
       title: AudioToVideoRequest
+    CameraSetting:
+      type: object
+      title: CameraSetting
+      description: >-
+        Camera offsets on top of the avatar's own framing. Every field is
+        optional and neutral when left out. A value outside its supported
+        range is still applied, and the response lists a warning for it;
+        NaN and infinity are a 422.
+      properties:
+        pos_x_off:
+          type: number
+          default: 0.0
+          description: "Moves the avatar right, in half canvas widths. Supported range -10 to 10."
+        pos_y_off:
+          type: number
+          default: 0.0
+          description: "Moves the avatar down, in half canvas heights. Supported range -10 to 10."
+        pos_z_off:
+          type: number
+          default: 0.0
+          description: "Metres the camera backs away from the avatar (negative moves in). Supported range -5 to 5."
+        rot_x_off:
+          type: number
+          default: 0.0
+          description: "Degrees the camera tilts up (pitch). Supported range -180 to 180."
+        rot_y_off:
+          type: number
+          default: 0.0
+          description: "Degrees the camera pans right (yaw). Supported range -180 to 180."
+        rot_z_off:
+          type: number
+          default: 0.0
+          description: "Degrees the camera rolls clockwise. Supported range -180 to 180."
+        zoom:
+          type: number
+          default: 1.0
+          description: "Multiplies the avatar's zoom; 1 is no change. Supported range above 0, up to 4."
+        orbit_x_off:
+          type: number
+          default: 0.0
+          description: "Degrees the camera orbits up over the avatar's head (elevation). Supported range -80 to 80."
+        orbit_y_off:
+          type: number
+          default: 0.0
+          description: "Degrees the camera orbits round to its right (azimuth). Supported range -180 to 180."
     ConfigurableSessionRequest:
       properties:
         faceId:
@@ -985,6 +1277,14 @@ components:
             - type: string
             - type: "null"
           title: Firstmessage
+        introAnimation:
+          anyOf:
+            - $ref: "#/components/schemas/AnimationId"
+            - type: "null"
+          description: >-
+            An animation the avatar plays as it opens the session, when the
+            user joins (with firstMessage, if there is one). Trinity-2 faces
+            only; the others ignore it. Leave it out for no animation.
         maxSessionLength:
           type: integer
           title: Maxsessionlength
@@ -1005,7 +1305,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/LLMConfig"
           default:
-            model: gpt-4o-mini
+            model: gpt-6-luna
             provider: OpenAI
         createTranscript:
           type: boolean
@@ -1014,7 +1314,55 @@ components:
         model:
           allOf:
             - $ref: "#/components/schemas/SimliModels"
-          default: artalk
+          default: fasttalk
+        disableSuperRes:
+          type: boolean
+          title: Disablesuperres
+          default: false
+          description: Turns off the face restoration pass on legacy faces.
+        streaming_width:
+          type: integer
+          title: Streaming Width
+          default: 768
+          minimum: 512
+          description: >-
+            Width of the streamed video in pixels, Trinity-2 faces only (the others
+            keep their own frame size). At least 512, and with
+            streaming_height one of 1:1, 16:9 or 9:16, otherwise a 422. A
+            canvas larger than the avatar's frame is padded with its
+            background; a smaller one crops a window out of it.
+        streaming_height:
+          type: integer
+          title: Streaming Height
+          default: 768
+          minimum: 512
+          description: Height of the streamed video in pixels. See streaming_width.
+        avatar_position_x:
+          type: number
+          title: Avatar Position X
+          default: 0.5
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits across the canvas, from 0 (left) to 1
+            (right). Trinity-2 only.
+        avatar_position_y:
+          type: number
+          title: Avatar Position Y
+          default: 1.0
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits down the canvas, from 0 (top) to 1
+            (bottom). Trinity-2 only.
+        camera:
+          anyOf:
+            - $ref: "#/components/schemas/CameraSetting"
+            - type: "null"
+          description: >-
+            The camera the session starts with, on top of the avatar's own
+            framing. Trinity-2 only. Leave it out to keep the avatar's
+            framing. A streaming session can move it afterwards with CAM_ messages.
       type: object
       title: ConfigurableSessionRequest
     CustomLLMConfig:
@@ -1058,7 +1406,7 @@ components:
             - $ref: "#/components/schemas/Google_Models"
             - type: string
           title: Model
-          default: gpt-4o-mini
+          default: gpt-6-luna
         provider:
           allOf:
             - $ref: "#/components/schemas/LLM_Provider"
@@ -1099,14 +1447,27 @@ components:
         - livekit_token
         - livekit_url
       title: LiveKitInitializationRequest
+    AnimationId:
+      type: string
+      description: >-
+        An animation clip a Trinity-2 avatar can play, by the same ID
+        everywhere animations are named.
+      enum:
+        - g003_wave_goodbye_solo
+        - speaking_hands_explaining
+        - wave
+      title: AnimationId
     OpenAI_Models:
       type: string
+      description: >-
+        gpt-realtime-2.1-mini and gpt-live-1 are speech to speech: they listen
+        and speak themselves, so the TTS settings don't apply. The older
+        gpt-4o and gpt-4.1 models are still accepted for existing
+        integrations.
       enum:
-        - gpt-4o
-        - gpt-4o-mini
-        - gpt-4.1
-        - gpt-4.1-mini
-        - gpt-4.1-nano
+        - gpt-6-luna
+        - gpt-realtime-2.1-mini
+        - gpt-live-1
       title: OpenAI_Models
     SessionDetails:
       properties:
@@ -1116,6 +1477,13 @@ components:
         sessionId:
           type: string
           title: Sessionid
+        warnings:
+          type: array
+          items:
+            type: string
+          description: >-
+            Deprecations, and starting camera fields outside their supported
+            range. The session starts regardless.
       type: object
       required:
         - roomUrl
@@ -1125,7 +1493,6 @@ components:
       type: string
       enum:
         - fasttalk
-        - artalk
       title: SimliModels
     StartStreamingSessionRequest:
       properties:
@@ -1136,6 +1503,7 @@ components:
           type: string
           title: Apiversion
           const: v2
+          default: v2
         sessionAggregator:
           anyOf:
             - type: string
@@ -1161,6 +1529,49 @@ components:
           type: string
           title: Audioinputformat
           default: pcm16
+        streaming_width:
+          type: integer
+          title: Streaming Width
+          default: 768
+          minimum: 512
+          description: >-
+            Width of the streamed video in pixels, Trinity-2 faces only (the others
+            keep their own frame size). At least 512, and with
+            streaming_height one of 1:1, 16:9 or 9:16, otherwise a 422. A
+            canvas larger than the avatar's frame is padded with its
+            background; a smaller one crops a window out of it.
+        streaming_height:
+          type: integer
+          title: Streaming Height
+          default: 768
+          minimum: 512
+          description: Height of the streamed video in pixels. See streaming_width.
+        avatar_position_x:
+          type: number
+          title: Avatar Position X
+          default: 0.5
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits across the canvas, from 0 (left) to 1
+            (right). Trinity-2 only.
+        avatar_position_y:
+          type: number
+          title: Avatar Position Y
+          default: 1.0
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits down the canvas, from 0 (top) to 1
+            (bottom). Trinity-2 only.
+        camera:
+          anyOf:
+            - $ref: "#/components/schemas/CameraSetting"
+            - type: "null"
+          description: >-
+            The camera the session starts with, on top of the avatar's own
+            framing. Trinity-2 only. Leave it out to keep the avatar's
+            framing. A streaming session can move it afterwards with CAM_ messages.
       type: object
       required:
         - faceId
@@ -1169,8 +1580,8 @@ components:
       type: string
       enum:
         - ElevenLabs
-        - PlayHT
         - Cartesia
+        - Inworld
         - User
       title: TTS_Provider
     TokenRequest:
@@ -1209,6 +1620,49 @@ components:
             - type: "null"
           title: Originallowlist
           default: []
+        streaming_width:
+          type: integer
+          title: Streaming Width
+          default: 768
+          minimum: 512
+          description: >-
+            Width of the streamed video in pixels, Trinity-2 faces only (the others
+            keep their own frame size). At least 512, and with
+            streaming_height one of 1:1, 16:9 or 9:16, otherwise a 422. A
+            canvas larger than the avatar's frame is padded with its
+            background; a smaller one crops a window out of it.
+        streaming_height:
+          type: integer
+          title: Streaming Height
+          default: 768
+          minimum: 512
+          description: Height of the streamed video in pixels. See streaming_width.
+        avatar_position_x:
+          type: number
+          title: Avatar Position X
+          default: 0.5
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits across the canvas, from 0 (left) to 1
+            (right). Trinity-2 only.
+        avatar_position_y:
+          type: number
+          title: Avatar Position Y
+          default: 1.0
+          minimum: 0
+          maximum: 1
+          description: >-
+            Where the avatar sits down the canvas, from 0 (top) to 1
+            (bottom). Trinity-2 only.
+        camera:
+          anyOf:
+            - $ref: "#/components/schemas/CameraSetting"
+            - type: "null"
+          description: >-
+            The camera the session starts with, on top of the avatar's own
+            framing. Trinity-2 only. Leave it out to keep the avatar's
+            framing. A streaming session can move it afterwards with CAM_ messages.
       type: object
       required:
         - simliAPIKey
@@ -1228,6 +1682,11 @@ components:
         type:
           type: string
           title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
       type: object
       required:
         - loc
@@ -1323,8 +1782,82 @@ components:
       required:
         - image
       title: Body_preprocess_image_faces_trinity_preprocess_post
-    TrinityVersion:
+    TrinityGenerationState:
       type: string
       enum:
+        - not_found
+        - pending
+        - processing
+        - completed
+        - failed
+      title: TrinityGenerationState
+    TrinityGeneration:
+      type: object
+      properties:
+        face_id:
+          type: string
+          title: Face Id
+        status:
+          $ref: "#/components/schemas/TrinityGenerationState"
+        queue_position:
+          type: integer
+          title: Queue Position
+          description: >-
+            Place in the pending queue. 0 once the generation has left the queue
+            and is being worked on.
+        dispatch_after:
+          type: integer
+          title: Dispatch After
+          description: >-
+            GSA_2.0 only, while the generation is pending and held by the 10
+            minutes between one account's GSA_2.0 generations: the Unix time
+            (seconds) it may start. Absent otherwise.
+      required:
+        - face_id
+        - status
+        - queue_position
+      title: TrinityGeneration
+    TrinityGenerationStatus:
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: "#/components/schemas/TrinityGenerationState"
+          description: >-
+            Status of the most recent generation, or not_found when none is
+            tracked.
+        queue_position:
+          type: integer
+          title: Queue Position
+          description: >-
+            Queue position of the most recent generation, or -1 when none is
+            tracked.
+        face_id:
+          type: string
+          title: Face Id
+          description: >-
+            The most recent generation's face id. Absent when nothing is tracked
+            and no face_id was requested; echoes the requested face_id otherwise.
+        generations:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrinityGeneration"
+          title: Generations
+          description: >-
+            Every generation still tracked for the caller, oldest first. Completed
+            and failed entries remain listed for 24 hours. Empty when none is
+            tracked.
+      required:
+        - status
+        - queue_position
+        - generations
+      title: TrinityGenerationStatus
+    TrinityVersion:
+      type: string
+      description: >-
+        The avatar generation: GSA_1.0 makes a Trinity-1 face, GSA_2.0 a
+        Trinity-2 face.
+      enum:
         - GSA_1.0
+        - GSA_2.0
       title: GSVersion

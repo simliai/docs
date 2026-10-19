@@ -35,6 +35,10 @@ channels:
         $ref: "#/components/messages/clear_buffer"
       final_message:
         $ref: "#/components/messages/final_message"
+      camera:
+        $ref: "#/components/messages/camera"
+      camera_notice:
+        $ref: "#/components/messages/camera_notice"
       event:
         $ref: "#/components/messages/event"
       error:
@@ -57,6 +61,10 @@ channels:
         $ref: "#/components/messages/clear_buffer"
       final_message:
         $ref: "#/components/messages/final_message"
+      camera:
+        $ref: "#/components/messages/camera"
+      camera_notice:
+        $ref: "#/components/messages/camera_notice"
       event:
         $ref: "#/components/messages/event"
       error:
@@ -93,6 +101,18 @@ operations:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/final_message"
+  sendCamera_peer_to_peer:
+    action: send
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/camera"
+  cameraNotice_peer_to_peer:
+    action: receive
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/camera_notice"
   event_peer_to_peer:
     action: receive
     channel:
@@ -131,6 +151,18 @@ operations:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/final_message"
+  sendCamera_livekit:
+    action: send
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/camera"
+  cameraNotice_livekit:
+    action: receive
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/camera_notice"
   event_livekit:
     action: receive
     channel:
@@ -176,6 +208,47 @@ components:
         schema:
           type: string
           const: DONE
+    camera:
+      description: |
+        Moves the camera, Trinity-2 faces only. Sent as binary: the ASCII prefix `CAM_`, then little-endian float32 camera offsets on top of the avatar's own framing, in this order (y comes before x):
+
+        | # | Field | Meaning | Supported range |
+        |---|-------|---------|-----------------|
+        | 1 | pos_y_off | Moves the avatar down, in half canvas heights | -10 to 10 |
+        | 2 | pos_x_off | Moves the avatar right, in half canvas widths | -10 to 10 |
+        | 3 | pos_z_off | Metres the camera backs away from the avatar (negative moves in) | -5 to 5 |
+        | 4 | zoom | Multiplies the avatar's zoom; 1 is no change | above 0, up to 4 |
+        | 5 | rot_x_off | Degrees the camera tilts up (pitch) | -180 to 180 |
+        | 6 | rot_y_off | Degrees the camera pans right (yaw) | -180 to 180 |
+        | 7 | rot_z_off | Degrees the camera rolls clockwise | -180 to 180 |
+        | 8 | orbit_x_off | Degrees the camera orbits up over the avatar's head (elevation) | -80 to 80 |
+        | 9 | orbit_y_off | Degrees the camera orbits round to its right (azimuth) | -180 to 180 |
+
+        Send the first 4, the first 7 or all 9 values; the ones left off stay neutral (0).
+
+        Each message replaces the whole camera, including the one the session started with (the session token's `camera`): the values are offsets from the avatar's own framing, not from the previous message. 0, 0, 0, 1, 0, 0, 0, 0, 0 returns to the avatar's own framing.
+
+        The camera cuts to the new setting. To glide instead, append the ASCII tag `LERP` and one more float32: the seconds the move takes, from wherever the camera is now (part-way through an earlier glide, if one is running). 0 or less is a cut.
+
+        A message is 20, 32 or 40 bytes, or 28, 40 or 48 with `LERP`. A value outside its supported range is still applied, with a `WARNING:` reply. Any other length, NaN or infinity is rejected and the camera stays where it is. See camera_notice.
+      contentType: application/octet-stream
+      payload:
+        schema:
+          type: string
+          format: bytestring
+    camera_notice:
+      description: "Server replies to a camera message, sent as text. None of them end the session."
+      payload:
+        schema:
+          type: string
+          oneOf:
+            - pattern: '^WARNING: .+$'
+              description: "Values outside their supported range, applied as sent. Each reads `camera <field> <value> is outside its supported range [<low>, <high>]; applied as is` (zoom's range opens with `(`), separated by `; `."
+            - const: "Invalid camera override received"
+              description: "The payload was the wrong length, or held NaN or infinity. The camera is unchanged."
+            - const: "Selected model does not support camera overrides"
+              description: "The face is not Trinity-2. The camera is unchanged."
+        example: "WARNING: camera zoom 6.0 is outside its supported range (0.0, 4.0]; applied as is"
 
     event:
       description: "Server sent signals"
@@ -207,10 +280,11 @@ components:
           properties:
             livekit_url:
               type: string
+              description: LiveKit server URL to join. For users pinned to a region this is that region's endpoint (e.g. wss://<project>.eu.rtc.livekit.cloud), so always connect to the URL in this message rather than a cached one.
             livekit_token:
               type: string
     error:
-      description: Termination messages that specify the reason for immediate termination
+      description: Termination messages that specify the reason for immediate termination, including a routing error (Routing error, no EU Sessions available. EU ONLY PROCESSING enabled) when a region-pinned session lands on a machine outside its region
       payload:
         schema:
           type: string # Wrapping in an object often fixes the 'properties' read error
