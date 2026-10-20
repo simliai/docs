@@ -66,7 +66,7 @@ Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
 
 This is a dataclass that represents the config sent to [this endpoint](/api-reference/compose-session-token) to get a session_token
 
-- `faceId`: str # FaceID you can get from [default avatars](/api-reference/available-faces) or create your own on the [simli website](https://app.simli.com/create/select)
+- `faceId`: str # FaceID you can get from [default avatars](/api-reference/preset-faces) or create your own on the [simli website](https://app.simli.com/create/select)
 - `handleSilence`: bool. Specify whether you want to keep the Simli Avatar Moving when you don't send in Audio default true. Set to false for absolute control (difficult to get response time right)
 - `maxSessionLength`: int. A hard time limit (in seconds) after which the session will disconnect
 - `maxIdleTime`: int. A soft time limit (in seconds) that disconnects the session after a period of not sending in data
