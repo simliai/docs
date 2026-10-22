@@ -86,6 +86,12 @@ ws.send("BG_6f1c2a9e-1b2c-4d3e-8f90-0123456789ab");
 
 The new background replaces the one the session started with a moment later, once it has loaded. Audio keeps playing meanwhile, and if you send several, the last one wins.
 
+To go back to the avatar's own background, send `BG_` with the nil UUID. It applies at once, and cancels a background that's still loading. `FG_` with the nil UUID takes the foreground away.
+
+```javascript
+ws.send("BG_00000000-0000-0000-0000-000000000000");
+```
+
 A message that is applied gets no reply. Otherwise the server answers with a text message. None of these replies end the session, and the avatar keeps what it had:
 
 | Reply | Meaning |
@@ -105,4 +111,8 @@ A Simli Auto session's avatar is in a Daily room with your app. To swap the back
 {"type": "simli-background", "id": "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"}
 ```
 
-For a foreground, send `{"type": "simli-foreground", "id": "<foreground id>"}`.
+For a foreground, send `{"type": "simli-foreground", "id": "<foreground id>"}`. An `id` of `null` goes back to the avatar's own background, or takes the foreground away:
+
+```json
+{"type": "simli-background", "id": null}
+```

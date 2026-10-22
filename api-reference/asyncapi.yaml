@@ -302,6 +302,8 @@ components:
         Puts one of your uploaded backgrounds behind the avatar, Trinity-2 faces only: the ASCII prefix `BG_` and the background's id, as `POST /assets/backgrounds` returned it, 36 characters (hyphens included, either case). Text or binary; 39 characters in all, nothing else is accepted. An image can't be sent: upload it first. The background is cropped to fill the session's canvas.
 
         Only your own backgrounds: an id that isn't one of your account's is ignored. It replaces the one the session started with (the session token's `background_id`) a moment later, once loaded; audio keeps playing meanwhile, and the last one sent wins. See asset_notice.
+
+        `BG_00000000-0000-0000-0000-000000000000` (the nil UUID) goes back to the avatar's own background, at once.
       payload:
         schema:
           type: string
@@ -309,7 +311,7 @@ components:
         example: "BG_6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"
     foreground:
       description: |
-        Lays one of your uploaded foregrounds over the avatar through its transparency, Trinity-2 faces only: the ASCII prefix `FG_` and the foreground's id, as `POST /assets/foregrounds` returned it, 36 characters. Text or binary; 39 characters in all, nothing else is accepted, an image least of all. Otherwise as background, in place of the session token's `foreground_id`.
+        Lays one of your uploaded foregrounds over the avatar through its transparency, Trinity-2 faces only: the ASCII prefix `FG_` and the foreground's id, as `POST /assets/foregrounds` returned it, 36 characters. Text or binary; 39 characters in all, nothing else is accepted, an image least of all. Otherwise as background, in place of the session token's `foreground_id`. `FG_00000000-0000-0000-0000-000000000000` (the nil UUID) takes the foreground away.
       payload:
         schema:
           type: string
