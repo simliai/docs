@@ -39,6 +39,12 @@ channels:
         $ref: "#/components/messages/camera"
       camera_notice:
         $ref: "#/components/messages/camera_notice"
+      background:
+        $ref: "#/components/messages/background"
+      foreground:
+        $ref: "#/components/messages/foreground"
+      asset_notice:
+        $ref: "#/components/messages/asset_notice"
       event:
         $ref: "#/components/messages/event"
       error:
@@ -65,6 +71,12 @@ channels:
         $ref: "#/components/messages/camera"
       camera_notice:
         $ref: "#/components/messages/camera_notice"
+      background:
+        $ref: "#/components/messages/background"
+      foreground:
+        $ref: "#/components/messages/foreground"
+      asset_notice:
+        $ref: "#/components/messages/asset_notice"
       event:
         $ref: "#/components/messages/event"
       error:
@@ -113,6 +125,24 @@ operations:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/camera_notice"
+  sendBackground_peer_to_peer:
+    action: send
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/background"
+  sendForeground_peer_to_peer:
+    action: send
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/foreground"
+  assetNotice_peer_to_peer:
+    action: receive
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/asset_notice"
   event_peer_to_peer:
     action: receive
     channel:
@@ -163,6 +193,24 @@ operations:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/camera_notice"
+  sendBackground_livekit:
+    action: send
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/background"
+  sendForeground_livekit:
+    action: send
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/foreground"
+  assetNotice_livekit:
+    action: receive
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/asset_notice"
   event_livekit:
     action: receive
     channel:
@@ -249,6 +297,39 @@ components:
             - const: "Selected model does not support camera overrides"
               description: "The face is not Trinity-2. The camera is unchanged."
         example: "WARNING: camera zoom 6.0 is outside its supported range (0.0, 4.0]; applied as is"
+    background:
+      description: |
+        Puts one of your uploaded backgrounds behind the avatar, Trinity-2 faces only: the ASCII prefix `BG_` and the background's id, as `POST /assets/backgrounds` returned it, 36 characters (hyphens included, either case). Text or binary; 39 characters in all, nothing else is accepted. An image can't be sent: upload it first. The background is cropped to fill the session's canvas.
+
+        Only your own backgrounds: an id that isn't one of your account's is ignored. It replaces the one the session started with (the session token's `background_id`) a moment later, once loaded; audio keeps playing meanwhile, and the last one sent wins. See asset_notice.
+      payload:
+        schema:
+          type: string
+          pattern: '^BG_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        example: "BG_6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"
+    foreground:
+      description: |
+        Lays one of your uploaded foregrounds over the avatar through its transparency, Trinity-2 faces only: the ASCII prefix `FG_` and the foreground's id, as `POST /assets/foregrounds` returned it, 36 characters. Text or binary; 39 characters in all, nothing else is accepted, an image least of all. Otherwise as background, in place of the session token's `foreground_id`.
+      payload:
+        schema:
+          type: string
+          pattern: '^FG_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        example: "FG_6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"
+    asset_notice:
+      description: "Server replies to a background or foreground message, sent as text; a message that is applied gets none. None of them end the session, and the avatar keeps what it had."
+      payload:
+        schema:
+          type: string
+          oneOf:
+            - pattern: '^Invalid (background|foreground) message: .+$'
+              description: "Not `BG_`/`FG_` and an id of 36 characters (an image, say)."
+            - pattern: '^(background|foreground) \S+ is not one of your uploaded (backgrounds|foregrounds), ignoring$'
+              description: "No such id among your account's uploads of that kind: never uploaded, deleted, or another account's."
+            - pattern: "^Couldn't load (background|foreground) \\S+, ignoring$"
+              description: "It couldn't be fetched or read just now; send it again."
+            - pattern: '^Selected model does not support a custom (background|foreground)$'
+              description: "The face is not Trinity-2."
+        example: "background 6f1c2a9e-1b2c-4d3e-8f90-0123456789ab is not one of your uploaded backgrounds, ignoring"
 
     event:
       description: "Server sent signals"

@@ -64,8 +64,10 @@ paths:
                     items:
                       type: string
                     description: >-
-                      Starting camera fields outside their supported range, and region
-                      overrides. The token is minted regardless.
+                      Starting camera fields outside their supported range, region
+                      overrides, and background_id / foreground_id dropped as not
+                      your account's (the avatar's own is used). The token is minted
+                      regardless.
         "400":
           description: Invalid Data
           content:
@@ -116,8 +118,9 @@ paths:
                     items:
                       type: string
                     description: >-
-                      Camera fields outside their supported range. The video is made
-                      with them regardless.
+                      Camera fields outside their supported range, and background_id /
+                      foreground_id dropped as not your account's (the avatar's own is
+                      used). The video is made regardless.
         "422":
           description: Validation Error
           content:
@@ -418,6 +421,119 @@ paths:
           description: Invalid input
         "401":
           description: Unauthorized
+  /assets/{kind}:
+    post:
+      summary: Upload Background or Foreground
+      description: >-
+        Uploads an image to show behind your avatars (a background) or over them
+        (a foreground). It goes through a content safety check first, which takes
+        a few seconds, and one it flags is refused. Stored as PNG, private to your
+        account: only your own sessions can use it, by its id, as a session
+        token's, a static video's or an Auto session's background_id /
+        foreground_id, or in a streaming session's BG_ / FG_ message.
+      operationId: uploadAsset_assets__kind__post
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AssetKind"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_uploadAsset_assets__kind__post"
+      responses:
+        "201":
+          description: Stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "400":
+          description: >-
+            The image can't be used: not a JPEG, PNG or WEBP, not 16:9, 9:16 or
+            1:1, outside the size limits, a foreground without transparency, or
+            flagged by the content safety check. detail says which.
+        "401":
+          description: Unauthorized
+        "413":
+          description: The image is 5MB or more
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+        "503":
+          description: >-
+            The content safety check is unavailable, so nothing was stored. Try
+            again.
+    get:
+      summary: List Backgrounds or Foregrounds
+      description: >-
+        Your uploaded backgrounds or foregrounds, newest first, each with a
+        signed URL that reads the image (a PNG) until url_expires_at, an hour
+        on. Anyone holding the URL can read that one image until then, so keep
+        it to your own app. List again for fresh URLs.
+      operationId: listAssets_assets__kind__get
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AssetKind"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ListedAsset"
+        "401":
+          description: Unauthorized
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  /assets/{kind}/{id}:
+    delete:
+      summary: Delete a Background or Foreground
+      description: >-
+        Deletes one of your uploaded backgrounds or foregrounds. This can not be
+        undone. A token or agent that names it starts with the avatar's own
+        instead.
+      operationId: deleteAsset_assets__kind___asset_id__delete
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/AssetKind"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not one of your backgrounds / foregrounds
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
   /integrations/livekit/agents:
     post:
       security: []
@@ -715,8 +831,9 @@ paths:
                     items:
                       type: string
                     description: >-
-                      Starting camera fields outside their supported range. The token
-                      is minted regardless.
+                      Starting camera fields outside their supported range, and
+                      background_id / foreground_id dropped as not your account's
+                      (the avatar's own is used). The token is minted regardless.
 
         "422":
           description: Validation Error
@@ -1187,6 +1304,29 @@ components:
             The camera the video starts with, on top of the avatar's own
             framing. Trinity-2 only. Leave it out to keep the avatar's
             framing.
+        background_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Background Id
+          description: >-
+            One of your uploaded backgrounds, by the id POST /assets/backgrounds
+            returned, to show behind the avatar, cropped to fill the canvas.
+            Trinity-2 only. Leave it out for the avatar's own. An id that is not
+            one of your account's is dropped with a warning, and the video uses
+            the avatar's own. An image is not accepted: upload it first.
+        foreground_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Foreground Id
+          description: >-
+            One of your uploaded foregrounds, by the id POST /assets/foregrounds
+            returned, laid over the avatar through its transparency and cropped
+            to fill the canvas. Trinity-2 only; otherwise as
+            background_id.
       type: object
       required:
         - faceId
@@ -1363,6 +1503,32 @@ components:
             The camera the session starts with, on top of the avatar's own
             framing. Trinity-2 only. Leave it out to keep the avatar's
             framing. A streaming session can move it afterwards with CAM_ messages.
+        background_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Background Id
+          description: >-
+            One of your uploaded backgrounds, by the id POST /assets/backgrounds
+            returned, to show behind the avatar, cropped to fill the canvas.
+            Trinity-2 only. Leave it out for the avatar's own. An id that is not
+            one of your account's is dropped with a warning, and the session uses
+            the avatar's own. An image is not accepted: upload it first.
+            Your app can change it in the session by sending the room an app
+            message {"type": "simli-background", "id": "<background id>"}.
+        foreground_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Foreground Id
+          description: >-
+            One of your uploaded foregrounds, by the id POST /assets/foregrounds
+            returned, laid over the avatar through its transparency and cropped
+            to fill the canvas. Trinity-2 only; otherwise as
+            background_id. Your app can change it with
+            {"type": "simli-foreground", "id": "<foreground id>"}.
       type: object
       title: ConfigurableSessionRequest
     CustomLLMConfig:
@@ -1384,10 +1550,11 @@ components:
       title: CustomLLMConfig
     Google_Models:
       type: string
+      description: >-
+        Gemini 2.5 and older are retired: they're still accepted, and run on
+        gemini-3.8-flash.
       enum:
-        - gemini-2.5-pro
-        - gemini-2.5-flash
-        - gemini-2.5-flash-lite-preview-06-17
+        - gemini-3.8-flash
       title: Google_Models
     HTTPValidationError:
       properties:
@@ -1482,8 +1649,9 @@ components:
           items:
             type: string
           description: >-
-            Deprecations, and starting camera fields outside their supported
-            range. The session starts regardless.
+            Deprecations, starting camera fields outside their supported range,
+            and background_id / foreground_id dropped as not your account's (the
+            avatar's own is used). The session starts regardless.
       type: object
       required:
         - roomUrl
@@ -1572,6 +1740,31 @@ components:
             The camera the session starts with, on top of the avatar's own
             framing. Trinity-2 only. Leave it out to keep the avatar's
             framing. A streaming session can move it afterwards with CAM_ messages.
+        background_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Background Id
+          description: >-
+            One of your uploaded backgrounds, by the id POST /assets/backgrounds
+            returned, to show behind the avatar, cropped to fill the canvas.
+            Trinity-2 only. Leave it out for the avatar's own. An id that is not
+            one of your account's is dropped with a warning, and the session uses
+            the avatar's own. An image is not accepted: upload it first.
+            A streaming session can change it afterwards with BG_ messages.
+        foreground_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Foreground Id
+          description: >-
+            One of your uploaded foregrounds, by the id POST /assets/foregrounds
+            returned, laid over the avatar through its transparency and cropped
+            to fill the canvas. Trinity-2 only; otherwise as
+            background_id. A streaming session can change it afterwards
+            with FG_ messages.
       type: object
       required:
         - faceId
@@ -1663,6 +1856,33 @@ components:
             The camera the session starts with, on top of the avatar's own
             framing. Trinity-2 only. Leave it out to keep the avatar's
             framing. A streaming session can move it afterwards with CAM_ messages.
+        background_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Background Id
+          description: >-
+            One of your uploaded backgrounds, by the id POST /assets/backgrounds
+            returned, to show behind the avatar, cropped to fill the canvas.
+            Trinity-2 only. Leave it out for the avatar's own. An id that is not
+            one of your account's is dropped with a warning, and the session uses
+            the avatar's own. An image is not accepted: upload it first.
+            The agent's session starts with it: agents store none of their own.
+            Your app can change it in the session by sending the room an app
+            message {"type": "simli-background", "id": "<background id>"}.
+        foreground_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: "null"
+          title: Foreground Id
+          description: >-
+            One of your uploaded foregrounds, by the id POST /assets/foregrounds
+            returned, laid over the avatar through its transparency and cropped
+            to fill the canvas. Trinity-2 only; otherwise as
+            background_id. Your app can change it with
+            {"type": "simli-foreground", "id": "<foreground id>"}.
       type: object
       required:
         - simliAPIKey
@@ -1782,6 +2002,84 @@ components:
       required:
         - image
       title: Body_preprocess_image_faces_trinity_preprocess_post
+    AssetKind:
+      type: string
+      enum:
+        - backgrounds
+        - foregrounds
+      title: AssetKind
+    Asset:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+          description: What background_id / foreground_id and BG_ / FG_ take.
+        name:
+          type: string
+          title: Name
+          description: The uploaded file's name.
+        width:
+          type: integer
+          title: Width
+        height:
+          type: integer
+          title: Height
+        size_bytes:
+          type: integer
+          title: Size Bytes
+          description: The stored PNG's size.
+        created_at:
+          type: integer
+          title: Created At
+          description: Unix time, in seconds.
+      type: object
+      required:
+        - id
+        - name
+        - width
+        - height
+        - size_bytes
+        - created_at
+      title: Asset
+    ListedAsset:
+      allOf:
+        - $ref: "#/components/schemas/Asset"
+        - type: object
+          properties:
+            url:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+              title: Url
+              description: >-
+                A signed URL that GETs the image until url_expires_at; usable as
+                an <img> src. Null if one couldn't be made just then.
+            url_expires_at:
+              type: integer
+              title: Url Expires At
+              description: Unix time, in seconds, when url stops working.
+          required:
+            - url
+            - url_expires_at
+      title: ListedAsset
+    Body_uploadAsset_assets__kind__post:
+      properties:
+        image:
+          type: string
+          format: binary
+          title: Image
+          description: >-
+            JPEG, PNG or WEBP, under 5MB, in one of the streaming canvases'
+            shapes: 16:9, 9:16 or 1:1 and no other, at least 512 pixels on its
+            shorter side and at most 1920x1080, 1080x1920 or 1080x1080. A
+            foreground needs transparency (a PNG or WEBP with an alpha channel).
+            EXIF orientation is applied; metadata is dropped.
+      type: object
+      required:
+        - image
+      title: Body_uploadAsset_assets__kind__post
     TrinityGenerationState:
       type: string
       enum:

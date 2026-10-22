@@ -18,7 +18,25 @@
                         "pages": [
                             "overview",
                             "api-reference/create-avatar",
-                            "api-reference/trinity-2",
+                            {
+                                "group": "Trinity-2",
+                                "icon": "star",
+                                "pages": [
+                                    "api-reference/trinity-2",
+                                    "api-reference/trinity-2/camera",
+                                    "api-reference/trinity-2/animations",
+                                    "api-reference/trinity-2/backgrounds",
+                                    {
+                                        "group": "Backgrounds API",
+                                        "icon": "code",
+                                        "pages": [
+                                            "api-reference/endpoint/assets/upload",
+                                            "api-reference/endpoint/assets/list",
+                                            "api-reference/endpoint/assets/delete"
+                                        ]
+                                    }
+                                ]
+                            },
                             "api-reference/preset-faces"
                         ]
                     },

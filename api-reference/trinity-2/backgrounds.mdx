@@ -1,0 +1,108 @@
+---
+title: "Backgrounds"
+icon: "image"
+description: "Show your own image behind a Trinity-2 avatar, or lay one over it, and swap it while the session runs"
+---
+
+A Trinity-2 avatar is shown on its own background, the one from its photo. You can upload your own backgrounds to show behind it instead, and foregrounds to lay over it through their transparency. A session can start with one of each, and a streaming session can swap them live. Faces other than [Trinity-2](/api-reference/trinity-2) ignore them.
+
+Uploads are private to your account: only your own sessions can use them, by their id.
+
+## Uploading one
+
+Post the image to [`POST /assets/backgrounds`](/api-reference/endpoint/assets/upload) as the multipart field `image`, or to `POST /assets/foregrounds` for a foreground.
+
+```bash
+curl -X POST "https://api.simli.ai/assets/backgrounds" \
+	-H "x-simli-api-key: $SIMLI_API_KEY" \
+	-F "image=@office.jpg"
+```
+
+```json 201
+{
+	"id": "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab",
+	"name": "office.jpg",
+	"width": 1920,
+	"height": 1080,
+	"size_bytes": 2483021,
+	"created_at": 1792412345
+}
+```
+
+Keep the `id`: it's what `background_id`, `foreground_id`, `BG_` and `FG_` take. The image is stored as a PNG, and `size_bytes` is that PNG's size.
+
+The image must be:
+
+- a JPEG, PNG or WEBP, under 5MB;
+- in one of the streaming canvases' shapes, 16:9, 9:16 or 1:1, and no other;
+- at least 512 pixels on its shorter side, and at most 1920x1080 (16:9), 1080x1920 (9:16) or 1080x1080 (1:1).
+
+A foreground also needs transparency: a PNG or WEBP with an alpha channel. EXIF orientation is applied, and metadata is dropped.
+
+Every upload goes through a content safety check first, which takes a few seconds. These are the errors you can get:
+
+| Status | Meaning |
+| --- | --- |
+| `400` | The image can't be used: the wrong type or shape, outside the size limits, a foreground without transparency, or flagged by the content safety check. `detail` says which. |
+| `413` | The image is 5MB or more. |
+| `503` | The content safety check is unavailable, so nothing was stored. Try again. |
+
+## Listing and deleting them
+
+[`GET /assets/backgrounds`](/api-reference/endpoint/assets/list) (or `/assets/foregrounds`) lists your uploads, newest first. Each has a `url` that reads the image, a PNG, until `url_expires_at` (Unix time in seconds, an hour on). You can use it as an `<img>` src. Anyone holding the URL can read that one image until then, so keep it to your own app. List again for fresh URLs. `url` is `null` if one couldn't be made just then.
+
+[`DELETE /assets/backgrounds/{id}`](/api-reference/endpoint/assets/delete) (or `/assets/foregrounds/{id}`) deletes one. This can't be undone. A token or agent that names it starts with the avatar's own instead. You get a `204`, or a `404` if it isn't one of yours.
+
+## Starting a session with one
+
+Put its id in `background_id` (and a foreground's in `foreground_id`), next to the [framing fields](/api-reference/trinity-2#framing-the-video), in any of these:
+
+- [`POST /compose/token`](/api-reference/compose-session-token)
+- [`POST /static/audio`](/api-reference/generate-static-video)
+- [`POST /auto/token`](/api-reference/create-simli-auto-session-token)
+- [`POST /auto/start/configurable`](/api-reference/start-auto-session)
+
+```json POST /compose/token
+{
+	"faceId": "YOUR_TRINITY_2_FACE_ID",
+	"streaming_width": 1366,
+	"streaming_height": 768,
+	"background_id": "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"
+}
+```
+
+The background is cropped to fill the canvas, and so is the foreground. Leave the fields out for the avatar's own. Only an id is accepted, not an image: upload it first. An id that isn't one of your account's is dropped, and the response's `warnings` gets an entry for it. The token or video is still made, with the avatar's own.
+
+<Note>Simli Auto agents don't store a background. Put `background_id` in the agent's [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request, and its session starts with it.</Note>
+
+## Swapping it during a session
+
+Both session WebSockets, [`/compose/webrtc/p2p`](/api-reference/websockets/peer_to_peer) and [`/compose/webrtc/livekit`](/api-reference/websockets/livekit), accept a `BG_` message: the ASCII prefix `BG_` and the background's id, 36 characters with its hyphens, in either case. Send it as text or binary. It is 39 characters in all, and nothing else is accepted. `FG_` and a foreground's id does the same for the foreground.
+
+```javascript
+// ws is the session's WebSocket
+ws.send("BG_6f1c2a9e-1b2c-4d3e-8f90-0123456789ab");
+```
+
+The new background replaces the one the session started with a moment later, once it has loaded. Audio keeps playing meanwhile, and if you send several, the last one wins.
+
+A message that is applied gets no reply. Otherwise the server answers with a text message. None of these replies end the session, and the avatar keeps what it had:
+
+| Reply | Meaning |
+| --- | --- |
+| `Invalid background message: ...` | It wasn't `BG_` and a 36-character id (an image, say). |
+| `background <id> is not one of your uploaded backgrounds, ignoring` | No such id among your account's backgrounds: never uploaded, deleted, or another account's. |
+| `Couldn't load background <id>, ignoring` | It couldn't be fetched or read just now. Send it again. |
+| `Selected model does not support a custom background` | The face isn't Trinity-2. |
+
+Foreground messages get the same replies, with `foreground` in place of `background`.
+
+### In a Simli Auto session
+
+A Simli Auto session's avatar is in a Daily room with your app. To swap the background, send the room an app message:
+
+```json
+{"type": "simli-background", "id": "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab"}
+```
+
+For a foreground, send `{"type": "simli-foreground", "id": "<foreground id>"}`.

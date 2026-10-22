@@ -1,0 +1,100 @@
+---
+title: "Camera"
+icon: "camera"
+description: "Start a Trinity-2 session with your own camera, then move it while the session runs"
+---
+
+A Trinity-2 avatar is filmed by a virtual camera. You can set where it starts, and move it during a streaming session: zoom, pan, tilt, roll and orbit around the avatar, as a cut or as a smooth glide. Faces other than [Trinity-2](/api-reference/trinity-2) ignore the camera.
+
+## The starting camera
+
+The `camera` field sets the camera a session or video starts with. It goes in the same requests as the [framing fields](/api-reference/trinity-2#framing-the-video): [`POST /compose/token`](/api-reference/compose-session-token), [`POST /static/audio`](/api-reference/generate-static-video), [`POST /auto/token`](/api-reference/create-simli-auto-session-token) and [`POST /auto/start/configurable`](/api-reference/start-auto-session). Each value is an offset from the avatar's own framing. Every field is optional, and a field you leave out has no effect (0, or 1 for `zoom`). If you leave `camera` out entirely, the avatar keeps its own framing.
+
+| Field | What it does | Supported range |
+| --- | --- | --- |
+| `pos_x_off` | Moves the avatar right, in half canvas widths | -10 to 10 |
+| `pos_y_off` | Moves the avatar down, in half canvas heights | -10 to 10 |
+| `pos_z_off` | Metres the camera backs away from the avatar (negative moves in) | -5 to 5 |
+| `zoom` | Multiplies the avatar's zoom; 1 is no change | above 0, up to 4 |
+| `rot_x_off` | Degrees the camera tilts up (pitch) | -180 to 180 |
+| `rot_y_off` | Degrees the camera pans right (yaw) | -180 to 180 |
+| `rot_z_off` | Degrees the camera rolls clockwise | -180 to 180 |
+| `orbit_x_off` | Degrees the camera orbits up over the avatar's head (elevation) | -80 to 80 |
+| `orbit_y_off` | Degrees the camera orbits round to its right (azimuth) | -180 to 180 |
+
+Values outside their supported range are not clamped. They are applied as sent, and the response's `warnings` array gets an entry for each one, for example `camera zoom 6.0 is outside its supported range (0.0, 4.0]; applied as is`. The token or video is still made. Only NaN and infinity are rejected, with a `422`.
+
+## Moving the camera during a session
+
+Both session WebSockets, [`/compose/webrtc/p2p`](/api-reference/websockets/peer_to_peer) and [`/compose/webrtc/livekit`](/api-reference/websockets/livekit), accept a binary `CAM_` message. It is the ASCII prefix `CAM_` followed by little-endian float32 values, in this order. Note that y comes before x:
+
+```
+pos_y_off, pos_x_off, pos_z_off, zoom, rot_x_off, rot_y_off, rot_z_off, orbit_x_off, orbit_y_off
+```
+
+- **Values:** send the first 4, the first 7 or all 9 values. Any you leave off have no effect.
+- **Replacement:** each message replaces the whole camera, including the starting `camera` from the token. Values are offsets from the avatar's own framing, not from the previous message. Sending `0, 0, 0, 1, 0, 0, 0, 0, 0` goes back to the avatar's own framing.
+- **Gliding:** the camera cuts to the new setting. To glide instead, add the ASCII tag `LERP` and one more float32: the number of seconds the move takes. The glide starts from wherever the camera is now, even partway through an earlier glide. A value of 0 or less is a cut.
+- **Size:** a message is 20, 32 or 40 bytes long, or 28, 40 or 48 bytes with `LERP`.
+
+<CodeGroup>
+
+```javascript JavaScript
+const CAMERA_FIELDS = [
+	"pos_y_off", "pos_x_off", "pos_z_off", "zoom",
+	"rot_x_off", "rot_y_off", "rot_z_off",
+	"orbit_x_off", "orbit_y_off",
+];
+
+// ws is the session's WebSocket. Fields left out of `camera` are neutral.
+function sendCamera(ws, camera = {}, lerpSeconds = 0) {
+	const values = CAMERA_FIELDS.map((field) => camera[field] ?? (field === "zoom" ? 1 : 0));
+	const lerpAt = 4 + 4 * values.length;
+	const message = new Uint8Array(lerpAt + (lerpSeconds > 0 ? 8 : 0));
+	const view = new DataView(message.buffer);
+	message.set(new TextEncoder().encode("CAM_"), 0);
+	values.forEach((value, i) => view.setFloat32(4 + 4 * i, value, true));
+	if (lerpSeconds > 0) {
+		message.set(new TextEncoder().encode("LERP"), lerpAt);
+		view.setFloat32(lerpAt + 4, lerpSeconds, true);
+	}
+	ws.send(message);
+}
+
+// Orbit 20 degrees to the right and zoom in a little, over 1.5 seconds
+sendCamera(ws, {orbit_y_off: 20, zoom: 1.3}, 1.5);
+// Cut back to the avatar's own framing
+sendCamera(ws);
+```
+
+```python Python
+import struct
+
+CAMERA_FIELDS = (
+    "pos_y_off", "pos_x_off", "pos_z_off", "zoom",
+    "rot_x_off", "rot_y_off", "rot_z_off",
+    "orbit_x_off", "orbit_y_off",
+)
+
+
+def camera_message(lerp_seconds: float = 0.0, **camera: float) -> bytes:
+    values = [camera.get(field, 1.0 if field == "zoom" else 0.0) for field in CAMERA_FIELDS]
+    message = b"CAM_" + struct.pack(f"<{len(values)}f", *values)
+    if lerp_seconds > 0:
+        message += b"LERP" + struct.pack("<f", lerp_seconds)
+    return message
+
+
+# With the Python SDK, send() passes the message through as is
+await connection.send(camera_message(orbit_y_off=20, zoom=1.3, lerp_seconds=1.5))
+```
+
+</CodeGroup>
+
+The server answers some camera messages with a text message. None of these replies end the session:
+
+| Reply | Meaning |
+| --- | --- |
+| `WARNING: camera <field> <value> is outside its supported range [...]; applied as is` | Some values were outside their supported range and were applied as sent. If several are, the warnings are separated by `; `. |
+| `Invalid camera override received` | The message was the wrong length or held NaN or infinity. The camera didn't move. |
+| `Selected model does not support camera overrides` | The face isn't Trinity-2. The camera didn't move. |
