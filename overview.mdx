@@ -11,21 +11,32 @@ Ready to make your first one?
 
 <CardGroup cols={2}>
 
-<Card title="Use LiveKit (recommended)" icon="pickaxe" iconType="duotone" href="/api-reference/livekit">
-  LiveKit is a realtime communication platform that allows you to create voice and video chat applications. Deploying your own LiveKit server is quick and easy. 
+<Card title="Use LiveKit Agents" icon="pickaxe" iconType="duotone" href="/api-reference/livekit">
+  Give a LiveKit Agents voice agent a Simli avatar that joins its LiveKit room.
 </Card>
-<Card title="Use PipeCat" icon="cat" iconType="duotone" href="/api-reference/pipecat">
-  Pipecat is an open source Python framework for building voice and multimodal AI bots that can see, hear, and speak in real-time. 
+<Card title="Use Pipecat" icon="cat" iconType="duotone" href="/api-reference/pipecat">
+  Pipecat is an open-source Python framework for voice and multimodal agents. Add a Simli avatar to its pipeline.
 </Card>
 </CardGroup>
-<Card title="Use Simli SDKs" icon="js" href="/api-reference/javascript">
-  For when you need full control of your tech stack (e.g., custom voice bots).
+<Card title="Use Simli SDKs" icon="js" href="/simli-sdks">
+  For when you need full control of your tech stack (e.g., custom voice agents).
 </Card>
 
+## Choose your pathway
+
+Each pathway needs a Simli API key, from your [Simli dashboard](https://app.simli.com). This is everything else you bring yourself:
+
+| Pathway | Runs | What you bring |
+| --- | --- | --- |
+| [LiveKit Agents](/api-reference/livekit) | A Python agent in your LiveKit room | Your own LiveKit server, reachable from the internet: LiveKit Cloud, or self-hosted with a public address (not `localhost`). A key for your model provider: OpenAI for the starter. |
+| [Pipecat](/api-reference/pipecat) | A Python agent on your machine | An OpenAI API key. No other accounts. |
+| [JavaScript SDK](/api-reference/javascript) | In the browser | A backend route that creates session tokens, so your API key never goes in the browser. |
+| [Python SDK](/api-reference/python) | In your Python program | Nothing else. |
+| [Raw WebRTC](/api-reference/simli-webrtc) | In your own client | Your own WebRTC client. |
 
 <Spacer size={20} />
 
 
-<Card title="Join our community" icon="discord" href="https://discord.gg/yQx49zNF4d">
+<Card title="Talk to us" icon="discord" href="https://discord.gg/yQx49zNF4d">
   Share your projects, get technical help, and stay up-to-date with the latest features.
 </Card>

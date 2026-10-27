@@ -217,18 +217,19 @@ paths:
           in: query
           required: false
           description: >-
-            The avatar generation to make. GSA_1.0 (the default) makes a
-            Trinity-1 face and takes one of your plan's face slots. GSA_2.0
-            makes a Trinity-2 face and runs on your Trinity-2 generations: one
-            is used when the face is built (a failed build uses none), and each
+            The avatar generation to make. GSA_2.0 (the default) makes a
+            Trinity-2 face and runs on your Trinity-2 generations: one is used
+            when the face is built (a failed build uses none), and each
             generation still queued or building holds one meanwhile. One
             account's GSA_2.0 generations start at least 10 minutes apart; a
             request inside that window is accepted at once and held in the
-            queue, and the response's dispatch_after says until when.
+            queue, and the response's dispatch_after says until when. GSA_1.0
+            makes a Trinity-1 face and takes one of your plan's face slots; it
+            is only available to accounts created before October 26, 2026.
           schema:
             allOf:
               - $ref: "#/components/schemas/TrinityVersion"
-            default: GSA_1.0
+            default: GSA_2.0
         - name: face_name
           in: query
           required: false
@@ -272,9 +273,10 @@ paths:
                   - warnings
         "403":
           description: >-
-            Out of avatars for this gsVersion: with GSA_1.0, every face slot of
-            your plan is taken; with GSA_2.0, you have no Trinity-2 generations
-            left.
+            Out of avatars for this gsVersion: with GSA_2.0, you have no
+            Trinity-2 generations left; with GSA_1.0, every face slot of your
+            plan is taken. Also returned for GSA_1.0 on an account created on or
+            after October 26, 2026, which can only make GSA_2.0 faces.
         "422":
           description: Validation Error
           content:
@@ -298,12 +300,13 @@ paths:
           required: false
           description: >-
             The avatar generation the image is for. Pass the same one to POST
-            /faces/trinity. Checks that the account has a face slot (GSA_1.0) or
-            a Trinity-2 generation (GSA_2.0) left, as that call does.
+            /faces/trinity. Checks that the account has a Trinity-2 generation
+            (GSA_2.0) or a face slot (GSA_1.0) left, as that call does. GSA_1.0
+            is only available to accounts created before October 26, 2026.
           schema:
             allOf:
               - $ref: "#/components/schemas/TrinityVersion"
-            default: GSA_1.0
+            default: GSA_2.0
         - name: retry
           in: query
           required: false
@@ -356,9 +359,10 @@ paths:
                 format: binary
         "403":
           description: >-
-            Out of avatars for this gsVersion: with GSA_1.0, every face slot of
-            your plan is taken; with GSA_2.0, you have no Trinity-2 generations
-            left.
+            Out of avatars for this gsVersion: with GSA_2.0, you have no
+            Trinity-2 generations left; with GSA_1.0, every face slot of your
+            plan is taken. Also returned for GSA_1.0 on an account created on or
+            after October 26, 2026, which can only make GSA_2.0 faces.
   /faces/trinity/generation_status:
     get:
       summary: Check Trinity Generation Status
@@ -648,45 +652,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /faces/legacy:
-    post:
-      summary: Generate Legacy Face
-      deprecated: true
-      operationId: generateFaceIDAPI_faces_legacy_create_post
-      parameters:
-        - name: characterVersion
-          in: query
-          required: false
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/CharacterVersion"
-            default: "1.5"
-        - name: face_name
-          in: query
-          required: false
-          schema:
-            type: string
-            default: untitled_avatar
-            title: Face Name
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: "#/components/schemas/Body_generateFaceIDAPI_faces_legacy_create_post"
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-
   /faces/legacy/{id}:
     delete:
       deprecated: true
@@ -706,31 +671,6 @@ paths:
           description: Invalid input
         "401":
           description: Unauthorized
-
-  /faces/legacy/generation_status:
-    get:
-      deprecated: true
-      summary: Get Legacy Face Generation Status
-      operationId: getRequestStatus_faces_legacy_status_get
-      parameters:
-        - name: face_id
-          in: query
-          required: false
-          schema:
-            type: string
-            title: Face Id
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
 
   /auto/agent:
     post:
@@ -1061,7 +1001,7 @@ components:
           description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
-          example: sonic-english
+          example: inworld-tts-2
         language:
           type: string
         emotion:
@@ -1086,7 +1026,7 @@ components:
         llm_provider:
           type: string
           enum: ["openai", "google", "user"]
-          description: "The provider of the LLM used by the agent"
+          description: "The provider of the LLM used by the agent. Unset, sessions run openai (gpt-6-luna), or google for a gemini llm_model"
         simli_version:
           type: integer
           description: "Version of the Simli model used for the face"
@@ -1140,7 +1080,7 @@ components:
           description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
-          example: sonic-english
+          example: inworld-tts-2
         owner_id:
           type: string
           description: "Unique identifier for the owner of the agent"
@@ -1165,7 +1105,7 @@ components:
         llm_provider:
           type: string
           enum: ["openai", "google", "user"]
-          description: "The provider of the LLM used by the agent"
+          description: "The provider of the LLM used by the agent. Unset, sessions run openai (gpt-6-luna), or google for a gemini llm_model"
         created_at:
           type: string
           format: date-time
@@ -1198,7 +1138,7 @@ components:
           description: "The voice's ID at the voice provider (Inworld voices go by name, such as Sarah)"
         voice_model:
           type: string
-          example: sonic-english
+          example: inworld-tts-2
         llm_model:
           type: string
           example: gpt-6-luna
@@ -1218,7 +1158,7 @@ components:
         llm_provider:
           type: string
           enum: ["openai", "google", "user"]
-          description: "The provider of the LLM used by the agent"
+          description: "The provider of the LLM used by the agent. Unset, sessions run openai (gpt-6-luna), or google for a gemini llm_model"
         created_at:
           type: string
           format: date-time
@@ -1256,11 +1196,6 @@ components:
           type: integer
           title: Videostartingframe
           default: 0
-        disableSuperRes:
-          type: boolean
-          title: Disablesuperres
-          default: false
-          description: Turns off the face restoration pass on legacy faces.
         streaming_width:
           type: integer
           title: Streaming Width
@@ -1383,11 +1318,11 @@ components:
         faceId:
           type: string
           title: Faceid
-          default: tmp9i8bbq7c
+          default: bf13113a-355a-4d97-8b90-4edccd1da7b2
         ttsProvider:
           allOf:
             - $ref: "#/components/schemas/TTS_Provider"
-          default: Cartesia
+          default: Inworld
         ttsAPIKey:
           anyOf:
             - type: string
@@ -1396,11 +1331,18 @@ components:
         ttsModel:
           type: string
           title: Ttsmodel
-          default: sonic-turbo-2025-03-07
+          default: inworld-tts-2
+          description: >-
+            Defaults to Inworld's model; with ttsProvider Cartesia, to
+            sonic-turbo-2025-03-07.
         voiceId:
           type: string
           title: Voiceid
-          default: a167e0f3-df7e-4d52-a9c3-f949145efdab
+          default: Ashley
+          description: >-
+            The voice's ID at the voice provider (Inworld voices go by name).
+            Defaults to Inworld's Ashley; with ttsProvider Cartesia, to
+            a167e0f3-df7e-4d52-a9c3-f949145efdab.
         systemPrompt:
           anyOf:
             - type: string
@@ -1455,11 +1397,6 @@ components:
           allOf:
             - $ref: "#/components/schemas/SimliModels"
           default: fasttalk
-        disableSuperRes:
-          type: boolean
-          title: Disablesuperres
-          default: false
-          description: Turns off the face restoration pass on legacy faces.
         streaming_width:
           type: integer
           title: Streaming Width
@@ -1551,10 +1488,12 @@ components:
     Google_Models:
       type: string
       description: >-
-        Gemini 2.5 and older are retired: they're still accepted, and run on
+        gemini-3.8-live is speech to speech over Google's Live API. Gemini 2.5
+        and older are retired: they're still accepted, and run on
         gemini-3.8-flash.
       enum:
         - gemini-3.8-flash
+        - gemini-3.8-live
       title: Google_Models
     HTTPValidationError:
       properties:
@@ -1961,21 +1900,6 @@ components:
           description: Error code
       required:
         - error
-    Body_generateFaceIDAPI_faces_legacy_create_post:
-      properties:
-        image:
-          type: string
-          format: binary
-          title: Image
-      type: object
-      required:
-        - image
-      title: Body_generateFaceIDAPI_faces_legacy_create_post
-    CharacterVersion:
-      type: string
-      enum:
-        - "1.5"
-      title: CharacterVersion
     Body_enqueueGSAGeneration_faces_gs_create_post:
       properties:
         image:
@@ -2153,8 +2077,8 @@ components:
     TrinityVersion:
       type: string
       description: >-
-        The avatar generation: GSA_1.0 makes a Trinity-1 face, GSA_2.0 a
-        Trinity-2 face.
+        The avatar generation: GSA_2.0 makes a Trinity-2 face, GSA_1.0 a
+        Trinity-1 face (accounts created before October 26, 2026 only).
       enum:
         - GSA_1.0
         - GSA_2.0

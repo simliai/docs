@@ -1,34 +1,31 @@
 ---
-title: JavaScript SDK
-icon: "js"
+title: "JavaScript SDK"
+sidebarTitle: "Guide"
+description: "Show a Simli avatar in the browser with simli-client"
 ---
 
-[SimliClient](https://github.com/simliai/simli-client) is a powerful tool for integrating real-time audio and video streaming capabilities into your web applications using WebRTC. This guide will walk you through the process of setting up and using SimliClient in your project.
+[simli-client](https://github.com/simliai/simli-client) connects a web page to Simli. You send it the audio the avatar should speak, and it plays the avatar's lip-synced video and voice in a `<video>` and an `<audio>` element.
 
-## Getting Started
+<Tip>Building a voice agent? [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) run the agent and Simli on the server. Use this SDK when the avatar's audio is already in the browser.</Tip>
 
-### Prerequisites
+## What you need
 
-Before you begin, make sure you have:
+- A Simli API key, from your [Simli dashboard](https://app.simli.com)
+- A backend route that creates session tokens. Your API key stays there and never goes in the browser.
 
-1. A Simli account with an API key
-2. Node.js and npm installed in your development environment
-
-### Installation
-
-Install the `simli-client` package in your project:
+## Install
 
 ```bash
 npm install simli-client
 ```
 
-## Usage
+## 1. Add video and audio elements
 
-### Step 1: Get the Video and Audio element references
-
-If you're using React, create video and audio elements with refs:
+With React, create the elements and keep refs to them:
 
 ```tsx
+import { useRef } from "react";
+
 function YourComponent() {
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const audioRef = useRef<HTMLAudioElement>(null);
@@ -42,173 +39,146 @@ function YourComponent() {
 }
 ```
 
-However, you can also just use direct dom refs we can also do that
+Without React, look the elements up in the DOM:
 
 ```typescript
-// assuming we have only one video element and one audio element
-const videoElement: HTMLVideoElement = document.getElementById("video");
-const audioElement: HTMLAudioElement = document.getElementById("audio");
+const videoElement = document.getElementById("video") as HTMLVideoElement;
+const audioElement = document.getElementById("audio") as HTMLAudioElement;
 ```
 
-### Step 2: Create a session token
+## 2. Create a session token on your server
 
-You can create the session_token from the client side, or put it behind a backend (or use server actions for Next.JS or equivalent in other frameworks). The recommended method for production deployments is to put it behind a backend as you don't want your api key to reside on the client
+Each session starts with a session token. Creating one takes your API key, so do it on your server and send only the token to the browser. This route is for Next.js (App Router). On other backends, POST the same config to [`POST /compose/token`](/api-reference/compose-session-token) with your key in the `x-simli-api-key` header.
 
-<Note>If you're using listenToMediastreamTrack() set `handleSilence: false` in the SimliConfig to avoid audio artifacts</Note>
+```typescript app/api/simli-token/route.ts
+import { generateSimliSessionToken } from "simli-client";
 
-```typescript
-import {generateSimliSessionToken, SimliSessionRequest} from "simli-client";
-
-async function getSessionToken(): Promise<string> {
-	const SimliConfig: SimliSessionRequest = {
-		faceId: "YOUR_FACE_ID",
-		maxSessionLength: 600, // in seconds
-		maxIdleTime: 180, // in seconds
-	};
-	const session_token = (await generateSimliSessionToken({apiKey: "YOUR_SIMLI_API_KEY", config: SimliConfig})).session_token;
-	return session_token;
+// Runs on your server, so SIMLI_API_KEY never reaches the browser.
+export async function POST() {
+	const { session_token } = await generateSimliSessionToken({
+		apiKey: process.env.SIMLI_API_KEY!,
+		config: {
+			faceId: "bf13113a-355a-4d97-8b90-4edccd1da7b2", // a Trinity-2 preset face
+			maxSessionLength: 600, // seconds
+			maxIdleTime: 180, // seconds
+		},
+	});
+	return Response.json({ session_token });
 }
 ```
 
-### (Optional) Step 2.5: Generate Ice Server Config (For running Simli in peer to peer mode)
+To use another avatar, replace the `faceId` with one from your [dashboard](https://app.simli.com) or the [default faces](/api-reference/preset-faces). For the video size, the avatar's position, the starting camera and backgrounds, see [Trinity-2](/api-reference/javascript/trinity-2).
 
-This provides a slightly lower latency connection to Simli however it might have some issues in places with stronger firewall restrictions (in such case we recommend using livekit mode which doesn't need this step at all)
+<Warning>Anyone who can reach your token route can start a session on your account. Put it behind your own sign-in or rate limiting before you go to production.</Warning>
 
-```typescript
-async function getIceServers(): Promise<RTCIceServers[]> {
-	return await getIceServers("YOUR_SIMLI_API_KEY");
-}
-```
+## 3. Connect
 
-### Step 3: Initialize SimliClient
-
-Create an instance of SimliClient and initialize it with your configuration:
-
-For P2P Mode:
+In the browser, get a token from your route, create a `SimliClient` and call `start()`:
 
 ```typescript
-import {SimliClient, LogLevel} from "simli-client";
-async function InitializeSimliClient(): SimliClient {
-	simliClient = new SimliClient(
-		await getSessionToken(),
-		videoRef.current,
-		audioRef.current,
-		await getIceServers(),
-		LogLevel.DEBUG, // Optional Paramter, in production it's recommended to set it to info
-		"p2p",
-	);
-	await simliClient.start();
+import { SimliClient, LogLevel } from "simli-client";
+
+async function startSimli(videoElement: HTMLVideoElement, audioElement: HTMLAudioElement): Promise<SimliClient> {
+	const res = await fetch("/api/simli-token", { method: "POST" });
+	if (!res.ok) throw new Error(`Couldn't create a Simli session token: ${res.status}`);
+	const { session_token } = await res.json();
+
+	const simliClient = new SimliClient(session_token, videoElement, audioElement, null, LogLevel.INFO);
+	simliClient.on("stop", () => console.log("Session ended"));
+	await simliClient.start(); // resolves once the avatar's first video frame is on screen
 	return simliClient;
 }
 ```
 
-For Livekit Mode:
+Create the client just before you call `start()`, because the constructor already opens the connection, and register your event handlers before `start()`. A `SimliClient` runs one session. To start another, get a new token and create a new client.
+
+## 4. Send audio
+
+Send the avatar's speech as raw PCM16 audio: 16 kHz, mono. Chunks of about 6000 bytes work well.
 
 ```typescript
-import {SimliClient, LogLevel} from "simli-client";
-async function InitializeSimliClient(): SimliClient {
-	simliClient = new SimliClient(
-		await getSessionToken(),
-		videoRef.current,
-		audioRef.current,
-		null,
-		LogLevel.DEBUG, // Optional Paramter, in production it's recommended to set it to info
-		"livekit",
-	);
-	await simliClient.start();
-	return simliClient;
-}
-```
-
-### Step 4: Send Audio Data
-
-Once the connection is established, you can start sending audio data:
-
-```javascript
-// Example: sending audio data (should be PCM16 format, 16KHz sample rate)
-const audioData = new Uint8Array(6000).fill(0); // Replace with your actual audio data
+// audioData: a Uint8Array of PCM16, 16 kHz, mono audio
 simliClient.sendAudioData(audioData);
 ```
 
-Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
-
-## SimliClient API reference
-
-#### Types
+To stop the avatar mid-sentence, for example when the user interrupts, drop the audio it hasn't spoken yet:
 
 ```typescript
-interface SimliSessionRequest {
-	faceId: string;
-	handleSilence: boolean;
-	maxSessionLength: number;
-	maxIdleTime: number;
-	model?: "fasttalk" | "artalk";
-}
-interface TokenRequestData {
-	config: SimliSessionRequest;
-	apiKey: string;
-}
-interface SimliSessionToken {
-	session_token: string;
-}
-
-type TransportMode = "livekit" | "p2p";
-type SignalingMode = "websockets";
-type session_token = string;
+simliClient.ClearBuffer();
 ```
 
-For SimliClient, check [the source code](https://github.com/simliai/simli-client)
+To stream from a live source instead, pass it to `listenToMediastreamTrack(track)` (a `MediaStreamTrack`, such as a microphone or a WebRTC track from your voice bot) or `listenToAudioElement(audioElement)` (an `<audio>` element). The SDK converts the audio and sends it for you.
 
-#### Methods
+### Choosing `handleSilence`
 
-- `async generateSimliSessionToken( request: TokenRequestData, SimliURL: string = "https://api.simli.ai",)`: Generate new session token given a `TokenRequestData` object. You can also redirect that request to your own backend.
-- `new SimliClient(session_token: string, videoElement: HTMLVideoElement, audioElement: HTMLAudioElement, iceServers: RTCIceServer[] | null, logLevel: LogLevel = LogLevel.DEBUG, transport_mode: TransportMode = "p2p", signaling: SignalingMode = "websockets", SimliWSURL: string = "wss://api.simli.ai", audioBufferSize: number = 3000,)`: Initializes the SimliClient with the provided configuration.
-- `async SimliClientInstance.start()`: Connects everything to Simli Servers with automatic retry on failure
-- `async SimliClientInstance.stop()`: Closes the WebRTC connection and cleans up resources.
-- `SimliClientInstance.sendAudioData(audioData: Uint8Array)`: Sends audio data to the server.
-- `SimliClientInstance.listenToMediastreamTrack(stream: MediaStreamTrack)`: Listens to a MediaStreamTrack and sends audio data to the server. _Can be used as an alternative to `sendAudioData`._
-- `SimliClientInstance.ClearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
+`handleSilence` in the session token config (default `true`) decides what Simli does when your audio runs out:
 
-## Advanced Usage
+- **`true`**: Simli fills the gaps with silence, so the avatar keeps moving naturally between sentences and picks up again when you send more. Keep it on when you send audio in bursts with `sendAudioData`, such as one TTS response at a time.
+- **`false`**: Simli plays only the audio you send, and the video freezes when you stop sending. Turn it off when you stream continuous audio with `listenToMediastreamTrack` or `listenToAudioElement`. Those already send their own silence, and Simli's gap filling would cut into it and cause audio artifacts.
 
-### Events
-
-- `start` when the webrtc connection is successful and avatar is shown on screen
-- `stop` when the simli server terminates a connection normally
-- `error` when the webRTC connection fails to connect or crashes in the middle
-- `speaking` when the avatar starts speaking
-- `silent` when the avatar stops speaking
-- `ack` when server acknowledges an audio segment has been received
-- `connection_info(serialized_info: string)` when rtc answer or livekit session info is received not useful in most applications and is meant for primarily internal use
-- `video_info(serialized_info: string)` shows video FPS, height, and width
-- `destination(serialized_info: string)` debugging information useful when reporting issues to simli
-- `unknown(message: string)` when the server sent a message that couldn't be parsed. Usually future messages that have been added to later versions of the client
-- `startup_error(message: string)` when there was a fundamental error causing simli to be unable to connect. This is usually triggered for invalid FaceIDs or depleted minutes. Message should be the cause of this startup failure. Automatic retries are disabled on startup_error
-
-General Usage
+## 5. Stop
 
 ```typescript
-simliClient.on("EVENT", callbackFunction);
+await simliClient.stop();
 ```
 
-### Error Handling
+## Errors and retries
 
-SimliClient provides console logging for various events and errors. It's recommended to implement proper error handling in your application to manage potential issues, such as network disconnections or initialization failures.
+`start()` resolves once the avatar's first video frame is on screen. If it fails, what happens depends on why:
 
-### Fork and Contribute to simli-client
+- **Simli refuses the session**, for example because the session token has expired, the face ID is unknown, your account is out of minutes, or you hit a rate limit. The `error` event fires with Simli's message, and `start()` rejects at once with the same message, a string such as `"ERROR: INVALID_FACE_ID"`. It doesn't retry, since a retry would fail the same way.
+- **The network fails**: the connection can't be opened or drops, or an attempt takes more than 15 seconds. These are the only failures `start()` retries, up to 10 times, with exponential backoff: it waits 1, 2, 4 and 8 seconds before the first four retries, then 16 seconds before each one after that, each wait plus a little random jitter. Then it rejects with `Error("Too Many Retry Attempts Failed to connect")`. Your event handlers stay registered across retries.
+- **Anything else goes wrong before the first frame**, such as a message from Simli the SDK doesn't recognise. `start()` rejects at once with that message as is, and the SDK logs it as `Unknown error from Simli: <message>`. Once the session has started, an unrecognised message doesn't end it: it fires the `unknown` event and is logged as a warning.
 
-<Card title="simli-client" icon="github" href="https://github.com/simliai/simli-client">
-	Fork and contribute to the simli-client repository on GitHub or clone for your own usecase.
-</Card>
+On your server, `generateSimliSessionToken` throws the API's response body if it answers with an error, for example for an invalid face ID, no minutes left or an unsupported video size (`422`).
+
+```typescript
+try {
+	simliClient = await startSimli(videoRef.current!, audioRef.current!);
+} catch (reason) {
+	console.error("Simli couldn't start:", reason);
+}
+```
+
+## Peer-to-peer mode (optional)
+
+The default transport needs nothing from you. If you'd rather connect the browser straight to Simli over WebRTC, there's a lower-level peer-to-peer mode. It can save a little latency, but strict firewalls can block it, and it needs ICE servers. Fetching them takes your API key, so add a second route on your server:
+
+```typescript app/api/simli-ice/route.ts
+import { generateIceServers } from "simli-client";
+
+export async function GET() {
+	// Falls back to a public STUN server if Simli's can't be fetched
+	return Response.json(await generateIceServers(process.env.SIMLI_API_KEY!));
+}
+```
+
+Then pass the ICE servers and `"p2p"` to `SimliClient`:
+
+```typescript
+const iceServers: RTCIceServer[] = await (await fetch("/api/simli-ice")).json();
+const simliClient = new SimliClient(session_token, videoElement, audioElement, iceServers, LogLevel.INFO, "p2p");
+await simliClient.start();
+```
+
+If three peer-to-peer attempts in a row fail, `start()` makes its remaining retries with the default transport.
+
+## Next steps
+
+<CardGroup cols={2}>
+	<Card title="Trinity-2" icon="star" href="/api-reference/javascript/trinity-2">
+		Video size, the avatar's position, the camera, backgrounds and foregrounds.
+	</Card>
+	<Card title="API reference" icon="code" href="/api-reference/javascript/reference">
+		Every function, method, event and type.
+	</Card>
+</CardGroup>
 
 ## Troubleshooting
 
-If you encounter issues:
+1. Check the reason `start()` rejected with, or the `error` event's message.
+2. Check that your API key is correct and active, and that your face ID is valid.
+3. Check that your audio is PCM16, 16 kHz, mono.
+4. Check that the page has permission to use the microphone, if you stream it.
 
-1. Ensure your API key is correct and active.
-2. Verify that your face ID is valid and associated with your account.
-3. Check that your audio data is in the correct format (PCM16, 16KHz).
-4. Verify that you have the necessary permissions for accessing the user's media devices.
-5. Review the console logs for any error messages or warnings.
-
-Reach out to our team for further assistance on [Discord](https://discord.gg/yQx49zNF4d).
+Reach out to our team on [Discord](https://discord.gg/yQx49zNF4d), or [fork simli-client](https://github.com/simliai/simli-client) for your own use case.

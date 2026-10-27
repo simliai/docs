@@ -36,9 +36,13 @@ This is the main object which everything revolves around. As the client, you'll 
 
 These objects represent the Audio and Video streams. TO BE CLEAR, the streams themselves are not joined in any way so your video and audio are completly independent of each other. You can have a video stream without audio and vice versa. These objects are then added to the `RTCPeerConnection` object to be sent to the other peer. It is also the object that you get from the `getUserMedia` function when you specify what you're sending in the offer.
 
+A Simli session only receives media, so you don't call `getUserMedia` at all. Instead, you add one receive-only audio transceiver and one receive-only video transceiver, `pc.addTransceiver("audio", {direction: "recvonly"})` and the same for `"video"`, before you create the offer.
+
 ### Datachannel
 
 This is the object that you can use to send data between the peers. It is not a stream, so you can't send a continuous stream of data. It is more like a message. You can send a message and the other peer will receive it. You can also send a message to a specific channel, so you can have multiple channels for different types of data.
+
+Simli sessions don't use one: your audio and control messages go over the session's WebSocket instead.
 
 ## Dancing the dance: WebRTC handshake and creating the connection
 
@@ -48,7 +52,7 @@ Everything starts with the RTCPeerConnection. Sure you need the configuration, b
 
 Once you have figured out what you want the connection to do, you create the offer object using, surprise, `createOffer()` function. This creates a json that will be sent to all peers that you want to connect to. Also you must make sure to tell the RTCPeerConnection object to use the offer as the local description using `setLocalDescription()` function.
 
-There's no exact way that specifies how to send the offer and get the answer. Some examples make you paste the offer in a CLI, others can use a POST request (easiest way in my opinion), and someone thought using WebSockets is a good idea (if you're doing [trickle ICE](https://github.com/pion/webrtc/tree/master/examples/trickle-ice) then probably but that's a different rabbithole that I won't get into here).
+There's no exact way that specifies how to send the offer and get the answer: this part, called signaling, is up to each app. Some examples make you paste the offer in a CLI, and others use a POST request. Simli's signaling is the session's WebSocket: you send the offer as its first message, and the answer comes back on it. See [Custom JS Simli Client](/api-reference/simli-webrtc).
 
 Regardless of how you're getting the answer, you need to set the remote description of the RTCPeerConnection object to the answer using `setRemoteDescription()` function. The peer does the same thing, but in reverse. They get the offer set it as the RemoteDescription and create an answer and set it as the LocalDescription.
 
@@ -62,7 +66,7 @@ A STUN server is used to tell you what your IP address is and what port is open 
 
 As such, people have started working with partial ICE results. Once you get and ICE candidate, you can send it to the other peer and they can start trying to connect to you. This is called trickle ICE. While it is mostly standard, it is not implemented in all browsers. So, you might want to wait for all ICE candidates before sending the offer.
 
-Aiortc library doesn't currently support trickle ICE, so what we're currently doing is waiting until no more ICE candidates are being generated for 500ms and then sending the offer. This is not ideal but it works great for our current limitations.
+Simli doesn't take trickled candidates: the offer is sent once, and has to carry them. Simli's reference clients wait until ICE gathering completes, or until no new candidate has come for 250ms, and then send the offer. This is not ideal but it works great for our current limitations. For the STUN and TURN servers themselves, your server can get a temporary set from [`GET /compose/ice`](/api-reference/endpoint/webrtc/getIceServers) and pass them to the browser as `iceServers`.
 
 ### Showing the work: Displaying Video and Playing Audio
 
@@ -74,4 +78,4 @@ Each language has it's own way of getting the video/audio data from the MediaStr
 
 ### I prefer text: Using Datachannels
 
-You need to create the datachannel object using the `createDataChannel()` function. You can then send messages using the `send()` function. You can also listen for messages using the `message` event. You can also listen for the `open` event to know when the datachannel is ready to send messages. You can also send binary data without base64 encoding by using the `send()` function with an UInt8Array as the argument.
+Simli doesn't use them, but in general: you need to create the datachannel object using the `createDataChannel()` function. You can then send messages using the `send()` function. You can also listen for messages using the `message` event. You can also listen for the `open` event to know when the datachannel is ready to send messages. You can also send binary data without base64 encoding by using the `send()` function with an UInt8Array as the argument.

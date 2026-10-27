@@ -7,46 +7,57 @@ icon: comments
 
 Using Simli Auto (our end-to-end API) is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledge base, a RAG powered system, using your fine-tuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, you're in the right place.
 
-There's a fun trick that you may already know about if you're this deep into the weeds, if you look at the [Deepseek api docs](https://api-docs.deepseek.com/), you can see that they're using the OpenAI SDK as if it was their own! They just put in the base_url for their API and the API key and then it works as if nothing weird is going on.
+There's a fun trick you may already know: the [DeepSeek API docs](https://api-docs.deepseek.com/) tell you to use the OpenAI SDK as if it were DeepSeek's own. You give it DeepSeek's base URL and API key, and it works as if nothing weird is going on.
 
-Well, this is a result of Deepseek, and a lot of LLM API providers copying most of OpenAI's homework in terms of API design, having the same endpoint naming scheme and Response . OpenAI API has a lot going on; however, there are 3 essential parts that everyone copied: Request path, , .
+That works because DeepSeek, like a lot of LLM API providers, copied OpenAI's API design. OpenAI's API has a lot going on, but everyone copied the 3 essential parts: the request path (`/chat/completions`), the request body, and the streamed response.
 
-TL;DR, If you have an OpenAI compatible API (test it out with the python or JS SDKs), pass [Simli the base url, an API key, and the model name](/api-reference/endpoint/simli-auto/startE2ESession#body-custom-llm-config-base-url) and you're golden!
+TL;DR: if your API works with the OpenAI SDK (try it with the Python or JS SDK), pass Simli its base URL, an API key and the model name in [`llmConfig`](/api-reference/start-auto-session#body-llm-config), with `provider` set to `"User"`, and you're golden! The base URL must use HTTPS.
+
+```json
+{
+    "faceId": "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    "llmConfig": {
+        "provider": "User",
+        "baseURL": "https://my-llm.example.com/v1",
+        "apiKey": "YOUR_LLM_API_KEY",
+        "model": "my-model"
+    }
+}
+```
+
+<Note>`customLLMConfig` (`baseURL`, `llmAPIKey`, `model`) still works but is deprecated: use `llmConfig`.</Note>
 
 ## The basic OpenAI request
 
-To make an OpenAI-compatible LLM API, you need to have something resembling the following
-
-POST `http(s)://my-awesome-llm-hosted-here/some/random/path */chat/completions*`
-
-With the header `Authorization` and value `Bearer INSERT_SECRET_API_KEY`
-
-and Body
+Simli calls your API the way the OpenAI SDK does: `POST {baseURL}/chat/completions`, with the header `Authorization: Bearer <your apiKey>` and a body like this:
 
 ```JSON
-"model":"my-AGI",
-"messages": [
-    {"role":"system", "content":"This is a sample system message (AKA base prompt)"}
-    {"role":"asssistant", "content":"This is a sample AI generated message"}
-    {"role":"user","content":"This is a sample user Input"}
-]
+{
+    "model":"my-AGI",
+    "messages": [
+        {"role":"system", "content":"This is a sample system message (AKA base prompt)"},
+        {"role":"assistant", "content":"This is a sample AI generated message"},
+        {"role":"user","content":"This is a sample user Input"}
+    ],
+    "stream": true
+}
 ```
 
 and the response(s)
 
 ```JSON
 {
-    "id":0,
-    "choices" :[ {
-        "delta": {"content":"Chunk Completion Text Example"}
+    "id": "chatcmpl-0",
+    "choices": [{
+        "delta": {"content": "Chunk Completion Text Example"}
     }],
-    "created": "Unix Time Stamp",
-    "model":"the model name you had in request",
-    "object": "chat.completion.chunk" // Just a literal
+    "created": 1730000000,
+    "model": "the model name you had in request",
+    "object": "chat.completion.chunk"
 }
 ```
 
-Response has the mimetype `text/eventstream` and above is used for all chunks. You must ensure that the text body is correctly formatted. Additionally, you must indicate that your response is done by sending a DONE frame. All responses are followed by 2 newline delimiters. Using FastAPI for example, you would have an async generator looking like this:
+`created` is a Unix timestamp and `object` is always the literal `chat.completion.chunk`. Response has the mimetype `text/event-stream` and above is used for all chunks. You must ensure that the text body is correctly formatted. Additionally, you must indicate that your response is done by sending a DONE frame. All responses are followed by 2 newline delimiters. Using FastAPI for example, you would have an async generator looking like this:
 
 ```python
 import json
@@ -60,7 +71,7 @@ async def outputStream():
         "model":"the model name you had in request",
         "object": "chat.completion.chunk" # Just a literal
     }]
-    async for chunk in ResultDict:
+    for chunk in ResultDict:
         yield f"data: {json.dumps(chunk)}\n\n"
     yield "data: [DONE]\n\n"
 
@@ -110,7 +121,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=11000)
 ```
 
-and another exxample just wrapping OpenAI SDK on the server
+and another example, wrapping the OpenAI SDK on the server
 
 ```python
 import os
@@ -128,10 +139,10 @@ OPEN_AI_API_KEY = os.getenv("OPENAI_API_KEY")
 async_client = AsyncOpenAI(api_key=OPEN_AI_API_KEY)
 
 
-async def streamOutput(request: Request):
+async def streamOutput(body: dict):
     output: AsyncGenerator[
         ChatCompletionChunk
-    ] = await async_client.chat.completions.create(**(await request.json()))
+    ] = await async_client.chat.completions.create(**body)
 
     async for item in output:
         out = f"data: {item.model_dump_json(exclude_unset=True)}\n\n"
@@ -141,8 +152,9 @@ async def streamOutput(request: Request):
 
 @app.post("/chat/completions")
 async def chat_completions(request: Request):
+    # Read the body before streaming: reading it inside the stream can hang
     return StreamingResponse(
-        streamOutput(request),
+        streamOutput(await request.json()),
         media_type="text/event-stream",
     )
 

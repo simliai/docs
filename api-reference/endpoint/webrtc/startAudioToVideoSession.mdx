@@ -1,5 +1,7 @@
 ---
 title: "/compose/token"
-description: "Start a session and get it's session token"
+description: "Create a session token for a streaming session"
 openapi: "POST /compose/token"
 ---
+
+Call this from your server: it takes your API key, and only the token goes to the browser. The token is valid for 5 minutes, so create one for each session, right before you open its WebSocket. The Trinity-2 fields, `streaming_width`, `streaming_height`, `avatar_position_x`, `avatar_position_y`, `camera`, `background_id` and `foreground_id`, are covered in [Trinity-2](/api-reference/trinity-2#framing-the-video). For the whole flow, see [Custom JS Simli Client](/api-reference/simli-webrtc).

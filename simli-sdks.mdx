@@ -6,12 +6,17 @@ description: "Create interactive AI avatars with full control over your AI stack
 --- 
 ## Overview
 
-Simli Client is our SDK that allows developers to create interactive AI avatars with full control over the tech stack. It is ideal for building apps with custom voice bots, integrating with existing systems and voice bots.
+The Simli SDKs let you create interactive AI avatars with full control over the tech stack. They're ideal for apps with custom voice agents, or for integrating with existing systems. You send the audio the avatar should speak, and get back its lip-synced video and voice.
 
+| SDK | Runs | What you need |
+| --- | --- | --- |
+| [JavaScript SDK](/api-reference/javascript) (`simli-client`) | In the browser | A Simli API key, and a backend route that creates session tokens, so the key never goes in the browser. |
+| [Python SDK](/api-reference/python) (`simli-ai`) | In your Python program | A Simli API key. |
 
-**Next steps:** 
-- Explore the detailed [Javascript](/api-reference/javascript) or [Python SDK](/api-reference/python) to get started quickly
-- Check out our example implementations
-- Join our community for support and updates
+Each SDK has three pages:
 
-For more detailed information about specific endpoints and features, navigate through the API reference sections.
+- **Guide**: install, connect, send audio, stop, and errors and retries.
+- **Trinity-2**: the video size, the avatar's position, the camera, backgrounds and foregrounds.
+- **API reference**: every class, method, event and type.
+
+Building a voice agent? [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) handle the audio and video for you. See [all starters](/api-reference/samples/all-samples) for complete example apps, or join our [Discord](https://discord.gg/yQx49zNF4d) for support and updates.

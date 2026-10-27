@@ -1,0 +1,164 @@
+---
+title: "JavaScript SDK reference"
+sidebarTitle: "API reference"
+description: "Every function, method, event and type in simli-client"
+---
+
+The package exports `SimliClient`, `generateSimliSessionToken`, `generateIceServers` and `LogLevel`, plus the types `SimliSessionRequest`, `SimliSessionToken` and `CameraSetting`. For a walkthrough, see the [guide](/api-reference/javascript).
+
+## Functions
+
+### `generateSimliSessionToken`
+
+```typescript
+generateSimliSessionToken(
+	request: { config: SimliSessionRequest; apiKey: string },
+	SimliURL: string = "https://api.simli.ai",
+): Promise<SimliSessionToken>
+```
+
+Creates a session token with [`POST /compose/token`](/api-reference/compose-session-token). It takes your API key, so call it on your server. It throws the response body text when the API answers with an error status.
+
+### `generateIceServers`
+
+```typescript
+generateIceServers(apiKey: string, SimliURL: string = "https://api.simli.ai"): Promise<RTCIceServer[]>
+```
+
+Fetches ICE servers for peer-to-peer mode. It takes your API key, so call it on your server. It never throws: if the request fails, it returns Google's public STUN server.
+
+## `SimliClient`
+
+### Constructor
+
+```typescript
+new SimliClient(
+	session_token: string,
+	videoElement: HTMLVideoElement,
+	audioElement: HTMLAudioElement,
+	iceServers: RTCIceServer[] | null,
+	logLevel: LogLevel = LogLevel.DEBUG,
+	transport_mode: "livekit" | "p2p" = "livekit",
+	signaling: "websockets" = "websockets",
+	SimliWSURL: string = "wss://api.simli.ai",
+	audioBufferSize: number = 3000,
+)
+```
+
+The constructor opens the connection, so create the client just before you call `start()`.
+
+| Parameter | Meaning |
+| --- | --- |
+| `session_token` | A token from `generateSimliSessionToken`, created on your server. |
+| `videoElement`, `audioElement` | Where the avatar's video and voice play. |
+| `iceServers` | Only for `"p2p"`. Pass `null` for the default transport. |
+| `logLevel` | `LogLevel.DEBUG`, `INFO`, `ERROR` or `CRITICAL`. `DEBUG` logs every message and audio chunk, so use `INFO` or `ERROR` in production. Warnings, such as `warning` events and unrecognised messages, are logged at `INFO` and `DEBUG`. |
+| `transport_mode` | `"livekit"`, the default, streams through Simli's own media servers. `"p2p"` connects straight to Simli over WebRTC and needs `iceServers`. |
+| `signaling` | Always `"websockets"`. |
+| `SimliWSURL` | Must start with `ws://` or `wss://`, with no trailing `/`. |
+| `audioBufferSize` | Samples per chunk that `listenToMediastreamTrack` and `listenToAudioElement` send. A positive integer: 3000 is 187.5 ms at 16 kHz. |
+
+It throws on an invalid `audioBufferSize` or `SimliWSURL`, and in `"p2p"` mode when `iceServers` is null or empty.
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `start(): Promise<void>` | Connects and resolves when the first video frame is on screen. Retries only network failures, with exponential backoff, and rejects at once on anything else. See [Errors and retries](/api-reference/javascript#errors-and-retries). Throws if the client was already stopped. |
+| `stop(): Promise<void>` | Ends the session and closes the connection. The client can't be started again. |
+| `sendAudioData(audioData: Uint8Array)` | Sends PCM16, 16 kHz, mono audio. It plays after any audio already queued. Throws if the connection isn't open. |
+| `sendAudioDataImmediate(audioData: Uint8Array)` | Drops any queued audio and plays this chunk right away. |
+| `ClearBuffer()` | Drops any queued audio, so the avatar stops talking. Use it when the user interrupts. |
+| `listenToMediastreamTrack(track: MediaStreamTrack)` | Streams an audio track, such as a microphone or a TTS WebRTC track, to Simli. |
+| `listenToAudioElement(audioEl: HTMLAudioElement)` | Streams what an `<audio>` element plays to Simli, and mutes that element locally: you hear the avatar through `audioElement` instead. An element can only be captured once. |
+| `setCamera(camera: CameraSetting \| null, options?: { lerpSeconds?: number })` | Trinity-2 only. Replaces the camera, or goes back to the avatar's own framing with `null`. Glides over `lerpSeconds` seconds if it's above 0, otherwise cuts. Throws on a value that isn't a finite number, and if the connection isn't open. See [Trinity-2](/api-reference/javascript/trinity-2). |
+| `setBackground(backgroundId: string \| null)` | Trinity-2 only. Shows one of your uploaded backgrounds behind the avatar, or the avatar's own with `null`. It applies a moment later, once loaded, and the last call wins. Throws if the id isn't a 36-character UUID. |
+| `setForeground(foregroundId: string \| null)` | Trinity-2 only. Lays one of your uploaded foregrounds over the avatar, or removes it with `null`. Otherwise it works like `setBackground`. |
+| `on(event, callback)` | Registers an [event](#events) handler. Register handlers before `start()`. They stay registered across retries. |
+| `off(event, callback)` | Removes an event handler. Throws if that event never had a handler. |
+
+## Events
+
+```typescript
+simliClient.on("error", (detail) => console.error("Simli:", detail));
+```
+
+| Event | Callback | Fires when |
+| --- | --- | --- |
+| `start` | `() => void` | The first video frame is on screen, and `start()` resolves. |
+| `stop` | `() => void` | Simli ended the session, for example when `maxSessionLength` or `maxIdleTime` was reached. The connection is closed. |
+| `error` | `(detail: string) => void` | Simli reported an error or closed the session with a reason, in a message starting `ERROR`, `RATE` or `CLOSING`. The connection is closed. During `start()`, `start()` rejects with the same `detail` and doesn't retry. |
+| `startup_error` | `(message: string) => void` | The connection failed: the signaling websocket failed (`"Websocket Failed"`), or the media connection couldn't be joined (`"LiveKit join failed: <reason>"`). It fires on each failed attempt, and `start()` retries. |
+| `speaking` | `() => void` | The avatar started speaking. |
+| `silent` | `() => void` | The avatar stopped speaking. |
+| `ack` | `() => void` | Simli acknowledged a message, such as an audio chunk. |
+| `video_info` | `(serialized_info: string) => void` | Video metadata arrived, as JSON: `{"video_metadata": {"fps", "width", "height"}}`. |
+| `destination` | `(serialized_info: string) => void` | Simli assigned the session, as JSON: `{"destination", "session_id"}`. Include it when you report an issue. |
+| `connection_info` | `(serialized_info: string) => void` | The connection details arrived. For internal use. |
+| `warning` | `(message: string) => void` | Simli answered `setCamera`, `setBackground` or `setForeground`: a camera value outside its supported range was applied anyway, or the change was ignored. The session goes on. See [Notices](/api-reference/javascript/trinity-2#notices). |
+| `unknown` | `(message: string) => void` | Any other message from Simli. Before the first frame, it also makes `start()` reject. After that, the session goes on. |
+
+## Types
+
+### `SimliSessionRequest`
+
+The `config` of a session token request, sent as the body of [`POST /compose/token`](/api-reference/compose-session-token).
+
+```typescript
+interface SimliSessionRequest {
+	faceId: string;
+	handleSilence?: boolean; // default true. See "Choosing handleSilence" in the guide
+	maxSessionLength?: number; // seconds, default 3600
+	maxIdleTime?: number; // seconds, default 300
+	sessionAggregator?: string | null;
+	startFrame?: number; // default 0
+	audioInputFormat?: string; // default "pcm16", the only format supported
+
+	// Trinity-2 faces only
+	streaming_width?: number; // pixels, at least 512, default 768
+	streaming_height?: number; // pixels, at least 512, default 768. With width: 1:1, 16:9 or 9:16
+	avatar_position_x?: number; // 0 (left) to 1 (right), default 0.5
+	avatar_position_y?: number; // 0 (top) to 1 (bottom), default 1
+	camera?: CameraSetting | null; // starting camera, leave out to keep the avatar's framing
+	background_id?: string | null; // an id from POST /assets/backgrounds
+	foreground_id?: string | null; // an id from POST /assets/foregrounds
+}
+```
+
+### `SimliSessionToken`
+
+```typescript
+interface SimliSessionToken {
+	session_token: string;
+	warnings: string[]; // out-of-range camera values, dropped background or foreground ids
+}
+```
+
+### `CameraSetting`
+
+Offsets on top of the avatar's own framing. Every field you leave out is neutral. Values outside the supported range are still applied, with a warning.
+
+```typescript
+interface CameraSetting {
+	pos_x_off?: number; // moves the avatar right, in half canvas widths, -10 to 10
+	pos_y_off?: number; // moves the avatar down, in half canvas heights, -10 to 10
+	pos_z_off?: number; // metres the camera backs away (negative moves in), -5 to 5
+	rot_x_off?: number; // degrees the camera tilts up, -180 to 180
+	rot_y_off?: number; // degrees the camera pans right, -180 to 180
+	rot_z_off?: number; // degrees the camera rolls clockwise, -180 to 180
+	zoom?: number; // multiplies the avatar's zoom, 1 is no change, above 0 up to 4
+	orbit_x_off?: number; // degrees the camera orbits up over the head, -80 to 80
+	orbit_y_off?: number; // degrees the camera orbits round to its right, -180 to 180
+}
+```
+
+### `LogLevel`
+
+```typescript
+enum LogLevel {
+	DEBUG = 0,
+	INFO = 1,
+	ERROR = 2,
+	CRITICAL = 3,
+}
+```

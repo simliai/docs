@@ -5,6 +5,8 @@ iconType: "duotone"
 description: "Create interactive AI avatars with just a few API calls"
 ---
 
+<Warning>Simli Auto is deprecated. It keeps working for now, but new projects should build their agent with [LiveKit](/api-reference/livekit) or [Pipecat](/api-reference/pipecat), or with the [Simli SDKs](/simli-sdks).</Warning>
+
 ## Overview
 
 Simli Auto is our managed API and provides streamlined way to integrate conversational AI agents into your applications with minimal setup.
@@ -18,7 +20,7 @@ For changing the interaction languages, you can look at the support list on [Dee
 There are two ways to build with Simli Auto. The recommended way for most people is using session tokens to authenticate:
 
 - **`POST /auto/token`**: Creates a new session token for authentication. Requires your Simli API key and optionally a TTS API key.
-- **`POST /auto/start/{agent_id}`**: Starts a session using token in the header for authentication (see API reference).
+- **`GET /auto/start/{agent_id}`**: Starts a session using the token in the `session-token` header for authentication (see API reference).
 
 An alternative way to start a session without creating a token first is to use this endpoint:
 
@@ -42,8 +44,10 @@ Here's a basic flow to get started:
 
 1. Create a session token:
 
-```bash
+```http
 POST /auto/token
+x-simli-api-key: your-api-key
+
 {
   "simliAPIKey": "your-api-key",
   "ttsAPIKey": "your-tts-api-key"  // Optional
@@ -52,16 +56,25 @@ POST /auto/token
 
 2. Start an end-to-end session:
 
-```bash
+```http
 POST /auto/start/configurable
+x-simli-api-key: your-api-key
+
 {
-  "apiKey": "your-api-key",
-  "faceId": "your-face-id",
-  "ttsProvider": "ElevenLabs"
+  "faceId": "bf13113a-355a-4d97-8b90-4edccd1da7b2",
   "language": "en",
   "createTranscript": false
 }
 ```
+
+This session uses the default voice and LLM. To change them, see [Defaults](#defaults).
+
+### Defaults
+
+If you leave them out, a session uses:
+
+- **Text-to-speech:** Inworld (`"ttsProvider": "Inworld"`), with the model `inworld-tts-2` (`ttsModel`) and the voice `Ashley` (`voiceId`). To use another provider, set `ttsProvider` to `ElevenLabs` or `Cartesia` and `voiceId` to one of its voices. `ttsAPIKey` takes your own key for that provider.
+- **LLM:** OpenAI's `gpt-6-luna` (`"llmConfig": {"provider": "OpenAI", "model": "gpt-6-luna"}`). To use your own, see [Using Custom LLMs](#using-custom-llms).
 
 ### Using Custom LLMs
 
@@ -108,6 +121,6 @@ Please refer to your API plan for specific rate limits and quotas. Ensure your a
 
 - Explore the detailed API reference for each endpoint
 - Check out our example implementations
-- Join our community for support and updates
+- [Talk to us](https://discord.gg/yQx49zNF4d) for support and updates
 
 For more detailed information about specific endpoints and features, navigate through the API reference sections.

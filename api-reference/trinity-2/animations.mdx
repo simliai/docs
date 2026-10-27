@@ -1,24 +1,11 @@
 ---
 title: "Animations"
 icon: "hand"
-description: "Have a Trinity-2 avatar open a Simli Auto session with an animation"
+description: "Play an animation on command: coming soon to Simli Compose"
 ---
 
-A Trinity-2 avatar can play an animation clip as it opens a Simli Auto session. Faces other than [Trinity-2](/api-reference/trinity-2) ignore it.
+<Note>
+Coming soon to Simli Compose.
+</Note>
 
-## Intro animation (Simli Auto)
-
-[`POST /auto/start/configurable`](/api-reference/start-auto-session) takes an `introAnimation`. The avatar plays it when the user joins, together with `firstMessage` if there is one. It's off by default: leave `introAnimation` out for no animation. Any other value gets a `422`.
-
-| `introAnimation` | The clip |
-| --- | --- |
-| `wave` | A wave over the head. The hand goes above the avatar's default frame, so zoom out (see [Camera](/api-reference/trinity-2/camera)) if you want all of it in view. |
-| `g003_wave_goodbye_solo` | |
-| `speaking_hands_explaining` | Both hands come up in front of the chest and talk with them, for 7 seconds. |
-
-```bash
-curl -X POST "https://api.simli.ai/auto/start/configurable" \
-	-H "x-simli-api-key: $SIMLI_API_KEY" \
-	-H "Content-Type: application/json" \
-	-d '{"faceId": "YOUR_TRINITY_2_FACE_ID", "firstMessage": "Hi there!", "introAnimation": "wave"}'
-```
+A Trinity-2 avatar will be able to play an animation on command during a Simli Compose session, such as a wave or a gesture while it talks. Faces other than [Trinity-2](/api-reference/trinity-2) won't support it.

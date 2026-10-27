@@ -1,134 +1,121 @@
 ---
-title: Python SDK
-icon: "python"
+title: "Python SDK"
+sidebarTitle: "Guide"
+description: "Run Simli sessions from Python with simli-ai"
 ---
 
-The Simli WebRTC SDK is a powerful tool for integrating real-time audio and video streaming capabilities into your python applications using WebRTC. You can use this SDK to display a Simli outside the browser, save the stream into a file, or integrate your stream in your program however you want!
+[simli-ai](https://github.com/simliai/simli-client-py) runs Simli sessions from Python. You send the audio the avatar should speak, and get back its lip-synced video and audio as [PyAV](https://pyav.org) frames, to save to a file, show in a window or process however you like.
 
-## Getting Started
+<Tip>Building a voice agent? [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) have Simli integrations that handle the audio and video for you.</Tip>
 
-### Prerequisites
+## What you need
 
-Before you begin, make sure you have:
+- A Simli API key, from your [Simli dashboard](https://app.simli.com)
+- Python 3.11 or later
 
-1. A Simli account with an API key
-2. Python3.9 or higher
+The SDK runs where your API key is safe, so there's no session token step.
 
-### Installation
-
-Install `simli-ai` package:
+## Install
 
 ```bash
 pip install simli-ai
 ```
 
-## Usage
+To show the avatar in a window with `LocalRenderer`, install the `local` extra instead: `pip install "simli-ai[local]"`.
 
-### Step 1: Creating the SimliClient
-
-Create an instance of SimliClient and initialize it with your configuration:
+## 1. Start a session
 
 ```python
 import asyncio
+
 from simli import SimliClient, SimliConfig
-from simli.renderers import FileRenderer
+from simli.renderers.renderers import FileRenderer
+
+
 async def main():
-    connection =  SimliClient(
-        api_key="YOUR_SIMLI_API_KEY",  # API Key
-        SimliConfig(
-            faceId="YOUR_FACE_ID",  # Face ID
-            maxSessionLength=20,
-            maxIdleTime=10,
-        )
-    )
-    await connection.start()
+    with open("speech.pcm", "rb") as f:  # PCM16, 16 kHz, mono
+        audio = f.read()
+
+    async with SimliClient(
+        api_key="YOUR_SIMLI_API_KEY",
+        config=SimliConfig(
+            faceId="bf13113a-355a-4d97-8b90-4edccd1da7b2",  # a Trinity-2 preset face
+            maxSessionLength=120,  # seconds
+            maxIdleTime=60,  # seconds
+        ),
+    ) as connection:
+        await connection.send(audio)
+        await FileRenderer(connection).render()  # writes output.mp4
+
 
 asyncio.run(main())
 ```
 
-Make sure to replace `"YOUR_SIMLI_API_KEY"` with your actual Simli API key, and `"YOUR_FACE_ID"` with the desired face ID for your application.
+Replace `"YOUR_SIMLI_API_KEY"` with your Simli API key. To use another avatar, replace the face ID with one from your [dashboard](https://app.simli.com) or the [default faces](/api-reference/preset-faces). For the video size, the avatar's position, the camera and backgrounds, see [Trinity-2](/api-reference/python/trinity-2).
 
-### Step 2: Send Audio Data
+`async with` starts the session and stops it when the block ends. Without it, call `await connection.start()` first and `await connection.stop()` when you're done.
 
-Once the connection is established, you can start sending audio data:
+## 2. Send audio
+
+`send()` takes raw PCM16 audio, 16 kHz, mono, as `bytes`. It plays after any audio already queued.
 
 ```python
-# Example: sending audio data (should be PCM16 format, 16KHz sample rate)
-await connection.sendSilence(1) # to send 1 second of silence to the API
-await connection.send(audio) # where audio is a bytes object representing the raw audio data
+await connection.send(audio)
+await connection.clearBuffer()  # drop the queued audio, e.g. when the user interrupts
+await connection.sendImmediate(audio)  # drop the queued audio and play this instead
 ```
 
-Ensure that your audio data is in PCM16 format with a 16KHz sample rate.
+`handleSilence` in `SimliConfig` (default `True`) decides what Simli does when your audio runs out. With `True`, Simli fills the gaps with silence, so the avatar keeps moving between sentences. Set it to `False` when you stream continuous audio that already has its own silences: Simli then plays only the audio you send, and the video freezes when you stop sending.
 
-## simli-ai API reference
+## 3. Get the video and audio
 
-### simli.SimliConfig
+The renderers in `simli.renderers.renderers` take the stream for you:
 
-This is a dataclass that represents the config sent to [this endpoint](/api-reference/compose-session-token) to get a session_token
+- `FileRenderer(connection)` writes it to `output.mp4`.
+- `LocalRenderer(connection)` shows it in a window and plays it on your speakers. It needs the `local` extra and a display.
+- `NDArrayRenderer(connection)` returns the video and audio as NumPy arrays once the session ends.
 
-- `faceId`: str # FaceID you can get from [default avatars](/api-reference/preset-faces) or create your own on the [simli website](https://app.simli.com/create/select)
-- `handleSilence`: bool. Specify whether you want to keep the Simli Avatar Moving when you don't send in Audio default true. Set to false for absolute control (difficult to get response time right)
-- `maxSessionLength`: int. A hard time limit (in seconds) after which the session will disconnect
-- `maxIdleTime`: int. A soft time limit (in seconds) that disconnects the session after a period of not sending in data
+To handle the frames yourself, iterate over them:
 
-### simli.SimliClient
-
-- `class SimlClient(api_key: str, config: SimliConfig, simliURL: str = "https://api.simli.ai",retry_count: int = 3, retry_timeout: float = 15.0, enableSFU: bool = True, transport_mode: TransportMode = TransportMode.P2P)`
-    - SimliClient constructor
-        - `api_key`: str. Your API key you get from [this page](https://app.simli.com/apiKey)
-        - `config`: refer to [SimliConfig](#simli-simliconfig)
-        - `simliURL`: str. Used if you're setting up a proxy for Simli Backend. Not useful for most
-        - `retry_count`: int = 3. How many reconnection attempts before an error is thrown
-        - `retry_timeout`: float. Time between retry attempts
-        - `enableSFU`: bool. Only works for TransportMode.P2P. Specifies whether traffic should run through cloudflare network or not
-        - `transport_mode`: TransportMode. Transport Mode. Livekit or Peer to Peer
-
-- `async def start()`: Initializes the SimliClient with the provided configuration and starts the WebRTC Connection
-- `async close()`: Closes the WebRTC connection and cleans up resources.
-- `registerEventCallback(event: SimliEvent,async_callback: Callable[[], Awaitable[None]])`. Register a callback to a [SimliEvent](#simlievent)
-- `async send(data: bytes | string)`: Sends audio data or control signals to the server.
-- `async sendImmediate(data: bytes)`: Sends audio data for immediate playback. Clears all previous audio in the buffer.
-- `async sendSilence(duration: float= 0.1875)`: Sends the specified duration to the server as silent audio, used mostly in Idle mode.
-- `async clearBuffer()`: Clears the audio buffer, best used when you want the avatar to stop talking.
-- `async getNextVideoFrame()`: returns the following [PyAV](https://pyav.basswood-io.com/docs/stable/) VideoFrame.
-- `async getNextAudioFrame()`: returns the following PyAV AudioFrame.
-- `async getVideoStreamIterator(targetFormat:str)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
-    - `targetFormat`: specify what format you want the frames to be in, defaults to RGB.
-- `async getAudioStreamIterator(targetSampleRate)`: Creates an async iterator that retrieves all the video frames in order. Can be used in an `async for` loop.
-    - `targetSampleRate: int`: specify the sampling rate of the output audio, specify if you want to use the audio in something else that has specific sampling rate constraints
-
-### SimliEvent
-
-Possible signals that are sent from the server. Can be used for callbacks. You can refer to [JS SDK](/api-reference/javascript#events)for an explanation of the events
-
-```py
-class SimliEvent(StrEnum):
-    START = auto()
-    STOP = auto()
-    ERROR = auto()
-    SILENT = auto()
-    SPEAK = auto()
-    ANSWER = auto()
-    VIDEO_META = auto()
-    DESTINATION = auto()
-    UNKNOWN = auto()
-    ACK = auto()
+```python
+async for frame in connection.getVideoStreamIterator("rgb24"):
+    ...  # a PyAV VideoFrame
 ```
 
-### Fork and Contribute to simli-client
+`getAudioStreamIterator()` does the same for audio. Run the two loops as separate tasks to receive both at once.
 
-<Card title="simli-ai" icon="github" href="https://github.com/simliai/simli-client-py">
-	Fork and contribute to the simli-client repository on GitHub or clone for your own usecase.
-</Card>
+## Errors and retries
 
-## Troubleshooting
+`start()` returns once Simli has started the session. If it can't, it raises one of these exceptions, all exported from `simli` and all subclasses of `SimliError`:
 
-If you encounter issues:
+- `SimliAPIError`: a request to the Simli API failed, for example an invalid API key, an unknown face ID or no minutes left. `status_code` and `detail` hold the HTTP status and Simli's message.
+- `SimliSessionError`: Simli refused the session, for example an expired session token or the rate limit. Also a message from Simli the SDK doesn't recognise, sent while the session is starting. That one is logged as `Unknown error from Simli: <message>`, and its `code` is `UNKNOWN_ERROR`.
+- `SimliConnectionError`: the network failed. A request or the websocket couldn't connect, timed out or dropped.
 
-1. Ensure your API key is correct and active.
-2. Verify that your face ID is valid and associated with your account.
-3. Check that your audio data is in the correct format (PCM16, 16KHz).
-4. Verify that you have the necessary permissions for accessing the user's media devices.
-5. Review the console logs for any error messages or warnings.
+`start()` retries only network failures: `SimliConnectionError` and HTTP 5xx responses. It tries up to `retry_count` times in all (3 by default), with exponential backoff: it waits 1, 2, 4 and 8 seconds before the first four retries, then 16 seconds before each one after that, each wait plus a little random jitter. Everything else raises at once.
 
-Reach out to our support team for further assistance on [Discord](https://discord.gg/yQx49zNF4d).
+```python
+from simli import SimliAPIError, SimliError
+
+try:
+    await connection.start()
+except SimliAPIError as e:
+    print(e.status_code, e.detail)  # e.g. 400 INVALID_FACE_ID
+except SimliError as e:
+    print(e)
+```
+
+Once the session has started, a message the SDK doesn't recognise no longer ends it: it's logged as a warning on the `simli_client` logger. Once the session has ended, `connection.stopReason` holds the reason Simli gave (such as `"IDLE"` or `"MAX"`), `connection.error` holds the error that ended it, if one did, and `send()` raises instead of failing silently.
+
+## Next steps
+
+<CardGroup cols={2}>
+	<Card title="Trinity-2" icon="star" href="/api-reference/python/trinity-2">
+		Video size, the avatar's position, the camera, backgrounds and foregrounds.
+	</Card>
+	<Card title="API reference" icon="code" href="/api-reference/python/reference">
+		Every class, method, event and exception.
+	</Card>
+</CardGroup>
+
+Questions? Ask on [Discord](https://discord.gg/yQx49zNF4d), or [fork simli-ai](https://github.com/simliai/simli-client-py) for your own use case.

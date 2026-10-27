@@ -1,0 +1,137 @@
+---
+title: "Python SDK reference"
+sidebarTitle: "API reference"
+description: "Every class, method, event and exception in simli-ai"
+---
+
+`simli` exports `SimliClient`, `SimliConfig`, `CameraSetting`, the exceptions (`SimliError`, `SimliAPIError`, `SimliSessionError`, `SimliConnectionError`) and their codes (`SimliExceptions`). For a walkthrough, see the [guide](/api-reference/python).
+
+## `SimliConfig`
+
+A dataclass that becomes the body of [`POST /compose/token`](/api-reference/compose-session-token). Fields left as `None` are left out of the request, so Simli's defaults apply.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `faceId` | required | The face to use. See the [default faces](/api-reference/preset-faces), or create your own in the [dashboard](https://app.simli.com). |
+| `handleSilence` | `True` | Simli fills the gaps with silence when your audio runs out. With `False`, Simli plays only what you send, and the video freezes when you stop sending. |
+| `maxSessionLength` | `600` | Seconds before the session ends, even mid-sentence. |
+| `maxIdleTime` | `30` | Seconds without speech before the session ends. |
+| `sessionAggregator` | `None` | |
+| `startFrame` | `None` (Simli's default is `0`) | |
+| `audioInputFormat` | `None` (Simli's default is `"pcm16"`) | `"pcm16"` is the only format supported. |
+| `streaming_width`, `streaming_height` | `None` (Simli's default is 768x768) | Trinity-2 only. The video's size. See [Trinity-2](/api-reference/python/trinity-2). |
+| `avatar_position_x`, `avatar_position_y` | `None` (Simli's default is `0.5`, `1.0`) | Trinity-2 only. Where the avatar sits on the canvas. |
+| `camera` | `None` | Trinity-2 only. The starting [`CameraSetting`](#camerasetting). |
+| `background_id`, `foreground_id` | `None` | Trinity-2 only. One of your uploaded backgrounds or foregrounds, by id. |
+
+## `CameraSetting`
+
+A dataclass of offsets on top of the avatar's own framing. The defaults are neutral. Values outside the supported range are still applied, with a warning.
+
+| Field | Default | Meaning | Supported range |
+| --- | --- | --- | --- |
+| `pos_x_off` | `0.0` | Moves the avatar right, in half canvas widths | -10 to 10 |
+| `pos_y_off` | `0.0` | Moves the avatar down, in half canvas heights | -10 to 10 |
+| `pos_z_off` | `0.0` | Metres the camera backs away from the avatar (negative moves in) | -5 to 5 |
+| `rot_x_off` | `0.0` | Degrees the camera tilts up | -180 to 180 |
+| `rot_y_off` | `0.0` | Degrees the camera pans right | -180 to 180 |
+| `rot_z_off` | `0.0` | Degrees the camera rolls clockwise | -180 to 180 |
+| `zoom` | `1.0` | Multiplies the avatar's zoom; 1 is no change | above 0, up to 4 |
+| `orbit_x_off` | `0.0` | Degrees the camera orbits up over the avatar's head | -80 to 80 |
+| `orbit_y_off` | `0.0` | Degrees the camera orbits round to its right | -180 to 180 |
+
+## `SimliClient`
+
+### Constructor
+
+```python
+SimliClient(
+    api_key: str,
+    config: SimliConfig,
+    simliURL: str = "https://api.simli.ai",
+    retry_count: int = 3,
+    retry_timeout: float | None = None,
+    enableSFU: bool = True,
+    transport_mode: TransportMode = TransportMode.P2P,
+)
+```
+
+| Parameter | Meaning |
+| --- | --- |
+| `api_key` | Your Simli API key, from your [dashboard](https://app.simli.com). |
+| `config` | A [`SimliConfig`](#simliconfig). |
+| `simliURL` | For a proxy in front of the Simli API. Leave it as is otherwise. |
+| `retry_count` | How many times `start()` tries in all. 0 or 1 means a single attempt. Only network failures and HTTP 5xx responses are retried, with exponential backoff. |
+| `retry_timeout` | Deprecated and ignored. |
+| `enableSFU` | Peer-to-peer mode only. Whether the media runs through Cloudflare's network. |
+| `transport_mode` | `TransportMode.P2P` (from `simli.simli`) connects straight to Simli over WebRTC. `TransportMode.LIVEKIT` streams through Simli's own media servers and needs the `livekit` extra (`pip install "simli-ai[livekit]"`). With the extra installed, retries use `LIVEKIT`. |
+
+`SimliClient` is an async context manager: `async with SimliClient(...) as connection` calls `start()` on entry and `stop()` on exit.
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `async start()` | Starts the session and returns once Simli has started it. Raises a [`SimliError`](#exceptions) if it can't. |
+| `async stop()` | Ends the session and closes the connection. |
+| `async send(data: bytes \| str)` | Sends PCM16, 16 kHz, mono audio, or a control message. Raises once the session has ended. |
+| `async sendImmediate(data: bytes)` | Drops any queued audio and plays this right away. |
+| `async sendSilence(duration: float = 0.1875)` | Sends that many seconds of silence. |
+| `async clearBuffer()` | Drops any queued audio, so the avatar stops talking. |
+| `async setCamera(camera: CameraSetting \| None, *, lerp_seconds: float \| None = None)` | Trinity-2 only. Replaces the camera, or goes back to the avatar's own framing with `None`. Glides over `lerp_seconds` seconds if it's above 0, otherwise cuts. Raises `ValueError` on a NaN or infinite value. See [Trinity-2](/api-reference/python/trinity-2). |
+| `async setBackground(background_id: str \| None)` | Trinity-2 only. Shows one of your uploaded backgrounds behind the avatar, or the avatar's own with `None`. Raises `ValueError` if the id isn't a 36-character id. |
+| `async setForeground(foreground_id: str \| None)` | Trinity-2 only. Lays one of your uploaded foregrounds over the avatar, or removes it with `None`. Raises `ValueError` if the id isn't a 36-character id. |
+| `getVideoStreamIterator(targetFormat: str = "rgb24")` | An async iterator over the video, as PyAV `VideoFrame`s in `targetFormat`. |
+| `getAudioStreamIterator(targetSampleRate: int = 48000)` | An async iterator over the audio, as PyAV `AudioFrame`s, resampled to `targetSampleRate`. |
+| `registerEventCallback(event: SimliEvent, async_callback)` | Calls `async_callback()` on an [event](#events). Register after `start()`. |
+
+### Properties
+
+| Property | Description |
+| --- | --- |
+| `stopReason: str \| None` | Why the session ended, as Simli put it, such as `"IDLE"` or `"MAX"`. `None` while it runs, or when you stopped it. |
+| `error: SimliError \| None` | The error that ended the session, if one did. |
+
+## Events
+
+`SimliEvent`, from `simli.events`:
+
+| Event | When |
+| --- | --- |
+| `START` | The session started. |
+| `STOP` | The session ended. |
+| `ERROR` | Simli reported an error. |
+| `SPEAK` | The avatar started speaking. |
+| `SILENT` | The avatar stopped speaking. |
+| `ACK` | Simli acknowledged a message, such as an audio chunk. |
+| `VIDEO_META` | Video metadata arrived. |
+| `DESTINATION` | Simli assigned the session. Include it when you report an issue. |
+| `CONNECTION_INFO` | The connection details arrived. For internal use. |
+| `UNKNOWN` | Any other message from Simli. |
+
+## Exceptions
+
+All of them are exported from `simli` and subclass `SimliError`, which subclasses `Exception`.
+
+| Exception | Raised when | Retried by `start()` |
+| --- | --- | --- |
+| `SimliError` | The base class. `message` says what failed, `code` is a `SimliExceptions` value (`UNKNOWN_ERROR` when Simli named none), and `retryable` says whether `start()` retries it. | |
+| `SimliAPIError` | A request to the Simli API failed, for example an invalid API key, an unknown face ID or no minutes left. `status_code` and `detail` hold the HTTP status and Simli's message. | Only a 5xx |
+| `SimliSessionError` | Simli refused or ended the session with an error, for example an expired session token or the rate limit. Also a message the SDK doesn't recognise while the session is starting, with `code` `UNKNOWN_ERROR`. | No |
+| `SimliConnectionError` | The network failed: a request or the websocket couldn't connect, timed out or dropped, or the media connection couldn't be joined. | Yes |
+
+`SimliExceptions` codes include `INVALID_API_KEY`, `INVALID_FACE_ID`, `BILLING_ERROR`, `MISSING_BILLING_INFO` and `UNKNOWN_ERROR`. The setters also raise `ValueError` on a bad value, without sending anything.
+
+## Renderers
+
+From `simli.renderers.renderers`. Each takes the `SimliClient` and has an `async render()` that runs until the session ends.
+
+| Renderer | What `render()` does |
+| --- | --- |
+| `FileRenderer(client, filename="output.mp4", videoCodec="h264", audioCodec="aac", outputFormat="mp4")` | Writes the video and audio to a file. |
+| `LocalRenderer(client, windowName="Simli")` | Shows the video in a window and plays the audio. Needs the `local` extra and a display. |
+| `NDArrayRenderer(client)` | Returns the video as an `(N, H, W, 3)` RGB array and the audio as a `(1, 2L)` array of interleaved stereo int16 samples at 48 kHz. |
+
+## Logging
+
+The SDK logs to the standard `logging` logger named `simli_client`, including Simli's notices about camera, background and foreground changes, as warnings.

@@ -25,16 +25,7 @@
                                     "api-reference/trinity-2",
                                     "api-reference/trinity-2/camera",
                                     "api-reference/trinity-2/animations",
-                                    "api-reference/trinity-2/backgrounds",
-                                    {
-                                        "group": "Backgrounds API",
-                                        "icon": "code",
-                                        "pages": [
-                                            "api-reference/endpoint/assets/upload",
-                                            "api-reference/endpoint/assets/list",
-                                            "api-reference/endpoint/assets/delete"
-                                        ]
-                                    }
+                                    "api-reference/trinity-2/backgrounds"
                                 ]
                             },
                             "api-reference/preset-faces"
@@ -44,17 +35,32 @@
                         "group": "Integrations",
                         "pages": [
                             "api-reference/livekit",
-                            "api-reference/pipecat"
+                            "api-reference/pipecat",
+                            "api-reference/trinity-2/integration-workarounds"
                         ]
                     },
                     {
                         "group": "Simli SDKs",
                         "pages": [
                             "simli-sdks",
-                            "api-reference/javascript",
-                            "api-reference/javascript_upgrade_guide",
-                            "api-reference/python",
-                            "api-reference/python_upgrade_guide"
+                            {
+                                "group": "JavaScript SDK",
+                                "icon": "js",
+                                "pages": [
+                                    "api-reference/javascript",
+                                    "api-reference/javascript/trinity-2",
+                                    "api-reference/javascript/reference"
+                                ]
+                            },
+                            {
+                                "group": "Python SDK",
+                                "icon": "python",
+                                "pages": [
+                                    "api-reference/python",
+                                    "api-reference/python/trinity-2",
+                                    "api-reference/python/reference"
+                                ]
+                            }
                         ]
                     },
                     {
@@ -115,12 +121,6 @@
                         ]
                     },
                     {
-                        "group": "Migration Guide",
-                        "pages": [
-                            "api-reference/api_migration_guide"
-                        ]
-                    },
-                    {
                         "group": "Simli Auto Guides (deprecated)",
                         "pages": [
                             "api-reference/endpoint/simli-auto/customLLM"
@@ -130,6 +130,48 @@
             }
         ]
     },
+    "redirects": [
+        {
+            "source": "/introduction",
+            "destination": "/overview"
+        },
+        {
+            "source": "/emotions",
+            "destination": "/api-reference/trinity-2"
+        },
+        {
+            "source": "/api-reference/create-simli-agent",
+            "destination": "/api-reference/samples/all-samples"
+        },
+        {
+            "source": "/api-reference/simli-client",
+            "destination": "/api-reference/javascript"
+        },
+        {
+            "source": "/api-reference/javascript_upgrade_guide",
+            "destination": "/api-reference/javascript"
+        },
+        {
+            "source": "/api-reference/python_upgrade_guide",
+            "destination": "/api-reference/python"
+        },
+        {
+            "source": "/api-reference/api_migration_guide",
+            "destination": "/api-reference/compose-session-token"
+        },
+        {
+            "source": "/api-reference/endpoint/assets/upload",
+            "destination": "/api-reference/upload-background-or-foreground"
+        },
+        {
+            "source": "/api-reference/endpoint/assets/list",
+            "destination": "/api-reference/list-backgrounds-or-foregrounds"
+        },
+        {
+            "source": "/api-reference/endpoint/assets/delete",
+            "destination": "/api-reference/delete-a-background-or-foreground"
+        }
+    ],
     "logo": {
         "light": "/logo/light.svg",
         "dark": "/logo/dark.svg"
@@ -141,7 +183,7 @@
     "navbar": {
         "links": [
             {
-                "label": "Join our Discord",
+                "label": "Need help, talk to us on Discord",
                 "href": "https://discord.gg/yQx49zNF4d"
             }
         ],

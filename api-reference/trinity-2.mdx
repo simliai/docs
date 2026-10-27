@@ -10,38 +10,38 @@ Trinity-2 is our newest avatar generation. A Trinity-2 avatar is built waist-up,
 - **Pick the video's size and shape.** Square, landscape or portrait, at any size from 512 pixels up.
 - **Place the avatar on the canvas.** Put it anywhere on the frame instead of in the bottom centre.
 - **Set a starting camera, then move it live.** Zoom, pan, tilt, roll and orbit around the avatar, as a cut or as a smooth glide. See [Camera](/api-reference/trinity-2/camera).
-- **Play an animation** when a Simli Auto session opens. See [Animations](/api-reference/trinity-2/animations).
+- **Play an animation on command.** Coming soon to Simli Compose. See [Animations](/api-reference/trinity-2/animations).
 - **Show your own background or foreground** behind or over the avatar, and swap it live. See [Backgrounds](/api-reference/trinity-2/backgrounds).
 
 Everything else works as before: the same session token, the same WebSockets and the same audio format (PCM16, 16 kHz, mono). Trinity-1 and legacy faces ignore every setting on this page and keep their own frame size (512x512 for Trinity-1).
 
 ## Making a Trinity-2 face
 
-Trinity-2 faces are made with the same endpoints as Trinity-1 faces. Pass `gsVersion=GSA_2.0` to both calls; leaving it out makes a Trinity-1 face.
+Trinity-2 is the default: the two calls below make a Trinity-2 face as they are. Accounts created before October 26, 2026 can still make a Trinity-1 face by passing `gsVersion=GSA_1.0` to both calls; newer accounts get a `403` for it.
 
 <Steps>
 	<Step title="Reframe the photo">
 		Send the photo to [`POST /faces/trinity/preprocess`](/api-reference/preprocess-trinity-face-image). For Trinity-2 it is reframed to show the person waist-up, with the torso and both hands, on the photo's own background.
 
-		The photo must be a JPEG, PNG or WEBP under 5MB and at least 512x512. It needs a person facing the camera, and their head must be at least 15% of the image height. If there are several people, the largest camera-facing head is used.
+		The photo must be a JPEG, PNG or WEBP under 5MB and at least 512x512. It needs a person facing the camera, and their head must be at least 15% of the image height.
 
 		```bash
-		curl -X POST "https://api.simli.ai/faces/trinity/preprocess?gsVersion=GSA_2.0" \
+		curl -X POST "https://api.simli.ai/faces/trinity/preprocess" \
 			-H "x-simli-api-key: $SIMLI_API_KEY" \
 			-F "image=@portrait.jpg" \
 			-D headers.txt -o framed.png
 		```
 
-		The response body is the reframed PNG. Keep its `TARGET-RATIO` header for the next step. Trinity-2 always returns `0` here; pass it back anyway. The `warnings` header is a JSON array of advice; the image can still be used when it isn't empty.
+		The `warnings` header is a JSON array of advice; the image can still be used when it isn't empty.
 
 		Not happy with the result? Run it again with `retry=true` to render at higher quality. That takes about 160 seconds instead of 25.
 	</Step>
 	<Step title="Start the generation">
-		Post the reframed image to [`POST /faces/trinity`](/api-reference/generate-trinity-face), with the `TARGET-RATIO` value in the `target-ratio` header. Use the same `gsVersion` as the preprocess call, because the two generations frame the image differently.
+		Post the reframed image to [`POST /faces/trinity`](/api-reference/generate-trinity-face), with the `TARGET-RATIO` value in the `target-ratio` header. If you pass `gsVersion`, pass the preprocess call's: the two generations frame the image differently.
 
 		```bash
 		RATIO=$(grep -i '^target-ratio:' headers.txt | cut -d' ' -f2 | tr -d '\r')
-		curl -X POST "https://api.simli.ai/faces/trinity?gsVersion=GSA_2.0&face_name=my_avatar" \
+		curl -X POST "https://api.simli.ai/faces/trinity?face_name=my_avatar" \
 			-H "x-simli-api-key: $SIMLI_API_KEY" \
 			-H "target-ratio: $RATIO" \
 			-F "image=@framed.png"
@@ -56,9 +56,11 @@ Trinity-2 faces are made with the same endpoints as Trinity-1 faces. Pass `gsVer
 		}
 		```
 
-		You can skip the preprocess step and post a photo without a `target-ratio` header. The image is then framed here first, which adds about 25 seconds.
+		You can skip the preprocess step and post a photo without a `target-ratio` header. The image is then preprocessed here automatically first, which adds about 25 seconds.
 	</Step>
 	<Step title="Wait for it to finish">
+		Creating a Trinity-2 face usually takes about 4 hours.
+
 		Poll [`GET /faces/trinity/generation_status`](/api-reference/check-trinity-generation-status) with the `face_id` until `status` is `completed` (or `failed`). The states are `pending`, `processing`, `completed`, `failed` and `not_found`.
 
 		```bash
@@ -84,7 +86,7 @@ Trinity-2 faces are made with the same endpoints as Trinity-1 faces. Pass `gsVer
 ### Trinity-2 generations and spacing
 
 - **They use Trinity-2 generations, not face slots.** Trinity-1 faces take one of your plan's face slots. Trinity-2 faces use your Trinity-2 generations instead: one is used when the face is built, and a failed build uses none. A generation that is still queued or building holds one until it finishes. When you have none left, both calls return `403`.
-- **Generations start at least 10 minutes apart.** Each account's Trinity-2 generations start at least 10 minutes apart. A request sent sooner is still accepted straight away, but it waits in the queue. While it waits, `dispatch_after` gives the Unix time (in seconds) when it can start. The field is left out when the generation isn't held.
+- **Generations start at least 10 minutes apart.** Your Trinity-2 generations start at least 10 minutes apart. A request sent sooner is still accepted straight away, but it waits in the queue. While it waits, `dispatch_after` gives the Unix time (in seconds) when it can start. The field is left out when the generation isn't held.
 
 ## Framing the video
 
@@ -106,7 +108,7 @@ Width and height together must make a 1:1, 16:9 or 9:16 frame. They only need to
 
 ```json POST /compose/token
 {
-	"faceId": "YOUR_TRINITY_2_FACE_ID",
+	"faceId": "bf13113a-355a-4d97-8b90-4edccd1da7b2",
 	"streaming_width": 1366,
 	"streaming_height": 768,
 	"avatar_position_x": 0.3,

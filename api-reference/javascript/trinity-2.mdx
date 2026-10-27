@@ -1,0 +1,90 @@
+---
+title: "Trinity-2 in the JavaScript SDK"
+sidebarTitle: "Trinity-2"
+description: "Frame a Trinity-2 avatar, move its camera and swap its background with simli-client"
+---
+
+[Trinity-2](/api-reference/trinity-2) faces take a video size and an avatar position, a camera you can move during the session, and your own backgrounds and foregrounds. Other faces ignore these options, but the session token request still checks the framing fields.
+
+## Framing and starting options
+
+Put these in the `config` of the session token request on your server, next to `faceId`:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `streaming_width`, `streaming_height` | `768`, `768` | The video's size in pixels. Each at least 512, together a 1:1, 16:9 or 9:16 frame. |
+| `avatar_position_x` | `0.5` | Where the avatar sits across the canvas, from 0 (left) to 1 (right). |
+| `avatar_position_y` | `1` | Where the avatar sits down the canvas, from 0 (top) to 1 (bottom). |
+| `camera` | none | The camera the session starts with, a [`CameraSetting`](/api-reference/javascript/reference#camerasetting). Leave it out to keep the avatar's own framing. |
+| `background_id` | none | One of your [uploaded backgrounds](/api-reference/trinity-2/backgrounds), by its id, shown behind the avatar. |
+| `foreground_id` | none | One of your uploaded foregrounds, by its id, laid over the avatar. |
+
+This route starts a 16:9 session with the camera zoomed in a little:
+
+```typescript app/api/simli-token/route.ts
+import { generateSimliSessionToken } from "simli-client";
+
+export async function POST() {
+	const { session_token, warnings } = await generateSimliSessionToken({
+		apiKey: process.env.SIMLI_API_KEY!,
+		config: {
+			faceId: "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+			streaming_width: 1366,
+			streaming_height: 768,
+			avatar_position_x: 0.5,
+			avatar_position_y: 1,
+			camera: { zoom: 1.2 },
+			// background_id: "YOUR_BACKGROUND_ID",
+		},
+	});
+	// Camera values outside their range, and background or foreground ids that aren't yours.
+	// The token is created regardless.
+	if (warnings.length) console.warn("Simli:", warnings);
+	return Response.json({ session_token });
+}
+```
+
+A size that isn't 1:1, 16:9 or 9:16, a side under 512 or a position outside 0 to 1 makes the request fail with a `422`. See [Framing the video](/api-reference/trinity-2#framing-the-video) for how the canvas is filled.
+
+## Changing the camera, background and foreground during a session
+
+Once `start()` has resolved, three methods change the avatar live:
+
+```typescript
+// Simli's notices about these calls: out-of-range camera values, ignored changes
+simliClient.on("warning", (message) => console.warn("Simli:", message));
+
+// Glide over 2 seconds: zoom in, and orbit 20 degrees round to the camera's right
+simliClient.setCamera({ zoom: 1.5, orbit_y_off: 20 }, { lerpSeconds: 2 });
+// Switch to one of your uploaded backgrounds
+simliClient.setBackground("YOUR_BACKGROUND_ID");
+
+// Later: cut back to the avatar's own framing and background, and take the foreground away
+simliClient.setCamera(null);
+simliClient.setBackground(null);
+simliClient.setForeground(null);
+```
+
+### `setCamera`
+
+`setCamera(camera, { lerpSeconds })` moves the [camera](/api-reference/trinity-2/camera). Each call replaces the whole camera, the session's starting one included. Its values are offsets from the avatar's own framing, not from the previous call, so fields you leave out are neutral, and `null` goes back to the avatar's own framing. It cuts to the new camera, unless `lerpSeconds` is above 0: then it glides there over that many seconds, from wherever the camera is now.
+
+It throws on a value that isn't a finite number, and if the connection isn't open. The fields and their ranges are in [`CameraSetting`](/api-reference/javascript/reference#camerasetting).
+
+### `setBackground` and `setForeground`
+
+[Upload the image](/api-reference/trinity-2/backgrounds) first, then pass the `id` the upload returned. `setBackground(id)` shows it behind the avatar, and `setForeground(id)` lays it over the avatar through its transparency. `null` goes back to the avatar's own background, or takes the foreground away.
+
+The new image shows a moment later, once it has loaded, and if you send several, the last one wins. Both throw if the id isn't the 36-character one the upload returned.
+
+## Notices
+
+Simli answers some of these calls with a notice, which arrives as the `warning` event. None of them end the session:
+
+| Notice | Meaning |
+| --- | --- |
+| `WARNING: camera zoom 6.0 is outside its supported range (0.0, 4.0]; applied as is` | A camera value was outside its supported range. It was applied anyway. |
+| `Invalid camera override received` | The camera was refused. It didn't move. |
+| `background <id> is not one of your uploaded backgrounds, ignoring` | The id isn't one of your account's backgrounds. The avatar keeps what it had. `foreground` reads the same way. |
+| `Couldn't load background <id>, ignoring` | The image couldn't be loaded just then. Send it again. |
+| `Selected model does not support camera overrides`, or `a custom background` | The face isn't Trinity-2. |

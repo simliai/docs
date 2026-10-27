@@ -56,7 +56,7 @@ description: "Embed a Simli Avatar on your website in a few minutes using Simli 
 
 The Simli Widget can be customized using various parameters in the embed code. Here are the available customization options:
 
-```tsx
+```html
 <simli-widget
   token="your-token"
   agentid="your-agent-id"
@@ -66,11 +66,12 @@ The Simli Widget can be customized using various parameters in the embed code. H
   overlay="false"
 >
 </simli-widget>
+<script src="https://app.simli.com/simli-widget/index.js" async type="text/javascript"></script>
 ```
 
 ### Parameters
 
-- `token` (required): Your Simli API token for authentication
+- `token` (required): A Simli Auto session token from [`POST /auto/token`](/api-reference/create-simli-auto-session-token), not your API key
 - `agentid` (required): The unique identifier of your Simli Agent
 
 #### Default Mode
@@ -84,7 +85,7 @@ The Simli Widget can be customized using various parameters in the embed code. H
 #### Overlay Mode (Custom Trigger Button)
 - `overlay`: Set to "true" to enable overlay mode, which creates a full-screen experience and enables you to customize the trigger button. Create a trigger button with the ID `simliOverlayBtn` in your HTML
 
-```tsx
+```html
 <button id="simliOverlayBtn">Open Widget</button>
 <simli-widget
   token="your-token"
@@ -93,6 +94,7 @@ The Simli Widget can be customized using various parameters in the embed code. H
   overlay="true"
 >
 </simli-widget>
+<script src="https://app.simli.com/simli-widget/index.js" async type="text/javascript"></script>
 ```
 
 <Card title="Simli Widget" icon="code" href="https://app.simli.com">

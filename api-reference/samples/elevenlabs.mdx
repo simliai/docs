@@ -1,9 +1,15 @@
 ---
 title: "ElevenLabs"
 icon: "pause"
-description: "ElevenLabs starter repository uses Simli SDKs"
+description: "ElevenLabs Agents starter, built with the Simli JavaScript SDK"
 ---
 
 <Card title="create-simli-app-elevenlabs" icon="github" href="https://github.com/simliai/create-simli-app-elevenlabs">
-	Open source project that demonstrates how to use Simli with ElevenLabs conversational agent
+	A Next.js app that gives an ElevenLabs agent a Simli avatar.
 </Card>
+
+The page connects to your [ElevenLabs agent](https://elevenlabs.io/app/agents) over a WebSocket, with a signed URL that a server action gets using your ElevenLabs API key. It sends the agent your microphone and plays the agent's voice through the avatar with the [JavaScript SDK](/api-reference/javascript).
+
+To run it, rename `.env_sample` to `.env` and fill in your Simli and ElevenLabs API keys, your ElevenLabs agent ID and a Simli face ID, then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-elevenlabs#readme) has the details.
+
+<Warning>This starter creates the Simli session token in the browser, with your Simli API key in `NEXT_PUBLIC_SIMLI_API_KEY`, so anyone who opens the page can read the key. Use it for local demos only. Before you deploy, create the session token on your server instead, as in [Create a session token](/api-reference/javascript#2-create-a-session-token-on-your-server).</Warning>

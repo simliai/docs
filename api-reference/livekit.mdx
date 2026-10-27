@@ -1,106 +1,155 @@
 ---
-title: "Livekit"
+title: "LiveKit Agents"
 icon: "pickaxe"
+description: "Give a LiveKit Agents voice agent a lip-synced Simli avatar"
 ---
 
-LiveKit is a realtime communication platform that allows you to create voice and video chat applications.
+[LiveKit Agents](https://docs.livekit.io/agents/) is LiveKit's open-source Python framework for voice AI agents. With the Simli plugin, a Simli avatar joins the agent's LiveKit room: the agent sends it its voice, and the avatar publishes lip-synced video and voice on the agent's behalf, so any LiveKit frontend shows them as the agent's.
 
-## Build your AI video agent with LiveKit
+## What you need
 
-We recommend using LiveKit to run your Simli agent. below is a guide to set up your environment and dependencies.
+- **A LiveKit server that's reachable from the internet**: a [LiveKit Cloud](https://cloud.livekit.io) project (the free tier works), or a self-hosted LiveKit server with a public address. You need its URL, API key and API secret.
+- A Simli API key, from your [Simli dashboard](https://app.simli.com)
+- A key for your model provider. The starter uses OpenAI's Realtime API, so an [OpenAI API key](https://platform.openai.com/api-keys) is all it needs: there's no separate speech-to-text or text-to-speech provider.
+- Python 3.10 or later (the starter uses [uv](https://docs.astral.sh/uv/)), and [Node.js](https://nodejs.org) 20.9 or later for the starter's web page
 
-0. **Set up a LiveKit account at [LiveKit.io](https://livekit.io).**
+<Warning>A LiveKit server running on your own machine (`localhost`, or `livekit-server --dev`) won't work. Simli's servers join your room from the internet, so `LIVEKIT_URL` must be reachable from the internet: use LiveKit Cloud, or a self-hosted server with a public address.</Warning>
 
-You're gonna a "Video conference" Sandbox project and 3 environment variables from your settings page for later.
+## Run the starter
 
-![LiveKit Logo](../images/livekit-tutorial.png)
+<Card title="create-simli-app-livekit-agents" icon="github" href="https://github.com/simliai/create-simli-app-livekit-agents">
+	A LiveKit Agents voice agent on OpenAI's Realtime API, with a Simli Trinity-2 avatar and a small web page to talk to it. Its lockfile pins the versions it was tested with.
+</Card>
 
-1. **Create a new folder on your computer**:
+```bash
+git clone https://github.com/simliai/create-simli-app-livekit-agents
+cd create-simli-app-livekit-agents
+uv sync
+cp .env.example .env                          # then paste in your keys
+cp frontend/.env.example frontend/.env.local  # then copy in the same three LIVEKIT_ values
+uv run agent.py dev
+```
 
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    touch livekit-simli.py
-    ```
+In a second terminal, start the web page. Its token route reads the LiveKit key and secret on the server, so they never reach the browser.
 
-2. **Install dependencies**:
+```bash
+cd frontend && npm install && npm run dev
+```
 
-    ```bash
-    pip install \
-    "livekit-agents[openai]" \
-    "livekit-plugins-simli" \
-    "python-dotenv"
-    ... etc
-    ```
+Open http://localhost:3000, click **Start** and allow the microphone. The avatar greets you once it's ready.
 
-3. **Set up your .env file**:
-   Create a `.env` file in your project directory and add your api keys for Simli, Livekit, and other services. For example:
+The agent registers as `simli-agent` and only joins rooms whose token dispatches it by that name, as the page's token does, so other agents in your LiveKit project don't join too. To rename it, set `LIVEKIT_AGENT_NAME` in both `.env` and `frontend/.env.local`. LiveKit's [Agents Playground](https://agents-playground.livekit.io) works too: connect it to your project and set **Agent name** to `simli-agent`.
 
-    ```
-    LIVEKIT_URL=wss://...
-    LIVEKIT_API_KEY=...
-    LIVEKIT_API_SECRET=...
+## Build it yourself
 
-    OPENAI_API_KEY=...
+### 1. Install the packages
 
-    SIMLI_API_KEY=...
-    SIMLI_FACE_ID=...
-    ```
+```bash
+pip install "livekit-agents[openai,simli]" python-dotenv
+```
 
-4. **Fill in your LiveKit runner code**:
-   Here's a simple example of a `livekit-simli.py` file. Ensure your `.env` file is in the same directory as this file.
+### 2. Set your keys
 
-```python livekit-simli.py
-import logging
+Put them in a `.env` file next to your agent:
+
+```bash .env
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+SIMLI_API_KEY=...
+OPENAI_API_KEY=...
+```
+
+The Simli plugin reads the `LIVEKIT_*` values too: it gives the avatar a token to join the room.
+
+### 3. Add the avatar to your agent
+
+This is the core of the starter's agent. The [starter's `agent.py`](https://github.com/simliai/create-simli-app-livekit-agents/blob/main/agent.py) has the complete file.
+
+```python agent.py
+import asyncio
 import os
 
 from dotenv import load_dotenv
-
-from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, WorkerType, cli
+from livekit.agents import Agent, AgentServer, AgentSession, JobContext, cli
 from livekit.plugins import openai, simli
-
-# from livekit.plugins import deepgram, elevenlabs, silero
-
-logger = logging.getLogger("simli-avatar-example")
-logger.setLevel(logging.INFO)
 
 load_dotenv()
 
+server = AgentServer()
 
-async def entrypoint(ctx: JobContext):
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(voice="alloy"),
-    )
 
-    simliAPIKey = os.getenv("SIMLI_API_KEY")
-    simliFaceID = os.getenv("SIMLI_FACE_ID")
+# Explicit dispatch: the agent only joins rooms whose token names it.
+@server.rtc_session(agent_name=os.getenv("LIVEKIT_AGENT_NAME") or "simli-agent")
+async def entrypoint(ctx: JobContext) -> None:
+    session = AgentSession(llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice="marin"))
 
-    simli_avatar = simli.AvatarSession(
+    # Connect first: wait_for_join() below only waits once the room is connected.
+    await ctx.connect()
+
+    avatar = simli.AvatarSession(
         simli_config=simli.SimliConfig(
-            api_key=simliAPIKey,
-            face_id=simliFaceID,
+            api_key=os.environ["SIMLI_API_KEY"],
+            face_id=os.getenv("SIMLI_FACE_ID") or "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+            max_session_length=600,  # seconds; the avatar leaves after this
+            max_idle_time=300,  # seconds without speaking before the avatar leaves
         ),
     )
-    await simli_avatar.start(session, room=ctx.room)
+    await avatar.start(session, room=ctx.room)
+    # If Simli refuses the session (a bad key or face ID, or no free session), the plugin
+    # logs the error and returns without connecting the agent's voice to the avatar.
+    if session.output.audio is None:
+        ctx.delete_room()
+        return
 
-    # start the agent, it will join the room and wait for the avatar to join
-    await session.start(
-        agent=Agent(instructions="Talk to me!"),
-        room=ctx.room,
-    )
+    # Don't start talking until the avatar is in the room, so its first words aren't lost.
+    try:
+        await avatar.wait_for_join(timeout=30)
+    except asyncio.TimeoutError:
+        ctx.delete_room()
+        return
 
+    await session.start(agent=Agent(instructions="You are a friendly voice assistant."), room=ctx.room)
+    session.generate_reply(instructions="Greet the user in one short sentence.")
+
+
+if __name__ == "__main__":
+    cli.run_app(server)
 ```
 
-5. **Run your bot**:
+The order matters: connect, start the avatar, wait for it to join, and only then start the session and greet. Audio the agent sends before the avatar is ready is lost.
 
-    ```bash
-    python3 livekit-simli.py
-    ```
+<Note>This gives a Trinity-2 face Simli's default 768x768 video. For a 16:9 video, the avatar's position, a starting camera or your own background, see [Trinity-2 in LiveKit Agents and Pipecat (temporary)](/api-reference/trinity-2/integration-workarounds).</Note>
 
-    and visit your Sandbox in `LiveKit.io` to talk to your agent in the browser. You can of course build your own clients that plug into the LiveKit pipeline!
+### 4. Run it
 
-6. **Deploy**:
-   You can self host livekit agents by running the command in a macbook in a closet. However, we recommend that you check [livekit cloud](https://docs.livekit.io/deploy/agents/). To make your frontend instead of the sandboxes, you can checkout the [livekit docs for agent frontends](https://docs.livekit.io/frontends/components/agents-ui/)
+```bash
+python agent.py dev     # while developing, with debug logs
+python agent.py start   # in production
+```
 
-7. **Learn more**:
-   For detailed documentation, visit [LiveKit's guide to Simli](https://docs.livekit.io/agents/integrations/avatar/simli/) or keep exploring Simli docs for more insights.
+Both connect to your LiveKit project and wait. The agent joins a room, and starts a Simli session, when the room's token [dispatches it by name](https://docs.livekit.io/agents/server/agent-dispatch/): `simli-agent`, or your `LIVEKIT_AGENT_NAME`.
+
+`python agent.py console` talks to the agent in your terminal instead. It's voice only, with no avatar, since there's no LiveKit room. The starter's agent handles that case. The [LiveKit CLI](https://docs.livekit.io/agents/server/startup-modes/) can also run the same `agent.py`, with `lk agent dev` and `lk agent console`.
+
+### 5. Talk to it
+
+Use the starter's web page, LiveKit's [Agents Playground](https://agents-playground.livekit.io) with **Agent name** set to `simli-agent`, or any LiveKit agent frontend whose token dispatches that name, such as [agent-starter-react](https://github.com/livekit-examples/agent-starter-react). The avatar's video arrives as the agent's video.
+
+## Troubleshooting
+
+- **The Simli avatar didn't start:** the Simli error logged just before says why. `401` means `SIMLI_API_KEY` is wrong, `400` means the face ID wasn't found, and `429` means your Simli account is already running as many sessions as it can.
+- **The Simli avatar didn't join the room:** usually Simli couldn't reach your LiveKit server. `LIVEKIT_URL` must be reachable from the internet, not `localhost`.
+- **The page says the avatar didn't join:** check that the agent is running, that `.env` and `frontend/.env.local` hold the same `LIVEKIT_*` values, and that `LIVEKIT_AGENT_NAME` matches in both if you set it.
+
+## Before you go to production
+
+- Anyone who can join a room in your LiveKit project starts a conversation, which uses your Simli minutes and model credit. The starter page's token route hands a token to anyone who opens the page, so put it behind your own sign-in before you deploy it.
+- The avatar leaves the room as soon as its agent does, so ending the agent's session, or deleting the room, ends the Simli session and its billing. A brief network blip on the agent's side doesn't count: LiveKit resumes the connection.
+- To deploy the agent, run `python agent.py start` on any server, or see [LiveKit's deployment guide](https://docs.livekit.io/deploy/agents/). The page builds with `npm run build` and runs with `npm start`, or deploys to any Next.js host.
+
+## Learn more
+
+- The starter's [README](https://github.com/simliai/create-simli-app-livekit-agents#readme): changing the face, model, voice and prompt
+- [LiveKit's guide to Simli](https://docs.livekit.io/agents/models/avatar/plugins/simli/)
+- [LiveKit Agents docs](https://docs.livekit.io/agents/): tools, other models and more

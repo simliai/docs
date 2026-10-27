@@ -18,19 +18,21 @@ channels:
 
       [Compose Session Token](/api-reference/compose-session-token) is sent as query parameter string
 
-      enableSFU is a query parameter boolean to opt into sending the traffic through cloudflare network for improved reliability
+      enableSFU is a query parameter boolean (default true) to opt into sending the traffic through cloudflare network for improved reliability
 
-      First message must be offer. Offer must be provided within 30 seconds of opening the websocket. Once offer is sent, a corresponding answer will be sent from the server which can be used as described [here](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/setRemoteDescription)
-    address: /compose/webrtc/peer_to_peer
+      First message must be offer. Offer must be provided within 20 seconds of opening the websocket, or the session ends with `STOP REASON: failed to receive RTC Offer`. Once offer is sent, a corresponding answer will be sent from the server which can be used as described [here](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/setRemoteDescription)
+    address: /compose/webrtc/p2p
     messages:
       offer:
         $ref: "#/components/messages/rtc_offer"
         description: "RTC Offer. Must be first message"
       answer:
         $ref: "#/components/messages/rtc_answer"
-        description: "RTC Offer. Must be first message"
+        description: "RTC Answer. Sent once your offer is in"
       audio_chunk:
         $ref: "#/components/messages/audio_chunk"
+      play_immediate:
+        $ref: "#/components/messages/play_immediate"
       clear_buffer:
         $ref: "#/components/messages/clear_buffer"
       final_message:
@@ -45,8 +47,12 @@ channels:
         $ref: "#/components/messages/foreground"
       asset_notice:
         $ref: "#/components/messages/asset_notice"
+      video_metadata:
+        $ref: "#/components/messages/video_metadata"
       event:
         $ref: "#/components/messages/event"
+      endframe:
+        $ref: "#/components/messages/endframe"
       error:
         $ref: "#/components/messages/error"
 
@@ -56,13 +62,15 @@ channels:
 
       [Compose Session Token](/api-reference/compose-session-token) is sent as query parameter string
 
-      No first message is required. However, You must successfully join the livekit room within 30 seconds
+      No first message is required. However, You must successfully join the livekit room within 60 seconds, or the session ends with `CLIENT NOT CONNECTED TO LIVEKIT ROOM, TERMINATED SESSION`
     address: /compose/webrtc/livekit
     messages:
       livekit_join_info:
         $ref: "#/components/messages/livekit_join_info"
       audio_chunk:
         $ref: "#/components/messages/audio_chunk"
+      play_immediate:
+        $ref: "#/components/messages/play_immediate"
       clear_buffer:
         $ref: "#/components/messages/clear_buffer"
       final_message:
@@ -77,8 +85,12 @@ channels:
         $ref: "#/components/messages/foreground"
       asset_notice:
         $ref: "#/components/messages/asset_notice"
+      video_metadata:
+        $ref: "#/components/messages/video_metadata"
       event:
         $ref: "#/components/messages/event"
+      endframe:
+        $ref: "#/components/messages/endframe"
       error:
         $ref: "#/components/messages/error"
 
@@ -101,6 +113,12 @@ operations:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/audio_chunk"
+  playImmediate_peer_to_peer:
+    action: send
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/play_immediate"
   clearBuffer_peer_to_peer:
     action: send
     channel:
@@ -143,12 +161,24 @@ operations:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/asset_notice"
+  videoMetadata_peer_to_peer:
+    action: receive
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/video_metadata"
   event_peer_to_peer:
     action: receive
     channel:
       $ref: "#/channels/peer_to_peer"
     messages:
       - $ref: "#/channels/peer_to_peer/messages/event"
+  endframe_peer_to_peer:
+    action: receive
+    channel:
+      $ref: "#/channels/peer_to_peer"
+    messages:
+      - $ref: "#/channels/peer_to_peer/messages/endframe"
   error_peer_to_peer:
     action: receive
     channel:
@@ -168,6 +198,12 @@ operations:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/audio_chunk"
+  playImmediate_livekit:
+    action: send
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/play_immediate"
 
   clearBuffer_livekit:
     action: send
@@ -211,12 +247,24 @@ operations:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/asset_notice"
+  videoMetadata_livekit:
+    action: receive
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/video_metadata"
   event_livekit:
     action: receive
     channel:
       $ref: "#/channels/livekit"
     messages:
       - $ref: "#/channels/livekit/messages/event"
+  endframe_livekit:
+    action: receive
+    channel:
+      $ref: "#/channels/livekit"
+    messages:
+      - $ref: "#/channels/livekit/messages/endframe"
   error_livekit:
     action: receive
     channel:
@@ -239,6 +287,18 @@ components:
               type: string
     audio_chunk:
       description: Binary stream of the audio that the Avatar will lipsync to. Sent as a binary stream (in JS/TS UInt8Arr)
+      contentType: application/octet-stream
+      payload:
+        schema:
+          type: string
+          format: bytestring
+    play_immediate:
+      description: |
+        Interrupts the avatar and plays new audio at once. Sent as binary: the ASCII prefix `PLAY_IMMEDIATE` (14 bytes), then audio in the same format as audio_chunk (PCM16, 16 kHz, mono), in one message.
+
+        Everything you sent before it that the avatar hasn't spoken yet is dropped, as with SKIP, and this audio starts playing from where the avatar is now. Audio chunks you send after it play after it.
+
+        Use it when the user interrupts and the reply is already in hand: one message drops the old audio and starts the new one, instead of a SKIP and then audio chunks. It can carry the whole reply, or just its start (Simli's reference client sends the first 4 seconds this way) with the rest following as ordinary audio chunks. An odd trailing byte is dropped. After DONE, it only interrupts: the audio in it isn't played.
       contentType: application/octet-stream
       payload:
         schema:
@@ -333,6 +393,42 @@ components:
               description: "The face is not Trinity-2."
         example: "background 6f1c2a9e-1b2c-4d3e-8f90-0123456789ab is not one of your uploaded backgrounds, ignoring"
 
+    video_metadata:
+      description: "Sent as JSON text once the session is set up, just before START. `fps`, `width` and `height` are integers: the frame rate and size of the video Simli streams. For a Trinity-2 face, `width` x `height` is the session token's `streaming_width` x `streaming_height`, an odd side rounded up by a pixel, at 25 fps. A Trinity-1 face streams 512 x 512 at 25 fps."
+      payload:
+        schema:
+          type: object
+          required:
+            - video_metadata
+          properties:
+            video_metadata:
+              type: object
+              required:
+                - fps
+                - width
+                - height
+              properties:
+                fps:
+                  type: integer
+                  description: Frames per second
+                width:
+                  type: integer
+                  description: Video width in pixels
+                height:
+                  type: integer
+                  description: Video height in pixels
+        example:
+          video_metadata:
+            fps: 25
+            width: 768
+            height: 768
+    endframe:
+      description: "Sent as text when the session ends, just before `CLOSING REASON: <reason>` and STOP: `ENDFRAME:` and the number of video frames the session streamed, an integer (the video's running time times its fps)."
+      payload:
+        schema:
+          type: string
+          pattern: '^ENDFRAME:[0-9]+$'
+        example: "ENDFRAME:1500"
     event:
       description: "Server sent signals"
       payload:

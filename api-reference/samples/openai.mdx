@@ -1,7 +1,7 @@
 ---
-title: 'OpenAI'
+title: 'OpenAI Realtime'
 icon: 'flower'
-description: "OpenAI starter repository"
+description: "OpenAI Realtime starter: a browser demo built with the Simli JavaScript SDK"
 ---
 
 <Card
@@ -9,5 +9,11 @@ description: "OpenAI starter repository"
   icon="github"
   href="https://github.com/simliai/create-simli-app-openai"
 >
-  Open source project that demonstrates how to use Simli with OpenAI conversational agent
+  A Next.js app that talks to OpenAI's Realtime API from the browser and speaks the answers through a Simli avatar.
 </Card>
+
+The page sends your microphone to the OpenAI Realtime API with OpenAI's realtime beta client library, and plays the voice that comes back through the avatar with the [JavaScript SDK](/api-reference/javascript).
+
+To run it, rename `.env_sample` to `.env` and paste in your Simli and OpenAI API keys, then run `npm install` and `npm run dev`. Change the avatar's name, face and prompt in `app/page.tsx`. The [README](https://github.com/simliai/create-simli-app-openai#readme) has the details.
+
+<Warning>This starter is a local demo. Both API keys are in `NEXT_PUBLIC_` variables, so anyone who opens the page can read them, and OpenAI has deprecated the realtime beta library it uses. To build an OpenAI agent you can deploy, see [LiveKit](/api-reference/livekit).</Warning>

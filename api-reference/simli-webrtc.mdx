@@ -1,909 +1,429 @@
 ---
 title: Custom JS Simli Client
-description: "Get started creating using Simli WebRTC API"
+description: "Talk to Simli's streaming API from your own JavaScript: the session token, a peer-to-peer or LiveKit connection, audio and live controls"
 ---
 
-# Simli WebRTC API basics
+This page builds a browser client for Simli's raw streaming protocol, the one the [JavaScript](/api-reference/javascript) and [Python](/api-reference/python) SDKs speak for you. It takes the same steps as Simli's own reference clients. Use it when you need your own WebRTC code, or Simli on a platform without an SDK.
 
-This is a quick and shallow guide on how to use the Simli WebRTC API. This won't explain how WebRTC works or go into the details of the audio. You can check the following articles for that: [WebRTC](/api-reference/webrtc-info), [Audio](/api-reference/audio-info). In this article, we're assuming you have a basic understanding of javascript, python, HTTP requests, and how to use APIs. Full codes will be posted at the end of this document.
+<Tip>If you don't need your own client, the [JavaScript SDK](/api-reference/javascript) does all of this for you.</Tip>
 
-## What's the Simli API?
+## What you need
 
-The Simli API is a way to transform any audio, whatever the source, into a talking head video (Humanoid character that speaks the audio) with realistic motions and low latency. The api allows anyone to add more life into their chat bots, virtual assistants, or any formless characters. For example, this article will give a face to any radio station that provides an audio stream over HTTP. However, the exact same principles apply to any audio source.
+- A Simli API key, from your [Simli dashboard](https://app.simli.com)
+- A server route that creates session tokens, so your API key never reaches the browser
+- Your own WebRTC code: the browser's `RTCPeerConnection` for a peer-to-peer session, or [livekit-client](https://github.com/livekit/client-sdk-js) (`npm install livekit-client`) for a LiveKit session
 
-The main input in the API is the audio stream. The audio must be in PCM Int16 format with a sampling rate of 16000 Hz and a single channel. The audio stream should be preferably sent in chunks of 6000 bytes; however, there's no limit on minimum audio size, with the maximum being 65,536 bytes. The API initiates a WebRTC connection which is handled by the browser (or your WebRTC library of choice) so you don't have to worry about playback details.
+New to WebRTC or raw audio? The [WebRTC](/api-reference/webrtc-info) and [Audio formats](/api-reference/audio-info) guides cover the basics.
 
-The HTML and Javascript components of this demo are adapted from [aiortc examples](https://github.com/aiortc/aiortc/tree/main/examples/server)
+## How a session runs
 
-## What's being written for this to work?
+Each session has one WebSocket to Simli. It carries the connection setup, your audio and your controls, while the avatar's video and voice come back over WebRTC. There are two transports, and they differ only in how that media connects:
 
-- Basic HTML page with a video and audio elements (to playback the webrtc stream).
-- Javascript file to handle the WebRTC connection and sending the audio stream to the Simli API.
-- Small python server to decode the mp3 audio stream to PCM Int16 and send it to the WebRTC connection. (not mandatory if you have a different way to get a correctly formatted audio stream).
-- An audio stream source (for this example, we're using a [radio station stream](https://radio.talksport.com/stream)).
+- **Peer to peer** (`/compose/webrtc/p2p`): you create an `RTCPeerConnection` and send Simli its offer, and Simli answers it.
+- **LiveKit** (`/compose/webrtc/livekit`): Simli puts the avatar in a LiveKit room and sends you a token to join it.
 
-### index.html
+A session goes like this:
 
-The HTML file is pretty simple. It has a video element to display the talking head video and an audio element to play the audio stream. The video element is hidden by default and will only be shown when the WebRTC connection is established.
+1. Your server creates a session token with [`POST /compose/token`](/api-reference/endpoint/webrtc/startAudioToVideoSession). For peer to peer, it also gets ICE servers from [`GET /compose/ice`](/api-reference/endpoint/webrtc/getIceServers).
+2. The browser opens the WebSocket with the token.
+3. Simli sends `{"destination", "session_id"}`.
+4. **Peer to peer:** you send your offer as the first message, and Simli sends back `{"type": "answer", "sdp"}`. **LiveKit:** Simli sends `{"livekit_url", "livekit_token"}`, and you join that room.
+5. Simli sends `{"video_metadata": {"fps", "width", "height"}}`, then `START`.
+6. You send audio and controls. Simli answers each message with `ACK`, and sends `SPEAK` and `SILENT` as the avatar starts and stops talking.
+7. When the session ends, Simli sends `ENDFRAME:<frame>`, `CLOSING REASON: <reason>` and `STOP`, and closes the WebSocket.
 
-```html filename="index.html"
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>WebRTC demo</title>
-		<style>
-			button {
-				padding: 8px 16px;
-			}
+The browser code below all goes in one module, `simli-raw.js`.
 
-			pre {
-				overflow-x: hidden;
-				overflow-y: auto;
-			}
+## 1. Create the session token on your server
 
-			video {
-				width: 100%;
-			}
+Creating a token takes your API key, so do it on your server and send only the token, and the ICE servers, to the browser. This route is for Next.js (App Router). On other backends, make the same two requests with your key in the `x-simli-api-key` header.
 
-			.option {
-				margin-bottom: 8px;
-			}
+```typescript app/api/simli-session/route.ts
+const SIMLI_API = "https://api.simli.ai";
 
-			#media {
-				max-width: 1280px;
-			}
-		</style>
-	</head>
-
-	<body>
-		<h2>Options</h2>
-
-		<div class="option">
-			<label for="apiKey">API key</label>
-			<input id="apiKey" type="text" value="" />
-		</div>
-
-		<div class="option">
-			<label for="faceId">Face ID</label>
-			<input id="faceId" type="text" value="tmp9i8bbq7c" />
-		</div>
-		<div class="option">
-			<label for="model">model</label>
-			<input id="model" type="text" value="fasttalk" />
-		</div>
-		<div class="option">
-			<input id="use-sfu" checked="checked" type="checkbox" />
-			<label for="use-sfu">Use sfu</label>
-		</div>
-		<div class="option">
-			<input id="use-stun" type="checkbox" checked="checked" />
-			<label for="use-stun">Use STUN server</label>
-		</div>
-		<div class="option">
-			<input id="handle-silence" type="checkbox" checked="checked" />
-			<label for="handle-silence">Server handles no input case</label>
-		</div>
-
-		<div class="option">
-			<label for="maxSessionLength">maxSessionLength</label>
-			<input id="maxSessionLength" value="3600" />
-		</div>
-		<div class="option">
-			<label for="maxIdleTime">maxIdleTime</label>
-			<input id="maxIdleTime" value="300" />
-		</div>
-
-		<button id="start" onclick="start()">Start</button>
-		<button id="stop" style="display: none" onclick="stop()">Stop</button>
-		<label id="startTime">Startup Time: </label>
-
-		<h2>State</h2>
-		<p>ICE gathering state: <span id="ice-gathering-state"></span></p>
-		<p>ICE connection state: <span id="ice-connection-state"></span></p>
-		<p>Signaling state: <span id="signaling-state"></span></p>
-		<input type="file" id="fileInput" />
-		<input type="number" id="chunkSize" value="6000" />
-		<button id="sendFile" onclick="sendFile()">Send file</button>
-		<button id="playImmediate" onclick="playImmediate()">Play Immediate</button>
-		<button id="playImmediateAndChunk" onclick="playImmediateAndChunk()">Play Immediate and chunk</button>
-		<button id="sendZeros" onclick="sendZeros()">Send Zeros</button>
-		<button id="skip" onclick="skip()">skip buffer</button>
-		<div id="media" style="display: none">
-			<h2>Media</h2>
-			<audio id="audio" autoplay="true "></audio>
-			<video id="video" autoplay="true" playsinline="true"></video>
-		</div>
-
-		<h2>Data channel</h2>
-		<pre id="data-channel" style="height: 200px"></pre>
-
-		<h2>SDP</h2>
-
-		<h3>Offer</h3>
-		<pre id="offer-sdp"></pre>
-
-		<h3>Answer</h3>
-		<pre id="answer-sdp"></pre>
-
-		<script src="client.js"></script>
-	</body>
-</html>
+// Runs on your server, so SIMLI_API_KEY never reaches the browser.
+export async function POST() {
+	const apiKey = {"x-simli-api-key": process.env.SIMLI_API_KEY!};
+	const [tokenRes, iceRes] = await Promise.all([
+		fetch(`${SIMLI_API}/compose/token`, {
+			method: "POST",
+			headers: {...apiKey, "Content-Type": "application/json"},
+			body: JSON.stringify({
+				faceId: "bf13113a-355a-4d97-8b90-4edccd1da7b2", // a Trinity-2 preset face
+				handleSilence: true,
+				maxSessionLength: 600, // seconds
+				maxIdleTime: 180, // seconds
+			}),
+		}),
+		// ICE servers for a peer-to-peer session. LiveKit sessions don't need them.
+		fetch(`${SIMLI_API}/compose/ice`, {headers: apiKey}),
+	]);
+	if (!tokenRes.ok) return new Response(await tokenRes.text(), {status: tokenRes.status});
+	const {session_token, warnings} = await tokenRes.json();
+	if (warnings?.length) console.warn("Simli:", warnings);
+	// A public STUN server if Simli's ICE servers can't be had
+	const iceServers = iceRes.ok ? await iceRes.json() : [{urls: ["stun:stun.l.google.com:19302"]}];
+	return Response.json({session_token, iceServers});
+}
 ```
 
-The HTML file doesn't do anything special, it just has button to initiate the connection, some text elements to show the state of the connection, and a video and audio element to display the video and audio stream respectively. It also imports a client.js file which contains the javascript code to handle the WebRTC connection.
+Send the plain face ID, with no `model` field. A token is valid for 5 minutes, so create a new one for each session, right before you connect. On an error, such as an invalid face ID or field, Simli answers with an error status and its reason in the body, and the route passes both on. `warnings` lists anything Simli accepted but changed, such as a background that isn't yours.
 
-### client.js
+<Warning>Anyone who can reach your token route can start a session on your account. Put it behind your own sign-in or rate limiting before you go to production.</Warning>
 
-The javascript file handles the WebRTC connection, sends the audio stream to the Simli API, and displays the video and audio stream.
+### Trinity-2 options
 
-```javascript
-// get DOM elements
-var dataChannelLog = document.getElementById("data-channel"),
-	iceConnectionLog = document.getElementById("ice-connection-state"),
-	iceGatheringLog = document.getElementById("ice-gathering-state"),
-	signalingLog = document.getElementById("signaling-state");
+With a [Trinity-2](/api-reference/trinity-2) face, the token request can also set the video's size, where the avatar sits, the starting camera and an uploaded background or foreground. All of them are optional:
+
+```json POST /compose/token
+{
+	"faceId": "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+	"streaming_width": 1366,
+	"streaming_height": 768,
+	"avatar_position_x": 0.5,
+	"avatar_position_y": 1.0,
+	"camera": {"zoom": 1.2, "orbit_y_off": 15},
+	"background_id": "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab",
+	"foreground_id": "YOUR_FOREGROUND_ID"
+}
 ```
 
-This block of code gets the DOM elements that will be used to display the state of the connection and the data channel messages.
+| Fields | See |
+| --- | --- |
+| `streaming_width`, `streaming_height`, `avatar_position_x`, `avatar_position_y` | [Framing the video](/api-reference/trinity-2#framing-the-video) |
+| `camera` | [The starting camera](/api-reference/trinity-2/camera#the-starting-camera) |
+| `background_id`, `foreground_id` | [Starting a session with one](/api-reference/trinity-2/backgrounds#starting-a-session-with-one). They take the id of an image you uploaded, not the image. |
 
-```javascript
-// peer connection
-var pc = null;
+## 2. Open the WebSocket
 
-wsConnection = null;
+```javascript simli-raw.js
+const SIMLI_WS = "wss://api.simli.ai";
 
-function createPeerConnection() {
-	var config = {
-		sdpSemantics: "unified-plan",
-	};
+// Your route from step 1
+async function getSession() {
+	const res = await fetch("/api/simli-session", {method: "POST"});
+	if (!res.ok) throw new Error(`Couldn't create a Simli session: ${await res.text()}`);
+	return res.json(); // {session_token, iceServers}
+}
 
-	config.iceServers = [{urls: ["stun:stun.l.google.com:19302"]}];
+function openSocket(path, params) {
+	const url = new URL(SIMLI_WS + path);
+	for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+	const ws = new WebSocket(url);
+	const opened = new Promise((resolve, reject) => {
+		ws.addEventListener("open", resolve, {once: true});
+		ws.addEventListener("error", () => reject(new Error("Simli WebSocket failed")), {once: true});
+	});
+	return {ws, opened};
+}
+```
 
-	pc = new RTCPeerConnection(config);
-	// register some listeners to help debugging
-	pc.addEventListener(
-		"icegatheringstatechange",
-		() => {
-			iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
-		},
-		false,
-	);
-	iceGatheringLog.textContent = pc.iceGatheringState;
+| Query parameter | Transport | Meaning |
+| --- | --- | --- |
+| `session_token` | Both | The token from step 1. |
+| `enableSFU` | Peer to peer | `true`, the default, relays the media through Cloudflare's network for reliability. `false` connects you straight to the Simli server. |
 
-	pc.addEventListener(
-		"iceconnectionstatechange",
-		() => {
-			iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
-		},
-		false,
-	);
-	iceConnectionLog.textContent = pc.iceConnectionState;
+## 3. Connect the media
 
-	pc.addEventListener(
-		"signalingstatechange",
-		() => {
-			signalingLog.textContent += " -> " + pc.signalingState;
-		},
-		false,
-	);
-	signalingLog.textContent = pc.signalingState;
+<Tabs>
+<Tab title="Peer to peer">
 
-	// connect audio / video
+```javascript simli-raw.js
+export async function startP2P(video, audio, handlers = {}) {
+	const {session_token, iceServers} = await getSession();
+
+	// Open the WebSocket first: Simli sets the session up while your ICE candidates gather.
+	const {ws, opened} = openSocket("/compose/webrtc/p2p", {session_token, enableSFU: "true"});
+
+	// Receive only: Simli sends one audio and one video track, and you send nothing over WebRTC.
+	const pc = new RTCPeerConnection({iceServers});
+	pc.addTransceiver("audio", {direction: "recvonly"});
+	pc.addTransceiver("video", {direction: "recvonly"});
 	pc.addEventListener("track", (evt) => {
-		if (evt.track.kind == "video") document.getElementById("video").srcObject = evt.streams[0];
-		else document.getElementById("audio").srcObject = evt.streams[0];
+		(evt.track.kind === "video" ? video : audio).srcObject = evt.streams[0];
 	});
 
-	pc.onicecandidate = (event) => {
-		if (event.candidate === null) {
-			console.log(JSON.stringify(pc.localDescription));
-		} else {
-			console.log(event.candidate);
-			//   console.log(JSON.stringify(pc.localDescription));
-			candidateCount += 1;
-			//   console.log(candidateCount);
-		}
-	};
+	const session = {ws, pc, handlers, closed: false};
+	listen(session); // sets Simli's answer as the remote description (step 4)
+	pc.addEventListener("connectionstatechange", () => {
+		if (pc.connectionState === "failed") close(session);
+	});
 
-	return pc;
-}
-```
-
-This block of code defines the function that creates the peer connection and registers some listeners to display the state of the connection. It also connects the audio and video tracks to the video and audio elements respectively.
-
-```javascript
-let candidateCount = 0;
-let prevCandidateCount = -1;
-function CheckIceCandidates() {
-	if (pc.iceGatheringState === "complete" || candidateCount === prevCandidateCount) {
-		console.log(pc.iceGatheringState, candidateCount);
-		connectToRemotePeer();
-	} else {
-		prevCandidateCount = candidateCount;
-		setTimeout(CheckIceCandidates, 250);
+	try {
+		await pc.setLocalDescription(await pc.createOffer());
+		await iceGathered(pc);
+		await opened;
+		// The offer must be the first message you send.
+		ws.send(JSON.stringify({type: pc.localDescription.type, sdp: pc.localDescription.sdp}));
+	} catch (error) {
+		close(session);
+		throw error;
 	}
+	return session;
 }
 
-function negotiate() {
-	return pc
-		.createOffer()
-		.then((offer) => {
-			return pc.setLocalDescription(offer);
-		})
-		.then(() => {
-			prevCandidateCount = candidateCount;
-			setTimeout(CheckIceCandidates, 250);
+// Simli takes no trickled candidates, so they go in the offer. Wait until gathering
+// completes, or until no new candidate has come for 250 ms.
+function iceGathered(pc, quietMs = 250) {
+	return new Promise((resolve) => {
+		if (pc.iceGatheringState === "complete") return resolve();
+		let timer = setTimeout(resolve, quietMs);
+		pc.addEventListener("icecandidate", (evt) => {
+			clearTimeout(timer);
+			if (evt.candidate) timer = setTimeout(resolve, quietMs);
+			else resolve(); // gathering is complete
 		});
+	});
 }
 ```
 
-This block of code defines the function that initiates the negotiation process. It creates an offer, sets the local description, while it doesn't wait until Gathering ICE candidates is finished; however, it waits until the ICE gathering state is complete or the number of candidates doesn't change for 250ms.
+Send the offer within 20 seconds of opening the WebSocket. Otherwise Simli ends the session with `STOP REASON: failed to receive RTC Offer`.
 
-```javascript
-async function connectToRemotePeer() {
-	var offer = pc.localDescription;
-	document.getElementById("offer-sdp").textContent = offer.sdp;
+</Tab>
+<Tab title="LiveKit">
 
-	const faceId = document.getElementById("faceId").value;
-	if (faceId === "") {
-		alert("Please enter faceId");
-		return;
-	}
+```javascript simli-raw.js
+import {Room, RoomEvent, Track} from "livekit-client";
 
-	const metadata = {
-		faceId: faceId,
-		maxSessionLength: parseInt(document.getElementById("maxSessionLength").value),
-		maxIdleTime: parseInt(document.getElementById("maxIdleTime").value),
-	};
-	console.log(metadata);
-	console.log(parseInt(document.getElementById("maxSessionLength").value));
+export async function startLiveKit(video, audio, handlers = {}) {
+	const {session_token} = await getSession();
+	const {ws, opened} = openSocket("/compose/webrtc/livekit", {session_token});
 
-	const sessionPromise = await fetch("/compose/token", {
-		method: "POST",
-		body: JSON.stringify(metadata),
-		headers: {
-			"Content-Type": "application/json",
-			"x-simli-api-key": document.getElementById("apiKey").value,
-		},
+	// adaptiveStream off, as in Simli's reference client: the video isn't paused or
+	// scaled down to fit the element.
+	const room = new Room({adaptiveStream: false});
+	room.on(RoomEvent.TrackSubscribed, (track) => {
+		if (track.kind === Track.Kind.Video) track.attach(video);
+		else if (track.kind === Track.Kind.Audio) track.attach(audio);
 	});
-	session_token = await sessionPromise.json();
-	wsURL = new URL(window.location.origin + "/compose/webrtc/p2p");
-	wsURL.searchParams.set("session_token", session_token.session_token);
-	const ws = new WebSocket(wsURL);
-	wsConnection = ws;
-	ws.addEventListener("message", async (evt) => {
-		dataChannelLog.textContent += "< " + evt.data + "\n";
-		if (evt.data === "START") {
-			dcZeroAudio = setTimeout(() => {
-				var message = new Uint8Array(64000);
-				wsConnection.send(message);
-				console.log("SEND");
-			}, 100);
-			return;
-		}
-		if (evt.data === "STOP") {
-			stop();
-			return;
-		} else if (evt.data.slice(0, 4) === "pong") {
-			console.log("PONG");
-			var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-			dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-		} else {
+	room.on(RoomEvent.TrackUnsubscribed, (track) => track.detach());
+
+	const session = {ws, room, handlers, closed: false};
+	listen(session); // joins the room when Simli says where (step 4)
+	room.on(RoomEvent.Disconnected, () => close(session));
+
+	try {
+		await opened;
+	} catch (error) {
+		close(session);
+		throw error;
+	}
+	return session;
+}
+```
+
+There's no offer to send. Simli sends `{"livekit_url", "livekit_token"}`, and sends `START` once you've joined. Connect to that URL rather than a cached one, because it can change from session to session. If you haven't joined within 60 seconds, Simli ends the session with `CLIENT NOT CONNECTED TO LIVEKIT ROOM, TERMINATED SESSION`. The token can subscribe but not publish: your audio still goes over the WebSocket.
+
+If you only use peer to peer, leave out `startLiveKit` and the `livekit-client` import.
+
+</Tab>
+</Tabs>
+
+## 4. Handle Simli's messages
+
+Everything Simli sends on the WebSocket is text. The JSON messages set up the connection, and the rest are plain strings.
+
+```javascript simli-raw.js
+function listen(session) {
+	const {ws, handlers} = session;
+	let closingReason = null;
+	ws.addEventListener("message", async ({data}) => {
+		if (data.startsWith("{")) {
+			const message = JSON.parse(data);
 			try {
-				const message = JSON.parse(evt.data);
-				if (message.type !== "answer") {
-					return;
-				}
-				answer = message;
-				document.getElementById("answer-sdp").textContent = answer.sdp;
-			} catch (e) {
-				console.log(e);
+				if (message.destination) console.info("Simli session", message.session_id, "on", message.destination);
+				else if (message.type === "answer") await session.pc.setRemoteDescription(message); // peer to peer
+				else if (message.livekit_url) await session.room.connect(message.livekit_url, message.livekit_token); // LiveKit
+				else if (message.video_metadata) handlers.onVideo?.(message.video_metadata); // {fps, width, height}
+			} catch (error) {
+				handlers.onError?.(String(error));
+				close(session);
 			}
-		}
+		} else if (data === "START") handlers.onStart?.(); // send audio from now on
+		else if (data === "ACK") return; // one for each message you send
+		else if (data === "SPEAK" || data === "SILENT") handlers.onSpeaking?.(data === "SPEAK");
+		else if (data.startsWith("ENDFRAME:")) return; // the number of the last frame
+		else if (data.startsWith("CLOSING REASON: ")) closingReason = data.slice("CLOSING REASON: ".length);
+		else if (data === "STOP") {
+			handlers.onStop?.(closingReason);
+			close(session);
+		} else if (/^(ERROR|RATE LIMIT|STOP REASON|CLIENT NOT CONNECTED)/.test(data)) {
+			handlers.onError?.(data);
+			close(session);
+		} else handlers.onNotice?.(data); // a camera, background or foreground notice: the session goes on
 	});
-	ws.addEventListener("close", () => {
-		console.log("Websocket closed");
-	});
-	let answer = null;
-	while (answer === null) {
-		await new Promise((r) => setTimeout(r, 10));
-	}
-	await pc.setRemoteDescription(answer);
+	ws.addEventListener("close", () => close(session));
+}
+
+// Ends the session at once. Safe to call more than once.
+export function close(session) {
+	if (session.closed) return;
+	session.closed = true;
+	session.ws.close();
+	session.pc?.close();
+	session.room?.disconnect();
 }
 ```
 
-This block of code defines the function that connects to the remote peer. It sends the local description to the Simli API, gets the remote description, and sets it.
+| Message | When |
+| --- | --- |
+| `{"destination": ..., "session_id": ...}` | First, once the WebSocket is open. Include it when you report an issue. |
+| `{"type": "answer", "sdp": ...}` | Peer to peer, after your offer. |
+| `{"livekit_url": ..., "livekit_token": ...}` | LiveKit. Join this room. |
+| `{"video_metadata": {"fps", "width", "height"}}` | Just before `START`. The video's frame rate and size. |
+| `START` | The session is ready. Send audio and controls from now on. |
+| `ACK` | After each message you send. |
+| `SPEAK`, `SILENT` | The avatar started or stopped talking. |
+| `WARNING: ...` | A [camera](/api-reference/trinity-2/camera#moving-the-camera-during-a-session) value was outside its supported range, and was applied anyway. |
+| Other plain text | A camera, [background or foreground](/api-reference/trinity-2/backgrounds#swapping-it-during-a-session) message wasn't applied, for example `Invalid camera override received`. The session goes on. |
+| `ERROR: <reason>` | Simli refused the session or couldn't run it, for example `ERROR: SESSION_TOKEN_EXPIRED`. Start again with a new token. |
+| `RATE LIMIT REACHED! ...` | You have too many sessions open. Close the ones you don't use. |
+| `STOP REASON: ...`, `CLIENT NOT CONNECTED TO LIVEKIT ROOM, ...` | You didn't send the offer, or join the room, in time. |
+| `ENDFRAME:<frame>`, `CLOSING REASON: <reason>`, `STOP` | The session is over, and Simli closes the WebSocket. |
+
+The closing reasons you'll see most often:
+
+| Reason | Why |
+| --- | --- |
+| `User Sent Final Chunk` | You sent `DONE`, and the avatar finished your audio. |
+| `IDLE` | Nothing but silence for `maxIdleTime` seconds. With `handleSilence: false`, no audio at all for 30 seconds. |
+| `MAX` | The session reached `maxSessionLength` seconds. |
+| `RATE LIMIT EXCEEDED` | You have too many sessions open. |
+| `WebRTC Disconnected...` | Peer to peer: the media connection dropped. |
+| `Client disconnected from LK room` | LiveKit: you left the room. |
+
+## 5. Send audio
+
+Audio goes over the WebSocket as binary messages of raw PCM16: signed 16-bit little-endian samples, 16 kHz, mono, with no file header. Start sending it only after `START`.
+
+```javascript simli-raw.js
+const CHUNK_BYTES = 6000; // 3000 samples, under 0.2 seconds of audio
+
+// pcm: a Uint8Array of PCM16, 16 kHz, mono audio
+export function sendAudio(ws, pcm) {
+	for (let i = 0; i < pcm.length; i += CHUNK_BYTES) ws.send(pcm.subarray(i, i + CHUNK_BYTES));
+}
+
+// Drops the audio the avatar hasn't spoken yet, for example when the user interrupts
+export function interrupt(ws) {
+	ws.send("SKIP");
+}
+
+// Drops the audio the avatar hasn't spoken yet, and plays this instead, right away
+export function playNow(ws, pcm) {
+	const message = new Uint8Array(14 + pcm.length);
+	message.set(new TextEncoder().encode("PLAY_IMMEDIATE"), 0);
+	message.set(pcm, 14);
+	ws.send(message);
+}
+```
+
+- **Queueing:** audio plays after whatever you sent before it. You can send it faster than real time, and Simli buffers it.
+- **Chunks:** chunks of about 6000 bytes work well. Split on whole samples, so every chunk is an even number of bytes.
+- **Gaps:** with `handleSilence: true` (the default), Simli fills the gaps between your audio with silence, so the avatar keeps moving. With `false`, the video waits for your audio. See [Choosing `handleSilence`](/api-reference/javascript#choosing-handlesilence).
+- **Sources:** to turn a file into PCM16, use `ffmpeg -i speech.mp3 -f s16le -acodec pcm_s16le -ar 16000 -ac 1 speech.pcm`. For speech from a TTS API, ask it for 16 kHz PCM. See [Audio formats](/api-reference/audio-info).
+
+## 6. Move the camera and swap the background
+
+With a [Trinity-2](/api-reference/trinity-2) face, you can move the camera and change the background or foreground while the session runs. Other faces answer these messages with a notice and ignore them.
+
+```javascript simli-raw.js
+const CAMERA_FIELDS = [
+	"pos_y_off", "pos_x_off", "pos_z_off", "zoom",
+	"rot_x_off", "rot_y_off", "rot_z_off",
+	"orbit_x_off", "orbit_y_off",
+];
+
+// CAM_ + little-endian float32s, y before x. Replaces the whole camera: fields left out are
+// neutral. Glides over lerpSeconds if it's above 0, and cuts otherwise.
+export function sendCamera(ws, camera = {}, lerpSeconds = 0) {
+	const values = CAMERA_FIELDS.map((field) => camera[field] ?? (field === "zoom" ? 1 : 0));
+	const lerpAt = 4 + 4 * values.length;
+	const message = new Uint8Array(lerpAt + (lerpSeconds > 0 ? 8 : 0));
+	const view = new DataView(message.buffer);
+	message.set(new TextEncoder().encode("CAM_"), 0);
+	values.forEach((value, i) => view.setFloat32(4 + 4 * i, value, true));
+	if (lerpSeconds > 0) {
+		message.set(new TextEncoder().encode("LERP"), lerpAt);
+		view.setFloat32(lerpAt + 4, lerpSeconds, true);
+	}
+	ws.send(message);
+}
+
+// The nil UUID goes back to the avatar's own background, or takes the foreground away.
+const NO_ASSET = "00000000-0000-0000-0000-000000000000";
+
+// The id of one of your uploaded backgrounds, or null for the avatar's own
+export function setBackground(ws, backgroundId) {
+	ws.send("BG_" + (backgroundId ?? NO_ASSET));
+}
+
+// The id of one of your uploaded foregrounds, or null for none
+export function setForeground(ws, foregroundId) {
+	ws.send("FG_" + (foregroundId ?? NO_ASSET));
+}
+```
 
 ```javascript
-function start() {
-	document.getElementById("start").style.display = "none";
+sendCamera(session.ws, {orbit_y_off: 20, zoom: 1.3}, 1.5); // orbit right and zoom in, over 1.5 seconds
+sendCamera(session.ws); // cut back to the avatar's own framing
+setBackground(session.ws, "6f1c2a9e-1b2c-4d3e-8f90-0123456789ab");
+setForeground(session.ws, null);
+```
 
-	pc = createPeerConnection();
+`BG_` and `FG_` take only an id from [`POST /assets/backgrounds` or `/assets/foregrounds`](/api-reference/trinity-2/backgrounds#uploading-one), never an image. For the camera fields and their ranges, see [Camera](/api-reference/trinity-2/camera#moving-the-camera-during-a-session). For how a new background loads, see [Backgrounds](/api-reference/trinity-2/backgrounds#swapping-it-during-a-session).
 
-	var time_start = null;
+## 7. End the session
 
-	const current_stamp = () => {
-		if (time_start === null) {
-			time_start = new Date().getTime();
-			return 0;
-		} else {
-			return new Date().getTime() - time_start;
-		}
-	};
-
-	// Build media constraints.
-
-	const constraints = {
-		audio: true,
-		video: true,
-	};
-
-	// Acquire media and start negotiation.
-
-	document.getElementById("media").style.display = "block";
-	navigator.mediaDevices.getUserMedia(constraints).then(
-		(stream) => {
-			stream.getTracks().forEach((track) => {
-				pc.addTrack(track, stream);
-			});
-			return negotiate();
-		},
-		(err) => {
-			alert("Could not acquire media: " + err);
-		},
-	);
-	document.getElementById("stop").style.display = "inline-block";
-}
-
-function stop() {
-	document.getElementById("stop").style.display = "none";
-
-	// close transceivers
-	if (pc.getTransceivers) {
-		pc.getTransceivers().forEach((transceiver) => {
-			if (transceiver.stop) {
-				transceiver.stop();
-			}
-		});
-	}
-
-	// close local audio / video
-	pc.getSenders().forEach((sender) => {
-		sender.track.stop();
-	});
-
-	// close peer connection
-	setTimeout(() => {
-		pc.close();
-	}, 500);
+```javascript simli-raw.js
+// Lets the avatar finish the audio it has, then ends the session. Simli sends STOP when it's done.
+export function finish(ws) {
+	ws.send("DONE");
 }
 ```
 
-This block of code defines the functions that start and stop the connection. The start function creates the peer connection, creates a data channel, sends the metadata to the Simli API, and starts the negotiation process. The stop function closes the data channel, transceivers, local audio and video, and the peer connection.
+After `DONE`, Simli plays the audio you've sent, ignores any you send after it, and then ends the session with `CLOSING REASON: User Sent Final Chunk` and `STOP`. To end the session at once instead, call `close(session)` from step 4: closing the WebSocket ends it, and so does closing the peer connection or leaving the room.
 
-```javascript
-async function initializeWebsocketDecoder() {
-	ws = new WebSocket("ws://localhost:8080/");
-	ws.onopen = function (event) {
-		console.log("connected");
-	};
-	ws.onmessage = function (event) {
-		dc.send(event.data);
-	};
-	ws.binaryType = "arraybuffer";
-	while (dc.readyState !== "open") {
-		await setTimeout(() => {}, 100);
-	}
-	response = await fetch("https://radio.talksport.com/stream");
-	if (!response.ok) {
-		throw new Error("Network response was not ok");
-	}
-	const reader = response.body.getReader();
-	function read() {
-		return reader.read().then(({done, value}) => {
-			if (done) {
-				console.log("Stream complete");
-				return;
-			}
-			ws.send(value);
-			return read();
-		});
-	}
+## Putting it together
 
-	return read();
-}
+```html index.html
+<!-- muted: the voice plays through the <audio> element -->
+<video id="video" autoplay playsinline muted></video>
+<audio id="audio" autoplay></audio>
+<button id="start">Start</button>
+<input id="file" type="file" accept=".pcm" />
+<button id="send">Send audio</button>
+<button id="interrupt">Interrupt</button>
+<button id="finish">Finish</button>
+<script type="module" src="main.js"></script>
 ```
 
-The last block of code defines the function that initializes the websocket decoder. It creates a websocket connection to the python server, sends the audio stream to the data channel, and reads the audio stream from the radio station.
+```javascript main.js
+import {startP2P, sendAudio, interrupt, finish, close} from "./simli-raw.js";
 
-and Here's an improved version used in our benchmark
+const video = document.getElementById("video");
+const audio = document.getElementById("audio");
+let session = null;
 
-```javascript filename="client.js"
-// get DOM elements
-var dataChannelLog = document.getElementById("data-channel"),
-	iceConnectionLog = document.getElementById("ice-connection-state"),
-	iceGatheringLog = document.getElementById("ice-gathering-state"),
-	signalingLog = document.getElementById("signaling-state");
-
-let wsConnection = null;
-let answer = null;
-let offer = null;
-let startStamp = null;
-
-// peer connection
-var pc = null;
-
-var session_token = null;
-async function createPeerConnection() {
-	var config = {
-		sdpSemantics: "unified-plan",
-	};
-
-	if (document.getElementById("use-stun").checked) {
-		// Fetch ICE servers first
-		try {
-			const sfu = document.getElementById("use-sfu").checked;
-			const faceId = document.getElementById("faceId").value;
-			if (faceId === "") {
-				alert("Please enter faceId");
-				return;
-			}
-
-			const metadata = {
-				// faceId: "tmp9i8bbq7c",
-				faceId: faceId,
-				handleSilence: document.getElementById("handle-silence").checked,
-				maxSessionLength: parseInt(document.getElementById("maxSessionLength").value),
-				maxIdleTime: parseInt(document.getElementById("maxIdleTime").value),
-			};
-			console.log(metadata);
-			console.log(parseInt(document.getElementById("maxSessionLength").value));
-
-			const sessionPromise = await fetch("/compose/token", {
-				method: "POST",
-				body: JSON.stringify(metadata),
-				headers: {
-					"Content-Type": "application/json",
-					"x-simli-api-key": document.getElementById("apiKey").value,
-				},
-			});
-			session_token = await sessionPromise.json();
-			wsURL = new URL(window.location.origin + "/compose/webrtc/p2p");
-			wsURL.searchParams.set("session_token", session_token.session_token);
-			wsURL.searchParams.set("enableSFU", sfu);
-
-			const ws = new WebSocket(wsURL);
-			wsConnection = ws;
-			ws.addEventListener("open", async () => {
-				while (!offer) {
-					await new Promise((r) => setTimeout(r, 10));
-				}
-
-				ws.send(
-					JSON.stringify({
-						sdp: offer.sdp,
-						type: offer.type,
-					}),
-				);
-				// wsConnection.send(session_token.session_token);
-			});
-			ws.addEventListener("message", async (evt) => {
-				dataChannelLog.textContent += "< " + evt.data + "\n";
-				if (evt.data === "START") {
-					dcZeroAudio = setTimeout(() => {
-						var message = new Uint8Array(64000);
-						wsConnection.send(message);
-						console.log("SEND");
-					}, 100);
-					return;
-				}
-				if (evt.data === "STOP") {
-					stop();
-					return;
-				} else if (evt.data.slice(0, 4) === "pong") {
-					console.log("PONG");
-					var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-					dataChannelLog.textContent += " RTT " + elapsed_ms + " ms\n";
-				} else {
-					try {
-						const message = JSON.parse(evt.data);
-						if (message.type !== "answer") {
-							return;
-						}
-						answer = message;
-						document.getElementById("answer-sdp").textContent = answer.sdp;
-					} catch (e) {
-						console.log(e);
-					}
-				}
-			});
-			ws.addEventListener("close", () => {
-				console.log("Websocket closed");
-			});
-
-			const icePromise = await fetch("/compose/ice", {
-				headers: {
-					"Content-Type": "application/json",
-				},
-				method: "GET",
-				headers: {
-					"x-simli-api-key": document.getElementById("apiKey").value,
-				},
-			});
-			// iceServers = await response.json();
-
-			const results = await Promise.all([icePromise]);
-			console.log(results);
-			config.iceServers = await results[0].json();
-		} catch (error) {
-			console.error("Error fetching ICE servers:", error);
-			// Fallback to Google STUN server if fetch fails
-			config.iceServers = [{urls: ["stun:stun.l.google.com:19302"]}];
-		}
-	}
-
-	console.log(config);
-	pc = new RTCPeerConnection(config);
-	// register some listeners to help debugging
-	pc.addEventListener(
-		"icegatheringstatechange",
-		() => {
-			iceGatheringLog.textContent += " -> " + pc.iceGatheringState;
-		},
-		false,
-	);
-	iceGatheringLog.textContent = pc.iceGatheringState;
-
-	pc.addEventListener(
-		"iceconnectionstatechange",
-		() => {
-			iceConnectionLog.textContent += " -> " + pc.iceConnectionState;
-		},
-		false,
-	);
-	iceConnectionLog.textContent = pc.iceConnectionState;
-
-	pc.addEventListener(
-		"signalingstatechange",
-		() => {
-			signalingLog.textContent += " -> " + pc.signalingState;
-		},
-		false,
-	);
-	signalingLog.textContent = pc.signalingState;
-
-	// connect audio / video
-	pc.addEventListener("track", (evt) => {
-		if (evt.track.kind == "video") {
-			document.getElementById("video").srcObject = evt.streams[0];
-			document.getElementById("video").requestVideoFrameCallback(() => {
-				const startupDuration = (new Date().getTime() - startStamp) / 1000;
-				console.log("First video frame rendered!", startupDuration);
-				document.getElementById("startTime").textContent += startupDuration.toString() + "s";
-			});
-			document;
-		} else {
-			document.getElementById("audio").srcObject = evt.streams[0];
-		}
+document.getElementById("start").onclick = async () => {
+	// startLiveKit(video, audio, handlers) takes the same arguments
+	session = await startP2P(video, audio, {
+		onStart: () => console.log("Simli is ready for audio"),
+		onSpeaking: (speaking) => console.log(speaking ? "Speaking" : "Silent"),
+		onNotice: (notice) => console.warn("Simli:", notice),
+		onError: (error) => console.error("Simli:", error),
+		onStop: (reason) => console.log("Session ended:", reason),
 	});
-
-	pc.onicecandidate = (event) => {
-		if (event.candidate === null) {
-			console.log(JSON.stringify(pc.localDescription));
-		} else {
-			console.log(event.candidate);
-			//   console.log(JSON.stringify(pc.localDescription));
-			candidateCount += 1;
-			//   console.log(candidateCount);
-		}
-	};
-
-	return pc;
-}
-
-function enumerateInputDevices() {
-	const populateSelect = (select, devices) => {
-		let counter = 1;
-		devices.forEach((device) => {
-			const option = document.createElement("option");
-			option.value = device.deviceId;
-			option.text = device.label || "Device #" + counter;
-			select.appendChild(option);
-			counter += 1;
-		});
-	};
-
-	navigator.mediaDevices
-		.enumerateDevices()
-		.then((devices) => {
-			populateSelect(
-				document.getElementById("audio-input"),
-				devices.filter((device) => device.kind == "audioinput"),
-			);
-			populateSelect(
-				document.getElementById("video-input"),
-				devices.filter((device) => device.kind == "videoinput"),
-			);
-		})
-		.catch((e) => {
-			alert(e);
-		});
-}
-
-let candidateCount = 0;
-let prevCandidateCount = -1;
-function CheckIceCandidates() {
-	if (pc.iceGatheringState === "complete" || candidateCount === prevCandidateCount) {
-		console.log(pc.iceGatheringState, candidateCount);
-		connectToRemotePeer().catch();
-	} else {
-		prevCandidateCount = candidateCount;
-		setTimeout(CheckIceCandidates, 250);
-	}
-}
-
-function negotiate() {
-	return pc
-		.createOffer()
-		.then((offer) => {
-			return pc.setLocalDescription(offer);
-		})
-		.then(() => {
-			prevCandidateCount = candidateCount;
-			setTimeout(CheckIceCandidates, 250);
-		});
-}
-
-async function connectToRemotePeer() {
-	offer = pc.localDescription;
-
-	while (answer === null) {
-		await new Promise((r) => setTimeout(r, 10));
-	}
-	console.log(answer);
-	await pc.setRemoteDescription(answer);
-}
-
-var time_start = null;
-const current_stamp = () => {
-	if (time_start === null) {
-		time_start = new Date().getTime();
-		return 0;
-	} else {
-		return new Date().getTime() - time_start;
-	}
 };
 
-function start() {
-	startStamp = new Date().getTime();
-	document.getElementById("start").style.display = "none";
-
-	pc = createPeerConnection().then((pc) => {
-		document.getElementById("media").style.display = "block";
-		pc.addTransceiver("audio", {direction: "recvonly"});
-		pc.addTransceiver("video", {direction: "recvonly"});
-		negotiate();
-
-		document.getElementById("stop").style.display = "inline-block";
-	});
-}
-
-function sendZeros() {
-	// Add event listener for file input change event
-
-	if (dc && dc.readyState === "open") {
-		wsConnection.send(new Uint8Array(64000));
-		console.log("SEND ZEROS", Date.now());
-	}
-	dataChannelLog.textContent += "- Sent Zeros: " + "64000" + "\n";
-}
-
-function sendFile() {
-	// Add event listener for file input change event
-
-	var file = document.getElementById("fileInput").files[0];
-	var reader = new FileReader();
-	reader.onload = async function (e) {
-		var arrayBuffer = e.target.result;
-		var uint8Array = new Uint8Array(arrayBuffer);
-		var button = document.getElementById("sendFile");
-		let chunkSize = parseInt(document.getElementById("chunkSize").value);
-		// console.log(uint8Array)
-		if (dc && dc.readyState === "open") {
-			// for (var x = 0; x < 600; x++)
-			{
-				for (var i = 0; i < uint8Array.length; i += chunkSize) {
-					wsConnection.send(uint8Array.slice(i, i + chunkSize));
-					console.log("SEND", Date.now());
-					button.textContent = "Sending...";
-				}
-				await new Promise((r) => setTimeout(r, 200));
-			}
-			// dc.send(uint8Array);
-			// console.log("SUNEN");
-			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
-			button.textContent = "Sent";
-		}
-	};
-
-	reader.readAsArrayBuffer(file);
-}
-
-function playImmediate() {
-	// Add event listener for file input change event
-
-	var file = document.getElementById("fileInput").files[0];
-	var reader = new FileReader();
-	reader.onload = async function (e) {
-		const arrayBuffer = new Uint8Array(e.target.result);
-		const asciiStr = "PLAY_IMMEDIATE";
-		const encoder = new TextEncoder(); // Default is utf-8
-		const strBytes = encoder.encode(asciiStr); // Uint8Array of " World!"
-
-		var uint8Array = new Uint8Array(strBytes.length + arrayBuffer.length);
-		uint8Array.set(strBytes, 0);
-		uint8Array.set(arrayBuffer, strBytes.length);
-		var button = document.getElementById("playImmediate");
-		// let chunkSize = parseInt(document.getElementById("chunkSize").value);
-		// console.log(uint8Array)
-		if (dc && dc.readyState === "open") {
-			// for (var x = 0; x < 600; x++)
-			wsConnection.send(uint8Array);
-			// dc.send(uint8Array);
-			// console.log("SUNEN");
-			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
-			button.textContent = "Sent";
-		}
-	};
-
-	reader.readAsArrayBuffer(file);
-}
-
-function playImmediateAndChunk() {
-	// Add event listener for file input change event
-
-	var file = document.getElementById("fileInput").files[0];
-	var reader = new FileReader();
-	reader.onload = async function (e) {
-		const arrayBuffer = new Uint8Array(e.target.result);
-		const asciiStr = "PLAY_IMMEDIATE";
-		const encoder = new TextEncoder(); // Default is utf-8
-		const strBytes = encoder.encode(asciiStr); // Uint8Array of " World!"
-
-		const firstChunkSize = 16000 * 2 * 4;
-		const firstSlice = arrayBuffer.slice(0, Math.min(firstChunkSize, arrayBuffer.length));
-
-		var uint8Array = new Uint8Array(strBytes.length + firstSlice.length);
-		uint8Array.set(strBytes, 0);
-		uint8Array.set(firstSlice, strBytes.length);
-		var button = document.getElementById("playImmediateAndChunk");
-		let chunkSize = parseInt(document.getElementById("chunkSize").value);
-		// console.log(uint8Array)
-
-		if (dc && dc.readyState === "open") {
-			// for (var x = 0; x < 600; x++)
-			wsConnection.send(uint8Array);
-			// await new Promise((r) => setTimeout(r, 1000));
-			if (arrayBuffer.length > firstChunkSize) {
-				for (var i = firstChunkSize; i < arrayBuffer.length; i += chunkSize) {
-					wsConnection.send(arrayBuffer.slice(i, i + chunkSize));
-					console.log("SEND", Date.now());
-					button.textContent = "Sending...";
-				}
-			}
-
-			// dc.send(uint8Array);
-			// console.log("SUNEN");
-			dataChannelLog.textContent += "- Sent file: " + file.name + "\n";
-			button.textContent = "Sent";
-		}
-	};
-
-	reader.readAsArrayBuffer(file);
-}
-
-function skip() {
-	wsConnection.send("SKIP");
-}
-
-function stop() {
-	if (wsConnection) {
-		wsConnection.send("DONE");
-	}
-	// close transceivers
-	if (pc.getTransceivers()) {
-		pc.getTransceivers().forEach((transceiver) => {
-			if (transceiver.stop) {
-				transceiver.stop();
-			}
-		});
-	}
-
-	// close local audio / video
-	pc.getSenders().forEach((sender) => {
-		sender.track.stop();
-	});
-
-	// close peer connection
-	pc.close();
-}
-
-addEventListener("beforeunload", (event) => {
-	stop();
-});
+// A raw PCM16, 16 kHz, mono file, such as the ffmpeg output from step 5
+document.getElementById("send").onclick = async () => {
+	const file = document.getElementById("file").files[0];
+	sendAudio(session.ws, new Uint8Array(await file.arrayBuffer()));
+};
+document.getElementById("interrupt").onclick = () => interrupt(session.ws);
+document.getElementById("finish").onclick = () => finish(session.ws);
+addEventListener("beforeunload", () => session && close(session));
 ```
 
-### server.py
-
-This one is also relatively simple and is used to decode the mp3 audio stream to PCM Int16 and send it back.
-
-```python filename="server.py"
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from starlette.websockets import WebSocketState
-import asyncio
-import uvicorn
-
-app = FastAPI()
-
-
-async def GetDecodeOutput(
-    websocket: WebSocket, decodeProcess: asyncio.subprocess.Process
-):
-    while True:
-        data = await decodeProcess.stdout.read(6000)
-        if not data:
-            break
-        await websocket.send_bytes(data)
-
-
-@app.websocket("/")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        decodeTask = await asyncio.subprocess.create_subprocess_exec(
-            *[
-                "ffmpeg",
-                "-i",
-                "pipe:0",
-                "-f",
-                "s16le",
-                "-ar",
-                "16000",
-                "-ac",
-                "1",
-                "-acodec",
-                "pcm_s16le",
-                "-",
-            ],
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-        )
-        sendTask = asyncio.create_task(GetDecodeOutput(websocket, decodeTask))
-        while (
-            websocket.client_state == WebSocketState.CONNECTED
-            and websocket.application_state == WebSocketState.CONNECTED
-        ):
-            data = await websocket.receive_bytes()
-            decodeTask.stdin.write(data)
-    except WebSocketDisconnect:
-        pass
-    finally:
-        decodeTask.stdin.close()
-        await decodeTask.wait()
-        await sendTask
-        await websocket.close()
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, port=8080)
-```
-
-To run, just type `python server.py`
-
-## Trinity-2: video size and camera
-
-With a [Trinity-2](/api-reference/trinity-2) face, the `/compose/token` request can also take `streaming_width`, `streaming_height`, `avatar_position_x`, `avatar_position_y` and a starting `camera`. During the session you can move the camera by sending a binary `CAM_` message over the same WebSocket you send audio on. See [Moving the camera during a session](/api-reference/trinity-2/camera#moving-the-camera-during-a-session) for the message format and a `sendCamera()` helper.
-
-## Tada! That's everything!
+Serve these through your bundler or framework, since `simli-raw.js` imports `livekit-client`.

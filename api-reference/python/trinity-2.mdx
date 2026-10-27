@@ -1,0 +1,70 @@
+---
+title: "Trinity-2 in the Python SDK"
+sidebarTitle: "Trinity-2"
+description: "Frame a Trinity-2 avatar, move its camera and swap its background with simli-ai"
+---
+
+[Trinity-2](/api-reference/trinity-2) faces take a video size and an avatar position, a camera you can move during the session, and your own backgrounds and foregrounds. Other faces ignore these options, but the session request still checks the framing fields.
+
+## Framing and starting options
+
+Set these in `SimliConfig`, next to `faceId`. Fields left as `None` are left out of the request, so Simli's defaults apply.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `streaming_width`, `streaming_height` | `768`, `768` | The video's size in pixels. Each at least 512, together a 1:1, 16:9 or 9:16 frame. |
+| `avatar_position_x` | `0.5` | Where the avatar sits across the canvas, from 0 (left) to 1 (right). |
+| `avatar_position_y` | `1.0` | Where the avatar sits down the canvas, from 0 (top) to 1 (bottom). |
+| `camera` | `None` | The camera the session starts with, a [`CameraSetting`](/api-reference/python/reference#camerasetting). `None` keeps the avatar's own framing. |
+| `background_id` | `None` | One of your [uploaded backgrounds](/api-reference/trinity-2/backgrounds), by its id, shown behind the avatar. An id that isn't yours is dropped, with a warning. |
+| `foreground_id` | `None` | One of your uploaded foregrounds, by its id, laid over the avatar. |
+
+This config starts a 16:9 session with the camera zoomed in a little:
+
+```python
+from simli import CameraSetting, SimliConfig
+
+config = SimliConfig(
+    faceId="bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    streaming_width=1366,
+    streaming_height=768,
+    avatar_position_x=0.5,
+    avatar_position_y=1.0,
+    camera=CameraSetting(zoom=1.2),
+    # background_id="YOUR_BACKGROUND_ID",
+)
+```
+
+A size that isn't 1:1, 16:9 or 9:16, a side under 512 or a position outside 0 to 1 makes `start()` raise a `SimliAPIError` with status `422`. See [Framing the video](/api-reference/trinity-2#framing-the-video) for how the canvas is filled.
+
+## Changing the camera, background and foreground during a session
+
+Once `start()` has returned, three methods change the avatar live:
+
+```python
+from simli import CameraSetting
+
+# Glide over 2 seconds: zoom in, and orbit 20 degrees round to the camera's right
+await connection.setCamera(CameraSetting(zoom=1.5, orbit_y_off=20), lerp_seconds=2)
+# Switch to one of your uploaded backgrounds
+await connection.setBackground("YOUR_BACKGROUND_ID")
+
+# Later: cut back to the avatar's own framing and background, and take the foreground away
+await connection.setCamera(None)
+await connection.setBackground(None)
+await connection.setForeground(None)
+```
+
+### `setCamera`
+
+`await connection.setCamera(camera, lerp_seconds=...)` moves the [camera](/api-reference/trinity-2/camera). Each call replaces the whole camera, the session's starting one included. Its values are offsets from the avatar's own framing, not from the previous call, so fields you leave out are neutral, and `None` goes back to the avatar's own framing. It cuts to the new camera, unless `lerp_seconds` is above 0: then it glides there over that many seconds, from wherever the camera is now.
+
+### `setBackground` and `setForeground`
+
+[Upload the image](/api-reference/trinity-2/backgrounds) first, then pass the `id` the upload returned. `setBackground(id)` shows it behind the avatar, and `setForeground(id)` lays it over the avatar through its transparency. `None` goes back to the avatar's own background, or takes the foreground away. The new image shows a moment later, once it has loaded, and if you send several, the last one wins.
+
+## Errors and notices
+
+- **A bad value raises `ValueError`**, and nothing is sent: a NaN or infinite camera value or `lerp_seconds`, or an id that isn't the 36-character one the upload returned.
+- **Simli's notices are logged as warnings** on the `simli_client` logger: a camera value outside its supported range (applied anyway), an id that isn't one of your uploads, an image that couldn't be loaded, or a face that isn't Trinity-2. None of them end the session.
+- **Once the session has ended**, these methods raise as `send()` does.

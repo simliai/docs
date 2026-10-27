@@ -1,5 +1,7 @@
 ---
 title: "/compose/ice"
-description: "Get TURN servers if you need them for NAT avoidance"
+description: "Get temporary STUN and TURN servers for a peer-to-peer session"
 openapi: "GET /compose/ice"
 ---
+
+Call this from your server, since it takes your API key, and pass the list to the browser as the `iceServers` of its `RTCPeerConnection`. Only peer-to-peer sessions need it: in a LiveKit session, LiveKit connects the media. See [Custom JS Simli Client](/api-reference/simli-webrtc#1-create-the-session-token-on-your-server).

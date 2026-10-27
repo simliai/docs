@@ -8,6 +8,10 @@ description: "Audio and the forgotten knowledge of the past"
 
 Talk about Audio formats, encoding schemes, popular audio container formats, streamability, and raw audio data. There's another [good article](https://docs.retellai.com/knowledge/audio-basics) that goes into more details about general digital audio. This document is more focused on the audio formats and encoding schemes that are popular in the web world.
 
+## What Simli takes
+
+Simli's streaming sessions take one audio format: raw PCM Int16 (signed, little endian), 16000 Hz, one channel, with no container or header. The first ffmpeg command below makes exactly that. A `.wav` file holds the same kind of samples behind a header, so convert it, or strip the header, before you send it. For how the audio is sent, see [Custom JS Simli Client](/api-reference/simli-webrtc#5-send-audio).
+
 ## What's raw audio data and why so many different representations?
 
 A quick recap of the Retell AI article, audio in the real world is a sound wave which can be represented by some (math) function. Usually, such functions are complicated so we represent the sound wave with how loud is it at a given time. How many times we're checking the loudness is what's called `sampling rate`. That's all there is to audio in the real world.

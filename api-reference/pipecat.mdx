@@ -1,176 +1,114 @@
 ---
 title: "Pipecat"
 icon: "cat"
+description: "Give a Pipecat voice agent a lip-synced Simli avatar"
 ---
 
-Pipecat is a realtime communication platform that allows you to create voice and video chat applications. Pipecat has it's own [documentation](https://docs.pipecat.ai/server/services/video/simli) for Simli, but we've included a guide below to get you started.
+[Pipecat](https://docs.pipecat.ai) is an open-source Python framework for voice and multimodal agents. Simli's video service drops into a Pipecat pipeline: it takes the bot's voice and returns the avatar's lip-synced video and voice, in sync.
 
-## Build your AI video agent with Pipecat
+## What you need
 
-We recommend using Pipecat to run your Simli agent. below is a guide to set up your environment and dependencies.
+- A Simli API key, from your [Simli dashboard](https://app.simli.com)
+- An [OpenAI API key](https://platform.openai.com/api-keys). The starter uses OpenAI's Realtime API, speech to speech, so there's no separate speech-to-text or text-to-speech provider.
+- Python 3.11 or later (the starter uses [uv](https://docs.astral.sh/uv/)), and [Node.js](https://nodejs.org) 20.9 or later for the starter's web page
 
-1. **Create a new project**:
+Everything runs on your machine: Pipecat connects the browser to the bot over peer-to-peer WebRTC, so there are no other accounts or media servers to set up.
 
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate
-    touch pipecat-simli.py
-    ```
+## Run the starter
 
-2. **Install dependencies**:
+<Card title="create-simli-app-pipecat" icon="github" href="https://github.com/simliai/create-simli-app-pipecat">
+	A Pipecat voice agent on OpenAI's Realtime API, with a Simli Trinity-2 avatar and a small web page to talk to it. Its lockfile pins the versions it was tested with.
+</Card>
 
-    ```bash
-    pip install "pipecat-ai[simli]"
-    pip install "pipecat-ai[deepgram]"
-    pip install "pipecat-ai[cartesia]"
-    pip install "pipecat-ai[openai]"
-    pip install "pipecat-ai[elevenlabs]"
-    pip install "pipecat-ai[webrtc]"
-    pip install fastapi dotenv loguru
-    ... etc
-    ```
-
-3. **Set up your .env file**:
-   Create a `.env` file in your project directory and add your api keys for Simli and other AI services. For example:
-
-    ```bash .env
-    CARTESIA_API_KEY=...
-    CARTESIA_VOICE_ID=...
-    DEEPGRAM_API_KEY=...
-    ELEVENLABS_API_KEY=...
-    ELEVENLABS_VOICE_ID=...
-    OPENAI_API_KEY=...
-    SIMLI_API_KEY=...
-    SIMLI_FACE_ID=...
-    ```
-
-4. **Fill in your Pipecat runner code**:
-   Here's a simple example of a Pipecat runner file. Ensure your `.env` file is in the same directory as this file.
-
-```python pipecat-simli.py
-import os
-
-from dotenv import load_dotenv
-from loguru import logger
-from simli import SimliConfig
-
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
-from pipecat.pipeline.task import PipelineParams, PipelineTask
-from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
-from pipecat.runner.types import RunnerArguments
-from pipecat.runner.utils import create_transport
-from pipecat.services.cartesia.tts import CartesiaTTSService
-from pipecat.services.deepgram.stt import DeepgramSTTService
-from pipecat.services.openai.llm import OpenAILLMService
-from pipecat.services.simli.video import SimliVideoService
-from pipecat.transports.base_transport import BaseTransport, TransportParams
-from pipecat.transports.services.daily import DailyParams
-
-load_dotenv(override=True)
-
-transport_params = {
-    "daily": lambda: DailyParams(
-        audio_in_enabled=True,
-        audio_out_enabled=True,
-        video_out_enabled=True,
-        video_out_is_live=True,
-        video_out_width=512,
-        video_out_height=512,
-        vad_analyzer=SileroVADAnalyzer(),
-    ),
-    "webrtc": lambda: TransportParams(
-        audio_in_enabled=True,
-        audio_out_enabled=True,
-        video_out_enabled=True,
-        video_out_is_live=True,
-        video_out_width=512,
-        video_out_height=512,
-        vad_analyzer=SileroVADAnalyzer(),
-    ),
-}
-
-
-async def run_bot(transport: BaseTransport, runner_args: RunnerArguments):
-    logger.info(f"Starting bot")
-
-    stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY"))
-
-    tts = CartesiaTTSService(
-        api_key=os.getenv("CARTESIA_API_KEY"),
-        voice_id=os.getenv("CARTESIA_VOICE_ID"),
-    )
-    simli_ai = SimliVideoService(
-        SimliConfig(os.getenv("SIMLI_API_KEY"), os.getenv("SIMLI_FACE_ID")),
-    )
-
-
-    llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
-    print("OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
-
-    messages = [
-        {
-        "role": "system",
-        "content": "You are a helpful LLM in a WebRTC call. Your goal is to demonstrate your capabilities in a succinct way."
-        },
-    ]
-
-    context = OpenAILLMContext(messages)
-    context_aggregator = llm.create_context_aggregator(context)
-
-    pipeline = Pipeline(
-        [
-            transport.input(),
-            stt,
-            context_aggregator.user(),
-            llm,
-            tts,
-            simli_ai,
-            transport.output(),
-            context_aggregator.assistant(),
-        ]
-    )
-
-    task = PipelineTask(
-        pipeline,
-        params=PipelineParams(
-            enable_metrics=True,
-            enable_usage_metrics=True,
-        ),
-        idle_timeout_secs=runner_args.pipeline_idle_timeout_secs,
-    )
-
-    @transport.event_handler("on_client_connected")
-    async def on_client_connected(transport, client):
-        logger.info(f"Client connected")
-        await task.queue_frames([context_aggregator.user().get_context_frame()])
-
-    @transport.event_handler("on_client_disconnected")
-    async def on_client_disconnected(transport, client):
-        logger.info(f"Client disconnected")
-        await task.cancel()
-
-    runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)
-    await runner.run(task)
-
-
-async def bot(runner_args: RunnerArguments):
-    """Main bot entry point compatible with Pipecat Cloud."""
-    transport = await create_transport(runner_args, transport_params)
-    await run_bot(transport, runner_args)
-
-
-if __name__ == "__main__":
-    from pipecat.runner.run import main
-
-    main()
+```bash
+git clone https://github.com/simliai/create-simli-app-pipecat
+cd create-simli-app-pipecat
+uv sync
+cp .env.example .env   # then paste in your keys
+uv run bot.py
 ```
 
-5. **Run your bot**:
-    ```bash
-    python3 pipecat-simli.py
-    ```
-    and visit `http://localhost:7860` to talk to your agent in the Pipecat sandbox.
-6. **Learn more**:
-   For detailed documentation, visit [Pipecat's guide to Simli](https://docs.pipecat.ai/server/services/video/simli) or keep exploring Simli docs for more insights.
+In a second terminal, start the web page:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Open http://localhost:3000, press **Start** and allow the microphone. The page holds no keys: it posts its WebRTC offer to its own `/api/offer`, which Next.js forwards to the bot. If the bot isn't on http://localhost:7860, start the page with `BOT_URL` set to where it is. Pipecat's prebuilt client at http://localhost:7860 works too.
+
+## Build it yourself
+
+### 1. Install the packages
+
+```bash
+pip install "pipecat-ai[openai,runner,simli,webrtc]" python-dotenv
+```
+
+### 2. Set your keys
+
+Put them in a `.env` file next to your bot:
+
+```bash .env
+SIMLI_API_KEY=...
+OPENAI_API_KEY=...
+```
+
+### 3. Add the avatar to your pipeline
+
+This is the core of the starter's bot: the transport, the Simli service and the pipeline. The [starter's `bot.py`](https://github.com/simliai/create-simli-app-pipecat/blob/main/bot.py) has the complete file, with the imports, the OpenAI Realtime service and the runner.
+
+```python bot.py
+transport = SmallWebRTCTransport(
+    webrtc_connection=runner_args.webrtc_connection,
+    params=TransportParams(
+        audio_in_enabled=True,
+        audio_out_enabled=True,
+        video_out_enabled=True,
+        video_out_is_live=True,
+        video_out_width=768,  # Simli's default video size
+        video_out_height=768,
+        video_out_framerate=25,  # Simli streams at 25 fps
+    ),
+)
+
+# Simli gets the bot's voice and sends back the avatar's video and voice, in sync.
+simli = SimliVideoService(
+    api_key=os.environ["SIMLI_API_KEY"],
+    face_id=os.getenv("SIMLI_FACE_ID") or "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    max_session_length=600,  # seconds, so a forgotten tab doesn't use up your minutes
+    max_idle_time=120,
+)
+
+pipeline = Pipeline(
+    [
+        transport.input(),  # the user's microphone
+        user_aggregator,
+        llm,  # OpenAIRealtimeLLMService: hears the user and answers in voice
+        simli,
+        transport.output(),  # the avatar's video and voice
+        assistant_aggregator,
+    ]
+)
+```
+
+Simli goes right after the service that produces the bot's voice, and before the transport's output.
+
+<Note>This gives a Trinity-2 face Simli's default 768x768 video. For a 16:9 video and the avatar's position, and for known issues with the avatar's first video and with GPT-Live, see [Trinity-2 in LiveKit Agents and Pipecat (temporary)](/api-reference/trinity-2/integration-workarounds).</Note>
+
+### 4. Run it
+
+```bash
+python bot.py
+```
+
+Then open http://localhost:7860, where Pipecat's runner serves a ready-made browser client, press **Connect** and allow the microphone.
+
+## Before you go to production
+
+The runner is for development. Anyone who can reach port 7860 can start a conversation, which uses your Simli minutes and OpenAI credit, so keep it on localhost or put it behind your own sign-in. To deploy, see [Pipecat's deployment guide](https://docs.pipecat.ai/pipecat/deployment/overview).
+
+## Learn more
+
+- The starter's [README](https://github.com/simliai/create-simli-app-pipecat#readme): changing the face, voice and prompt, and how it works
+- [Pipecat's guide to Simli](https://docs.pipecat.ai/api-reference/server/services/video/simli)
+- [Pipecat docs](https://docs.pipecat.ai): tools, other models and more
