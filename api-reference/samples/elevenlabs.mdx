@@ -8,8 +8,10 @@ description: "ElevenLabs Agents starter, built with the Simli JavaScript SDK"
 	A Next.js app that gives an ElevenLabs agent a Simli avatar.
 </Card>
 
-The page connects to your [ElevenLabs agent](https://elevenlabs.io/app/agents) over a WebSocket, with a signed URL that a server action gets using your ElevenLabs API key. It sends the agent your microphone and plays the agent's voice through the avatar with the [JavaScript SDK](/api-reference/javascript).
+The page connects to your [ElevenLabs agent](https://elevenlabs.io/app/agents) over a WebSocket, sends the agent your microphone, and plays the agent's voice through the avatar with the [JavaScript SDK](/api-reference/javascript). Both API keys stay on the server: `/api/simli-token` creates the Simli [session token](/api-reference/javascript#2-create-a-session-token-on-your-server), and `/api/elevenlabs-signed-url` gets a short-lived signed URL for the agent.
 
-To run it, rename `.env_sample` to `.env` and fill in your Simli and ElevenLabs API keys, your ElevenLabs agent ID and a Simli face ID, then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-elevenlabs#readme) has the details.
+In the ElevenLabs agent's settings, set the **TTS output format to PCM 16000 Hz** (Simli needs 16 kHz PCM) and a short **first message**, so the avatar greets you as soon as the conversation opens.
 
-<Warning>This starter creates the Simli session token in the browser, with your Simli API key in `NEXT_PUBLIC_SIMLI_API_KEY`, so anyone who opens the page can read the key. Use it for local demos only. Before you deploy, create the session token on your server instead, as in [Create a session token](/api-reference/javascript#2-create-a-session-token-on-your-server).</Warning>
+To run it, copy `.env.example`, fill in `SIMLI_API_KEY`, `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`, then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-elevenlabs#readme) has the details.
+
+<Warning>In production, both routes return `403` until you put them behind your own sign-in, because anyone who can call them starts a conversation on your Simli and ElevenLabs accounts. Also set call and duration limits on the ElevenLabs agent. See the README's "Before you deploy".</Warning>
