@@ -69,7 +69,7 @@ Use it in place of `simli.SimliConfig`:
 avatar = simli.AvatarSession(
     simli_config=Trinity2Config(
         api_key=os.environ["SIMLI_API_KEY"],
-        face_id=os.getenv("SIMLI_FACE_ID") or "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+        face_id=os.getenv("SIMLI_FACE_ID") or "14c60d62-6ebf-424d-b626-1f4f91c33b04",
         max_session_length=600,
         max_idle_time=300,
     ),
@@ -96,7 +96,7 @@ WIDTH, HEIGHT = 1366, 768
 
 simli = SimliVideoService(
     api_key=os.environ["SIMLI_API_KEY"],
-    face_id=os.getenv("SIMLI_FACE_ID") or "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    face_id=os.getenv("SIMLI_FACE_ID") or "14c60d62-6ebf-424d-b626-1f4f91c33b04",
     max_session_length=600,  # seconds, so a forgotten tab doesn't use up your minutes
     max_idle_time=120,
 )

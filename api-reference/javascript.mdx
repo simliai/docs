@@ -58,7 +58,7 @@ export async function POST() {
 	const { session_token } = await generateSimliSessionToken({
 		apiKey: process.env.SIMLI_API_KEY!,
 		config: {
-			faceId: "bf13113a-355a-4d97-8b90-4edccd1da7b2", // a Trinity-2 preset face
+			faceId: "14c60d62-6ebf-424d-b626-1f4f91c33b04", // Simli's default Trinity-2 face
 			maxSessionLength: 600, // seconds
 			maxIdleTime: 180, // seconds
 		},
