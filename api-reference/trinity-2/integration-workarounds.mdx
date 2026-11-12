@@ -1,16 +1,20 @@
 ---
 title: "Trinity-2 in LiveKit Agents and Pipecat (temporary)"
 sidebarTitle: "Trinity-2 workarounds"
-description: "Temporary workarounds for Trinity-2 options until the LiveKit Agents and Pipecat Simli integrations support them"
+description: "Temporary workarounds for Trinity-2 options in Pipecat, and in LiveKit Agents before livekit-plugins-simli 1.8.10"
 ---
 
-The Simli integrations in [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) work with Trinity-2 faces as they are, with Simli's default 768x768 video. They don't expose [Trinity-2's options](/api-reference/trinity-2) yet, such as a 16:9 video, the avatar's position or a starting camera, and Pipecat's has two known issues. Our starters work around these, as below. Each workaround says when you can remove it, and this page goes away once the integrations support Trinity-2 themselves.
+The Simli integrations in [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) work with Trinity-2 faces as they are, with Simli's default 768x768 video. LiveKit's plugin takes [Trinity-2's options](/api-reference/trinity-2), such as a 16:9 video, the avatar's position or a starting camera, from version 1.8.10. Pipecat's doesn't yet, and it has two known issues. Our starters work around these, as below. Each workaround says when you can remove it, and this page goes away once the integrations support Trinity-2 themselves.
 
 ## LiveKit Agents
 
-### Trinity-2 options: `Trinity2Config`
+### Trinity-2 options: upgrade to `livekit-plugins-simli` 1.8.10
 
-The plugin's `SimliConfig` sends Simli only the face ID, with a legacy style suffix, and the time limits. Its public `create_json()` method builds the body of the [`POST /compose/token`](/api-reference/compose-session-token) request, so a subclass can override it: this one sends the plain face ID and adds the Trinity-2 fields. It's from our [LiveKit Agents starter](https://github.com/simliai/create-simli-app-livekit-agents):
+From 1.8.10, the plugin's `SimliConfig` takes the Trinity-2 options itself and sends the plain face ID, so no workaround is needed. See [Trinity-2 options](/api-reference/livekit#trinity-2-options) in the LiveKit guide.
+
+<Accordion title="On 1.8.9 or earlier: the Trinity2Config subclass">
+
+The plugin's `SimliConfig` sends Simli only the face ID, with a legacy style suffix, and the time limits. Its public `create_json()` method builds the body of the [`POST /compose/token`](/api-reference/compose-session-token) request, so a subclass can override it: this one sends the plain face ID and adds the Trinity-2 fields.
 
 ```python
 from dataclasses import dataclass
@@ -72,7 +76,8 @@ avatar = simli.AvatarSession(
 )
 ```
 
-**Remove it when** the plugin's `SimliConfig` takes the Trinity-2 options and sends the plain face ID.
+**Remove it when** you upgrade to `livekit-plugins-simli` 1.8.10 or later.
+</Accordion>
 
 ## Pipecat
 
