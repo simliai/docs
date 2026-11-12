@@ -1,7 +1,7 @@
 ---
 title: 'OpenAI Realtime'
 icon: 'flower'
-description: "OpenAI Realtime starter: a browser demo built with the Simli JavaScript SDK"
+description: "OpenAI Realtime starter: a Next.js app built with the Simli JavaScript SDK"
 ---
 
 <Card
@@ -9,11 +9,16 @@ description: "OpenAI Realtime starter: a browser demo built with the Simli JavaS
   icon="github"
   href="https://github.com/simliai/create-simli-app-openai"
 >
-  A Next.js app that talks to OpenAI's Realtime API from the browser and speaks the answers through a Simli avatar.
+  A Next.js app that talks to OpenAI's Realtime API over WebRTC and speaks the answers through a Simli avatar.
 </Card>
 
-The page sends your microphone to the OpenAI Realtime API with OpenAI's realtime beta client library, and plays the voice that comes back through the avatar with the [JavaScript SDK](/api-reference/javascript).
+The browser sends your microphone to OpenAI's Realtime API over WebRTC, and plays the voice that comes back through the avatar with the [JavaScript SDK](/api-reference/javascript). Both API keys stay on the server:
 
-To run it, rename `.env_sample` to `.env` and paste in your Simli and OpenAI API keys, then run `npm install` and `npm run dev`. Change the avatar's name, face and prompt in `app/page.tsx`. The [README](https://github.com/simliai/create-simli-app-openai#readme) has the details.
+- `/api/simli-token` creates the Simli [session token](/api-reference/javascript#2-create-a-session-token-on-your-server).
+- `/api/openai-session` creates the OpenAI call for the browser's WebRTC offer and returns only the answer. The model, voice and prompt are set on the server, in `app/avatar.ts`, and the server hangs up the call when the session's time is up.
 
-<Warning>This starter is a local demo. Both API keys are in `NEXT_PUBLIC_` variables, so anyone who opens the page can read them, and OpenAI has deprecated the realtime beta library it uses. To build an OpenAI agent you can deploy, see [LiveKit](/api-reference/livekit).</Warning>
+To run it, copy `.env.example`, fill in `SIMLI_API_KEY` and `OPENAI_API_KEY`, then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-openai#readme) has the details, including how to change the face, voice and prompt.
+
+<Warning>In production, both routes return `403` until you put them behind your own sign-in, because anyone who can call them starts a session on your Simli and OpenAI accounts. See the README's "Before you deploy". The server-side hang-up needs a long-running server; on serverless hosts, see the README.</Warning>
+
+For an OpenAI agent that runs on a server instead, see [LiveKit Agents](/api-reference/livekit) or [Pipecat](/api-reference/pipecat).
