@@ -59,8 +59,7 @@ Put its id in `background_id` (and a foreground's in `foreground_id`), next to t
 
 - [`POST /compose/token`](/api-reference/compose-session-token)
 - [`POST /static/audio`](/api-reference/generate-static-video)
-- [`POST /auto/token`](/api-reference/create-simli-auto-session-token)
-- [`POST /auto/start/configurable`](/api-reference/start-auto-session)
+- [`POST /auto/token`](/api-reference/create-simli-auto-session-token) and [`POST /auto/start/configurable`](/api-reference/start-auto-session), for [Simli Auto](/api-reference/simli-auto) (deprecated)
 
 ```json POST /compose/token
 {
@@ -73,7 +72,7 @@ Put its id in `background_id` (and a foreground's in `foreground_id`), next to t
 
 The background is cropped to fill the canvas, and so is the foreground. Leave the fields out for the avatar's own. Only an id is accepted, not an image: upload it first. An id that isn't one of your account's is dropped, and the response's `warnings` gets an entry for it. The token or video is still made, with the avatar's own.
 
-<Note>Simli Auto agents don't store a background. Put `background_id` in the agent's [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request, and its session starts with it.</Note>
+<Note>Simli Auto is deprecated. Its agents don't store a background. Put `background_id` in the agent's [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request, and its session starts with it.</Note>
 
 ## Swapping it during a session
 
@@ -105,7 +104,7 @@ A message that is applied gets no reply. Otherwise the server answers with a tex
 
 Foreground messages get the same replies, with `foreground` in place of `background`.
 
-### In a Simli Auto session
+### In a Simli Auto session (deprecated)
 
 A Simli Auto session's avatar is in a Daily room with your app. To swap the background, send the room an app message:
 
