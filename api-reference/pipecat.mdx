@@ -25,7 +25,7 @@ git clone https://github.com/simliai/create-simli-app-pipecat
 cd create-simli-app-pipecat
 uv sync
 cp .env.example .env   # then paste in your keys
-uv run bot.py
+uv run bot.py -t webrtc
 ```
 
 In a second terminal, start the web page:
@@ -34,7 +34,7 @@ In a second terminal, start the web page:
 cd frontend && npm install && npm run dev
 ```
 
-Open http://localhost:3000, press **Start** and allow the microphone. The page holds no keys: it posts its WebRTC offer to its own `/api/offer`, which Next.js forwards to the bot. If the bot isn't on http://localhost:7860, start the page with `BOT_URL` set to where it is. Pipecat's prebuilt client at http://localhost:7860 works too.
+Open http://localhost:3000, press **Start** and allow the microphone. The page holds no keys: it posts its WebRTC offer to its own `/api/offer` route, which forwards it to the bot. If the bot isn't on http://localhost:7860, set `BOT_URL` in `frontend/.env.local`. Pipecat's prebuilt client at http://localhost:7860 works too.
 
 ## Build it yourself
 
@@ -122,14 +122,20 @@ Pipecat 1.16 also sends the avatar's video from the start of the session, not on
 ### 4. Run it
 
 ```bash
-python bot.py
+python bot.py -t webrtc
 ```
 
 Then open http://localhost:7860, where Pipecat's runner serves a ready-made browser client, press **Connect** and allow the microphone.
 
 ## Before you go to production
 
-The runner is for development. Anyone who can reach port 7860 can start a conversation, which uses your Simli minutes and OpenAI credit, so keep it on localhost or put it behind your own sign-in. To deploy, see [Pipecat's deployment guide](https://docs.pipecat.ai/pipecat/deployment/overview).
+The runner is for development.
+
+- **Limit which sites can reach it.** By default Pipecat's runner accepts requests from any website, so a page open in your browser could start a conversation on your accounts. Set `PIPECAT_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:7860` in `.env`; the starter's `.env.example` does. `-t webrtc` turns on only the WebRTC transport.
+- **Cap the whole conversation.** Simli's `max_session_length` ends the avatar, but not the pipeline, so the LLM keeps running. The starter cancels the pipeline after the same session length; do the same in your bot.
+- **Put sign-in in front of anything that starts a bot.** Anyone who can reach port 7860, or a page that forwards offers to it, can start a conversation that uses your Simli minutes and OpenAI credit. The starter's `/api/offer` route returns `403` in production until you add your own auth.
+
+To deploy, see [Pipecat's deployment guide](https://docs.pipecat.ai/pipecat/deployment/overview).
 
 ## Learn more
 
