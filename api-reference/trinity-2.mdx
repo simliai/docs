@@ -94,8 +94,7 @@ Four fields set the video's size and where the avatar sits in it. They are accep
 
 - [`POST /compose/token`](/api-reference/compose-session-token)
 - [`POST /static/audio`](/api-reference/generate-static-video)
-- [`POST /auto/token`](/api-reference/create-simli-auto-session-token)
-- [`POST /auto/start/configurable`](/api-reference/start-auto-session)
+- [`POST /auto/token`](/api-reference/create-simli-auto-session-token) and [`POST /auto/start/configurable`](/api-reference/start-auto-session), for [Simli Auto](/api-reference/simli-auto) (deprecated)
 
 | Field | Default | Meaning |
 | --- | --- | --- |
@@ -116,4 +115,4 @@ Width and height together must make a 1:1, 16:9 or 9:16 frame. They only need to
 }
 ```
 
-<Note>Simli Auto agents don't store framing. To frame an agent's session, put the framing fields in its [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request. The session uses the framing from its token, background and foreground included.</Note>
+<Note>Simli Auto is deprecated. Its agents don't store framing. To frame an agent's session, put the framing fields in its [`POST /auto/token`](/api-reference/create-simli-auto-session-token) request. The session uses the framing from its token, background and foreground included.</Note>
