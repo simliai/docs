@@ -1,16 +1,20 @@
 ---
 title: "Trinity-2 in LiveKit Agents and Pipecat (temporary)"
 sidebarTitle: "Trinity-2 workarounds"
-description: "Temporary workarounds for Trinity-2 options until the LiveKit Agents and Pipecat Simli integrations support them"
+description: "Workarounds for Trinity-2 options on older releases: LiveKit Agents before livekit-plugins-simli 1.8.10, and Pipecat before 1.16"
 ---
 
-The Simli integrations in [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) work with Trinity-2 faces as they are, with Simli's default 768x768 video. They don't expose [Trinity-2's options](/api-reference/trinity-2) yet, such as a 16:9 video, the avatar's position or a starting camera, and Pipecat's has two known issues. Our starters work around these, as below. Each workaround says when you can remove it, and this page goes away once the integrations support Trinity-2 themselves.
+The Simli integrations in [LiveKit Agents](/api-reference/livekit) and [Pipecat](/api-reference/pipecat) work with Trinity-2 faces as they are, with Simli's default 768x768 video. Both now take [Trinity-2's options](/api-reference/trinity-2), such as a 16:9 video, the avatar's position or a starting camera: `livekit-plugins-simli` from 1.8.10, and Pipecat from 1.16. Upgrade if you can. This page keeps the workarounds for older releases.
 
 ## LiveKit Agents
 
-### Trinity-2 options: `Trinity2Config`
+### Trinity-2 options: upgrade to `livekit-plugins-simli` 1.8.10
 
-The plugin's `SimliConfig` sends Simli only the face ID, with a legacy style suffix, and the time limits. Its public `create_json()` method builds the body of the [`POST /compose/token`](/api-reference/compose-session-token) request, so a subclass can override it: this one sends the plain face ID and adds the Trinity-2 fields. It's from our [LiveKit Agents starter](https://github.com/simliai/create-simli-app-livekit-agents):
+From 1.8.10, the plugin's `SimliConfig` takes the Trinity-2 options itself and sends the plain face ID, so no workaround is needed. See [Trinity-2 options](/api-reference/livekit#trinity-2-options) in the LiveKit guide.
+
+<Accordion title="On 1.8.9 or earlier: the Trinity2Config subclass">
+
+The plugin's `SimliConfig` sends Simli only the face ID, with a legacy style suffix, and the time limits. Its public `create_json()` method builds the body of the [`POST /compose/token`](/api-reference/compose-session-token) request, so a subclass can override it: this one sends the plain face ID and adds the Trinity-2 fields.
 
 ```python
 from dataclasses import dataclass
@@ -72,11 +76,18 @@ avatar = simli.AvatarSession(
 )
 ```
 
-**Remove it when** the plugin's `SimliConfig` takes the Trinity-2 options and sends the plain face ID.
+**Remove it when** you upgrade to `livekit-plugins-simli` 1.8.10 or later.
+</Accordion>
 
 ## Pipecat
 
-### Trinity-2 options: the Simli SDK's config
+### Upgrade to Pipecat 1.16
+
+From 1.16, `SimliVideoService` takes Trinity-2 framing through `framing=SimliVideoService.Framing(...)`, sends the avatar's video from the start of the session, and passes GPT-Live's voice to Simli. None of the workarounds below are needed. See [Trinity-2 options](/api-reference/pipecat#trinity-2-options) in the Pipecat guide.
+
+<Accordion title="On Pipecat 1.15 or earlier">
+
+#### Trinity-2 options: the Simli SDK's config
 
 Pipecat's `SimliVideoService` has no Trinity-2 options yet. It runs the [Simli Python SDK](/api-reference/python), which sends every field of its `SimliConfig` to Simli when the session starts, so the starter adds the [framing fields](/api-reference/trinity-2#framing-the-video) there. It's from our [Pipecat starter](https://github.com/simliai/create-simli-app-pipecat):
 
@@ -118,14 +129,16 @@ params=TransportParams(
 
 **Remove it when** that fix is in the Pipecat release you use and `SimliVideoService` takes the Trinity-2 options itself.
 
-### No video until the bot first speaks
+#### No video until the bot first speaks
 
 `SimliVideoService` doesn't pass on any video until the bot's first audio ([pipecat#4832](https://github.com/pipecat-ai/pipecat/issues/4832)). The starter has the bot greet the user as soon as they connect, so the avatar appears with the greeting.
 
 **Remove it when** the fix, [pipecat#5033](https://github.com/pipecat-ai/pipecat/pull/5033), is in the Pipecat release you use. You can then let the user speak first if you like.
 
-### Use OpenAI Realtime, not GPT-Live
+#### Use OpenAI Realtime, not GPT-Live
 
 Pipecat's `SimliVideoService` ignores the audio frames Pipecat's GPT-Live service produces, so with GPT-Live the avatar never moves. The starter uses `OpenAIRealtimeLLMService` instead. The same pending upstream fix to Pipecat's Simli service covers this.
 
 **Remove it when** that fix is in the Pipecat release you use. GPT-Live then works with Simli like any other voice.
+
+</Accordion>
