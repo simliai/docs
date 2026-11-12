@@ -119,6 +119,23 @@ simli = SimliVideoService(
 
 Pipecat 1.16 also sends the avatar's video from the start of the session, not only once the bot first speaks, and passes GPT-Live's voice (`OpenAILiveLLMService`) to Simli. On older Pipecat releases, see [Trinity-2 in LiveKit Agents and Pipecat](/api-reference/trinity-2/integration-workarounds).
 
+### Video quality with SmallWebRTCTransport
+
+The bot re-encodes the avatar's video before sending it to the browser. With `SmallWebRTCTransport`, that's done by aiortc, which starts at 0.5–1 Mbit/s: too little for a large Trinity-2 video, so the mouth looks smeared and the lip sync looks off. Pipecat has no setting for it, so raise aiortc's limits near the top of `bot.py`:
+
+```python
+import aiortc.codecs.h264
+import aiortc.codecs.vpx
+
+VIDEO_BITRATE = 2_500_000  # bits per second; enough for 1366x768
+for codec in (aiortc.codecs.vpx, aiortc.codecs.h264):
+    codec.DEFAULT_BITRATE = VIDEO_BITRATE
+    codec.MIN_BITRATE = VIDEO_BITRATE // 2
+    codec.MAX_BITRATE = VIDEO_BITRATE * 2
+```
+
+Lower it for a smaller video or slow networks. Daily and other hosted transports encode the video themselves and don't need this.
+
 ### 4. Run it
 
 ```bash
