@@ -3,6 +3,8 @@ title: "Custom LLM guide"
 icon: comments
 ---
 
+<Warning>Simli Auto is deprecated. It keeps working for now, but new projects should build their agent with [LiveKit](/api-reference/livekit) or [Pipecat](/api-reference/pipecat), or with the [Simli SDKs](/simli-sdks).</Warning>
+
 ## Introduction
 
 Using Simli Auto (our end-to-end API) is awesome! But it can be a bit difficult to tailor it out for your needs. You may have a custom knowledge base, a RAG powered system, using your fine-tuned LLM that's the best doctor or tutor ever known to mankind that you self-host, or just want to use a model that we don't readily support. If that's you, you're in the right place.
@@ -15,7 +17,7 @@ TL;DR: if your API works with the OpenAI SDK (try it with the Python or JS SDK),
 
 ```json
 {
-    "faceId": "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    "faceId": "14c60d62-6ebf-424d-b626-1f4f91c33b04",
     "llmConfig": {
         "provider": "User",
         "baseURL": "https://my-llm.example.com/v1",

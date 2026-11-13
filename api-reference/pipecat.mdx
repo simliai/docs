@@ -25,7 +25,7 @@ git clone https://github.com/simliai/create-simli-app-pipecat
 cd create-simli-app-pipecat
 uv sync
 cp .env.example .env   # then paste in your keys
-uv run bot.py
+uv run bot.py -t webrtc
 ```
 
 In a second terminal, start the web page:
@@ -34,14 +34,14 @@ In a second terminal, start the web page:
 cd frontend && npm install && npm run dev
 ```
 
-Open http://localhost:3000, press **Start** and allow the microphone. The page holds no keys: it posts its WebRTC offer to its own `/api/offer`, which Next.js forwards to the bot. If the bot isn't on http://localhost:7860, start the page with `BOT_URL` set to where it is. Pipecat's prebuilt client at http://localhost:7860 works too.
+Open http://localhost:3000, press **Start** and allow the microphone. The page holds no keys: it posts its WebRTC offer to its own `/api/offer` route, which forwards it to the bot. If the bot isn't on http://localhost:7860, set `BOT_URL` in `frontend/.env.local`. Pipecat's prebuilt client at http://localhost:7860 works too.
 
 ## Build it yourself
 
 ### 1. Install the packages
 
 ```bash
-pip install "pipecat-ai[openai,runner,simli,webrtc]" python-dotenv
+pip install "pipecat-ai[openai,runner,simli,webrtc]>=1.16" python-dotenv
 ```
 
 ### 2. Set your keys
@@ -74,7 +74,7 @@ transport = SmallWebRTCTransport(
 # Simli gets the bot's voice and sends back the avatar's video and voice, in sync.
 simli = SimliVideoService(
     api_key=os.environ["SIMLI_API_KEY"],
-    face_id=os.getenv("SIMLI_FACE_ID") or "bf13113a-355a-4d97-8b90-4edccd1da7b2",
+    face_id=os.getenv("SIMLI_FACE_ID") or "14c60d62-6ebf-424d-b626-1f4f91c33b04",
     max_session_length=600,  # seconds, so a forgotten tab doesn't use up your minutes
     max_idle_time=120,
 )
@@ -93,19 +93,66 @@ pipeline = Pipeline(
 
 Simli goes right after the service that produces the bot's voice, and before the transport's output.
 
-<Note>This gives a Trinity-2 face Simli's default 768x768 video. For a 16:9 video and the avatar's position, and for known issues with the avatar's first video and with GPT-Live, see [Trinity-2 in LiveKit Agents and Pipecat (temporary)](/api-reference/trinity-2/integration-workarounds).</Note>
+### Trinity-2 options
+
+This gives a Trinity-2 face Simli's default 768x768 video. From Pipecat 1.16, `SimliVideoService` takes [Trinity-2's framing](/api-reference/trinity-2#framing-the-video) itself. Set the transport's video to the same size:
+
+```python
+WIDTH, HEIGHT = 1366, 768  # 1:1, 16:9 or 9:16, each side at least 512
+
+simli = SimliVideoService(
+    api_key=os.environ["SIMLI_API_KEY"],
+    face_id=os.getenv("SIMLI_FACE_ID") or "14c60d62-6ebf-424d-b626-1f4f91c33b04",
+    max_session_length=600,
+    max_idle_time=120,
+    framing=SimliVideoService.Framing(
+        streaming_width=WIDTH,
+        streaming_height=HEIGHT,
+        avatar_position_x=0.5,  # 0 (left) to 1 (right)
+        avatar_position_y=1.0,  # 0 (top) to 1 (bottom)
+        # camera=SimliVideoService.Camera(zoom=1.2),
+        # background_id="<upload id>",
+    ),
+)
+# ...and in TransportParams: video_out_width=WIDTH, video_out_height=HEIGHT
+```
+
+Pipecat 1.16 also sends the avatar's video from the start of the session, not only once the bot first speaks, and passes GPT-Live's voice (`OpenAILiveLLMService`) to Simli. On older Pipecat releases, see [Trinity-2 in LiveKit Agents and Pipecat](/api-reference/trinity-2/integration-workarounds).
+
+### Video quality with SmallWebRTCTransport
+
+The bot re-encodes the avatar's video before sending it to the browser. With `SmallWebRTCTransport`, that's done by aiortc, which starts at 0.5–1 Mbit/s: too little for a large Trinity-2 video, so the mouth looks smeared and the lip sync looks off. Pipecat has no setting for it, so raise aiortc's limits near the top of `bot.py`:
+
+```python
+import aiortc.codecs.h264
+import aiortc.codecs.vpx
+
+VIDEO_BITRATE = 2_500_000  # bits per second; enough for 1366x768
+for codec in (aiortc.codecs.vpx, aiortc.codecs.h264):
+    codec.DEFAULT_BITRATE = VIDEO_BITRATE
+    codec.MIN_BITRATE = VIDEO_BITRATE // 2
+    codec.MAX_BITRATE = VIDEO_BITRATE * 2
+```
+
+Lower it for a smaller video or slow networks. Daily and other hosted transports encode the video themselves and don't need this.
 
 ### 4. Run it
 
 ```bash
-python bot.py
+python bot.py -t webrtc
 ```
 
 Then open http://localhost:7860, where Pipecat's runner serves a ready-made browser client, press **Connect** and allow the microphone.
 
 ## Before you go to production
 
-The runner is for development. Anyone who can reach port 7860 can start a conversation, which uses your Simli minutes and OpenAI credit, so keep it on localhost or put it behind your own sign-in. To deploy, see [Pipecat's deployment guide](https://docs.pipecat.ai/pipecat/deployment/overview).
+The runner is for development.
+
+- **Limit which sites can reach it.** By default Pipecat's runner accepts requests from any website, so a page open in your browser could start a conversation on your accounts. Set `PIPECAT_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:7860` in `.env`; the starter's `.env.example` does. `-t webrtc` turns on only the WebRTC transport.
+- **Cap the whole conversation.** Simli's `max_session_length` ends the avatar, but not the pipeline, so the LLM keeps running. The starter cancels the pipeline after the same session length; do the same in your bot.
+- **Put sign-in in front of anything that starts a bot.** Anyone who can reach port 7860, or a page that forwards offers to it, can start a conversation that uses your Simli minutes and OpenAI credit. The starter's `/api/offer` route returns `403` in production until you add your own auth.
+
+To deploy, see [Pipecat's deployment guide](https://docs.pipecat.ai/pipecat/deployment/overview).
 
 ## Learn more
 
