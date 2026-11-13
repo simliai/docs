@@ -82,16 +82,85 @@ paths:
                     type: string
                     description: Fail Reason
 
+        "403":
+          description: >-
+            The face is private and belongs to another account. A face can be
+            used by the account that created it, and, when it is public, by
+            any account that has its face ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: FACE_NOT_ALLOWED
+                  reason:
+                    type: string
         "422":
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+  /static/audio/sign:
+    post:
+      summary: Sign a Static Video's URLs Again
+      description: >-
+        Fresh signed URLs for a video made with POST /static/audio, for when the
+        ones you have expired. Only the account that made the video can have
+        its URLs signed.
+      operationId: signStaticUrl_static_audio_sign_post
+      parameters:
+        - name: x-simli-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  description: >-
+                    Either of the video's URLs (hls_url or mp4_url), as returned
+                    before. The token on it may have expired, or be left off.
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hls_url:
+                    type: string
+                  mp4_url:
+                    type: string
+                  access_token:
+                    type: string
+                  access_token_expires_at:
+                    type: integer
+                    description: Unix time (seconds) the new URLs stop working, 6 hours after the request.
+        "401":
+          description: Invalid API key
+        "404":
+          description: The URL is not a video's, or the video is not your account's
   /static/audio:
     post:
       summary: Generate Static Video
-      description: Generate and stream a static video file from a given audio sample
+      description: >-
+        Generate and stream a static video file from a given audio sample. The
+        whole request body may be at most 5 MB, and the audio at most 30 minutes
+        long. The video is private: the returned URLs are signed (they carry an
+        access token valid for 6 hours) and its files are served on a signed
+        URL only. POST /static/audio/sign issues fresh ones.
       operationId: audioToVideoInterface_static_audio_post
       requestBody:
         required: true
@@ -109,10 +178,18 @@ paths:
                 properties:
                   hls_url:
                     type: string
-                    example: "https://api.simli.ai/hls/path-to-file/output.m3u8"
+                    example: "https://api.simli.ai/hls/path-to-file/output.m3u8?token=1794500000.q0J..."
                   mp4_url:
                     type: string
-                    example: "https://api.simli.ai/mp4/path-to-file/output.mp4"
+                    example: "https://api.simli.ai/mp4/path-to-file/output.mp4?token=1794500000.q0J..."
+                  access_token:
+                    type: string
+                    description: >-
+                      The token both URLs carry as `?token=`. The playlist's segment
+                      URLs carry it too.
+                  access_token_expires_at:
+                    type: integer
+                    description: Unix time (seconds) the signed URLs stop working, 6 hours after the request.
                   warnings:
                     type: array
                     items:
@@ -121,8 +198,10 @@ paths:
                       Camera fields outside their supported range, and background_id /
                       foreground_id dropped as not your account's (the avatar's own is
                       used). The video is made regardless.
+        "413":
+          description: The request body is over 5 MB
         "422":
-          description: Validation Error
+          description: Validation Error, or audio longer than 30 minutes
           content:
             application/json:
               schema:
@@ -132,7 +211,7 @@ paths:
       summary: Get HLS Segment
       security: []
       description: Get HLS Stream of Generated Video
-      operationId: getCachedVideo_static_hls__machineIP___file__get
+      operationId: getHlsFile_static_hls__destination___file__get
       parameters:
         - name: destination
           in: path
@@ -164,7 +243,7 @@ paths:
   /static/mp4/{destination}/{file}:
     get:
       summary: Get MP4 of Generated Video
-      operationId: getCachedVideoMp4_static_mp4__machineIP___file__get
+      operationId: getMp4_static_mp4__destination___file__get
       security: []
       parameters:
         - name: destination
@@ -397,6 +476,7 @@ paths:
   /faces:
     get:
       summary: Get all faces
+      description: Your own faces only. Other accounts' faces are never listed, public or not.
       responses:
         "200":
           description: List of faces
@@ -406,6 +486,80 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FacesResponse"
+
+  /face/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Check that a face can be used
+      description: >-
+        A face can be used by the account that created it, and, when it is
+        public, by any account that has its face ID. Public faces are not
+        discoverable: no endpoint lists or searches other accounts' faces, so
+        another account can use a public face only if it has been given the
+        ID.
+      responses:
+        "200":
+          description: The face is yours or public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaceAccess"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: The face is neither yours nor public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Face dd57684f-2a27-495b-acee-917a2e5c5ad5 is not yours and is not public"
+        "404":
+          description: No such face
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Make a face public or private
+      description: >-
+        A private face can be used only by the account that created it. A
+        public face can also be used by any other account that has its face
+        ID. Making a face public does not make it discoverable: it is not
+        listed or searchable anywhere, and GET /faces returns only your own
+        faces, so other accounts can use it only if you give them the ID.
+        New faces are private.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacePatchRequest"
+      responses:
+        "200":
+          description: The face, with its new visibility
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacesResponse"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "404":
+          description: No such face, or it belongs to another account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /faces/trinity/{id}:
     delete:
@@ -548,10 +702,9 @@ paths:
           in: query
           required: false
           description: >-
-            The same Simli session token carried in the request body. Supplying
-            it here as well lets the edge route the request without reading the
-            body; the body field remains authoritative for older clients, and
-            this value takes precedence when both are sent.
+            The same Simli session token carried in the request body. Send it
+            here as well; the body field remains for older clients, and this
+            value takes precedence when both are sent.
           schema:
             type: string
             title: Session Token
@@ -596,14 +749,14 @@ paths:
       parameters:
         - name: startTime
           in: query
-          description: Filter records from this Unix timestamp
+          description: Sessions started at or after this Unix timestamp (default a week ago)
           required: false
           schema:
             type: integer
             example: 1745750387
         - name: endTime
           in: query
-          description: Filter records until this Unix timestamp
+          description: Sessions started at or before this Unix timestamp (default now); requires startTime
           required: false
           schema:
             type: integer
@@ -620,6 +773,12 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/HistoryRecord"
+        "400":
+          description: endTime without startTime, a timestamp that isn't a number, or a startTime in the future
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Unauthorized - Invalid API key
           content:
@@ -652,25 +811,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /faces/legacy/{id}:
-    delete:
-      deprecated: true
-      summary: Delete a face
-      description: Removes a face. This can not be undone. All agents connected to this face_id will be broken
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "204":
-          description: Face deleted successfully
-        "400":
-          description: Invalid input
-        "401":
-          description: Unauthorized
 
   /auto/agent:
     post:
@@ -691,6 +831,14 @@ paths:
                 $ref: "#/components/schemas/AgentResponse"
         "400":
           description: Invalid input
+        "403":
+          description: The face in face_id is neither yours nor public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Face dd57684f-2a27-495b-acee-917a2e5c5ad5 is not yours and is not public"
   /auto/agents:
     get:
       deprecated: true
@@ -734,6 +882,14 @@ paths:
       responses:
         "200":
           description: Agent updated successfully
+        "403":
+          description: The face in face_id is neither yours nor public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Face dd57684f-2a27-495b-acee-917a2e5c5ad5 is not yours and is not public"
         "404":
           description: Agent not found
     delete:
@@ -747,7 +903,18 @@ paths:
   /auto/token:
     post:
       summary: Create Simli Auto Session Token
-      description: Create a temporary session token for Simli Auto Sessions
+      description: >-
+        A session token for Simli Auto, minted on your server with your API
+        key so the key never reaches the page. Carrying the session's
+        `request` (the fields of POST /auto/start/configurable's body), it is
+        the websocket start on its own: the page sends
+        `{"sessionToken": ...}` as the /auto/webrtc/{transport} websocket's
+        first message, and the session is the one minted. Without one it
+        starts a saved agent's session, sent with the agent's id as GET
+        /auto/start/{agent_id} takes them. `expiryStamp` (Unix seconds)
+        makes it short-lived; `originAllowList` names the pages that may
+        start with it. A key and a face are remembered for the mints that
+        follow, so a repeat mint waits on nothing but the sealing.
       deprecated: true
       operationId: createPipecatSessionToken_auto_token_post
       requestBody:
@@ -774,7 +941,31 @@ paths:
                       Starting camera fields outside their supported range, and
                       background_id / foreground_id dropped as not your account's
                       (the avatar's own is used). The token is minted regardless.
+                  model:
+                    anyOf:
+                      - type: string
+                        enum: [trinity2, trinity1]
+                      - type: "null"
+                    description: >-
+                      The face's generation, for a token carrying its request:
+                      connect the websocket with `?model=` set to it, which
+                      routes the start to a node serving the face.
 
+        "403":
+          description: >-
+            The face is private and belongs to another account. A face can be
+            used by the account that created it, and, when it is public, by
+            any account that has its face ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: FACE_NOT_ALLOWED
+                  reason:
+                    type: string
         "422":
           description: Validation Error
           content:
@@ -832,9 +1023,17 @@ paths:
             type: boolean
             default: false
             title: Redirect
+        - $ref: "#/components/parameters/AgentVariables"
       responses:
         "200":
           description: Successful Response
+          headers:
+            X-Simli-Variables-Defaulted:
+              $ref: "#/components/headers/VariablesDefaulted"
+            X-Simli-Variables-Invalid:
+              $ref: "#/components/headers/VariablesInvalid"
+            X-Simli-Variables-Unknown:
+              $ref: "#/components/headers/VariablesUnknown"
           content:
             application/json:
               schema:
@@ -874,9 +1073,17 @@ paths:
             type: boolean
             default: false
             title: Redirect
+        - $ref: "#/components/parameters/AgentVariables"
       responses:
         "200":
           description: Successful Response
+          headers:
+            X-Simli-Variables-Defaulted:
+              $ref: "#/components/headers/VariablesDefaulted"
+            X-Simli-Variables-Invalid:
+              $ref: "#/components/headers/VariablesInvalid"
+            X-Simli-Variables-Unknown:
+              $ref: "#/components/headers/VariablesUnknown"
           content:
             application/json:
               schema:
@@ -921,6 +1128,41 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
 
 components:
+  parameters:
+    AgentVariables:
+      name: variables
+      in: query
+      required: false
+      description: >-
+        The agent's runtime variables, one query param each
+        (?name=Ann&city=Paris). The agent marks them in its prompt and first
+        message as {{name}} or {{name: default}}; each mark takes the value
+        given for its name, or its default (blank without one). A value is at
+        most 20 characters. Nothing here refuses the start: a value over 20
+        characters, a variable not given and a param that is not one of the
+        agent's variables are reported in the response's X-Simli-Variables-*
+        headers instead. redirect and model are the route's own params, not
+        variables.
+      style: form
+      explode: true
+      schema:
+        type: object
+        additionalProperties:
+          type: string
+          maxLength: 20
+  headers:
+    VariablesDefaulted:
+      description: The agent's variables given no value, comma-separated; their defaults went in.
+      schema:
+        type: string
+    VariablesInvalid:
+      description: The agent's variables whose value was over 20 characters, comma-separated; their defaults went in.
+      schema:
+        type: string
+    VariablesUnknown:
+      description: Query params that are not the agent's variables, comma-separated; unused.
+      schema:
+        type: string
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
@@ -928,35 +1170,58 @@ components:
       name: x-simli-api-key
 
   schemas:
-    FacesRequest:
+    FaceAccess:
       type: object
       additionalProperties: false
       properties:
         id:
           type: string
           format: uuid
-          description: "Unique identifier for the face, generated by the MySQL service"
-        owner_id:
+        name:
           type: string
-          description: "Unique identifier for the owner of the face"
         simli_version:
           type: integer
           description: "Version of the Simli model used for the face"
           example: 1
+        is_public:
+          type: boolean
+          description: "Whether the face is public: usable by any account that has its face ID, though not listed or discoverable"
+        is_owner:
+          type: boolean
+          description: "Whether the face is your own. When false, you can use it because it is public and you have its ID"
       required:
         - id
-        - owner_id
+        - name
+        - simli_version
+        - is_public
+        - is_owner
+    FacePatchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        is_public:
+          type: boolean
+          description: "true makes the face public (usable by any account that has its face ID; not listed or discoverable), false makes it private (usable only by the account that created it)"
+      required:
+        - is_public
     FacesResponse:
       type: object
       additionalProperties: false
       properties:
+        is_owner:
+          type: boolean
+          description: "Always true: a face is answered this way to its owner only"
+        is_public:
+          type: boolean
+          description: "Whether the face is public: usable by any account that has its face ID, though not listed or discoverable. A private face is usable only by the account that created it. New faces are private; change it with PATCH /face/{id}"
+        is_deleted:
+          type: boolean
+        name:
+          type: string
         id:
           type: string
           format: uuid
-          description: "Unique identifier for the face, generated by the MySQL service"
-        owner_id:
-          type: string
-          description: "Unique identifier for the owner of the face"
+          description: "Unique identifier for the face"
         simli_version:
           type: integer
           description: "Version of the Simli model used for the face"
@@ -971,7 +1236,6 @@ components:
           description: "Timestamp when the face was last updated"
       required:
         - id
-        - owner_id
         - simli_version
         - created_at
         - updated_at
@@ -982,7 +1246,7 @@ components:
         id:
           type: string
           format: uuid
-          description: "Unique identifier for the agent, generated by the MySQL service"
+          description: "Unique identifier for the agent"
         face_id:
           type: string
           format: uuid
@@ -1020,9 +1284,6 @@ components:
         max_session_length:
           type: integer
           default: 3600
-        owner_id:
-          type: string
-          description: "Unique identifier for the owner of the agent"
         llm_provider:
           type: string
           enum: ["openai", "google", "user"]
@@ -1054,7 +1315,6 @@ components:
         - llm_endpoint
         - max_idle_time
         - max_session_length
-        - owner_id
         - llm_provider
         - created_at
         - updated_at
@@ -1081,9 +1341,6 @@ components:
         voice_model:
           type: string
           example: inworld-tts-2
-        owner_id:
-          type: string
-          description: "Unique identifier for the owner of the agent"
         language:
           type: string
         emotion:
@@ -1318,7 +1575,7 @@ components:
         faceId:
           type: string
           title: Faceid
-          default: bf13113a-355a-4d97-8b90-4edccd1da7b2
+          default: 14c60d62-6ebf-424d-b626-1f4f91c33b04
         ttsProvider:
           allOf:
             - $ref: "#/components/schemas/TTS_Provider"
@@ -1717,6 +1974,11 @@ components:
         - User
       title: TTS_Provider
     TokenRequest:
+      description: >-
+        What a Simli Auto session token seals. Either the session's own
+        `request`, for the websocket start, or what a saved agent's session
+        starts with: the keys, the framing (agents store none of their own)
+        and the transcript flag, the agent named at the start.
       properties:
         expiryStamp:
           anyOf:
@@ -1724,9 +1986,16 @@ components:
             - type: "null"
           title: Expirystamp
           default: -1
+          description: >-
+            When the token stops starting sessions, in Unix seconds; -1 for
+            never. Set it for a short-lived token.
         simliAPIKey:
           type: string
           title: Simliapikey
+          default: ""
+          description: >-
+            The API key the session runs on. Leave it out for the
+            x-simli-api-key header's.
         llmAPIKey:
           anyOf:
             - type: string
@@ -1752,6 +2021,18 @@ components:
             - type: "null"
           title: Originallowlist
           default: []
+          description: >-
+            The pages that may start sessions with the token, by host,
+            checked against the request's Origin. Leave it out for any.
+        request:
+          anyOf:
+            - $ref: "#/components/schemas/ConfigurableSessionRequest"
+            - type: "null"
+          description: >-
+            The session the token starts on the websocket, as POST
+            /auto/start/configurable takes it, carried exactly as set. A
+            start with it names no agent, and the request's own keys and
+            framing apply, not the token's.
         streaming_width:
           type: integer
           title: Streaming Width
@@ -1823,8 +2104,6 @@ components:
             background_id. Your app can change it with
             {"type": "simli-foreground", "id": "<foreground id>"}.
       type: object
-      required:
-        - simliAPIKey
       title: TokenRequest
     ValidationError:
       properties:
@@ -1858,16 +2137,20 @@ components:
         id:
           type: string
           format: uuid
-          description: Firebase unique identifier for the session
+          description: Unique identifier for the session
         face_id:
           type: string
           description: face_id used in session
         kind:
           type: string
           description: Interaction Method
-        endUserAggregator:
+        simliModel:
           type: string
-          description: (optional) Aggregation identifier provided in request by customer for grouping their end-users
+          enum: [Trinity 2, Trinity 1]
+          description: The avatar model that served the session; absent on records that don't say
+        sessionAggregator:
+          type: string
+          description: Aggregation identifier provided in request by customer for grouping their end-users; the API key's name (apiKeyName) when the request gave none
         apiKeyName:
           type: string
           description: (optional) Name of the API key used for this session
@@ -1881,13 +2164,253 @@ components:
         endTime:
           type: integer
           description: Session end time as Unix timestamp
+        endReason:
+          type: string
+          description: (Simli Auto) Why the session ended, e.g. PARTICIPANT_LEFT, CLIENT_STOPPED, NOBODY_JOINED
+        models:
+          type: array
+          description: (Simli Auto) Every model the session ran
+          items:
+            $ref: "#/components/schemas/ModelUse"
+        metrics:
+          $ref: "#/components/schemas/SessionMetrics"
+        meteredUsage:
+          type: object
+          description: >-
+            What the session's meters were billed, by service: the LLM and TTS
+            when Simli's keys ran them (llmDelegate is the text model GPT-Live
+            hands its reasoning to), and Simli Auto's agent fee on every Auto
+            session's seconds (a minute at least)
+          properties:
+            llm:
+              $ref: "#/components/schemas/MeterUsage"
+            llmDelegate:
+              $ref: "#/components/schemas/MeterUsage"
+            tts:
+              $ref: "#/components/schemas/MeterUsage"
+            agent:
+              $ref: "#/components/schemas/MeterUsage"
+        estimatedCost:
+          $ref: "#/components/schemas/EstimatedCost"
       required:
         - id
-        - userId
-        - sessionTokenId
         - sessionTotalTime
         - startTime
         - endTime
+    ModelUse:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [llm, tts, stt, speech_to_speech, avatar]
+        provider:
+          type: string
+          example: Azure OpenAI
+        model:
+          type: string
+          example: gpt-realtime-2.1-mini
+        simliKey:
+          type: boolean
+          description: Whether it ran on Simli's key (Simli pays for it) rather than the caller's
+    EstimatedCost:
+      type: object
+      description: >-
+        What a billed session came to, approximately, in US dollars: Simli's
+        seconds as billed at the account's plan rate, and what its LLM and TTS
+        meters charged. It's the same whether credits or the invoice paid for
+        it; the invoice rounds its totals, not each session's. Absent on
+        sessions that weren't billed and on records from before it was kept.
+      properties:
+        totalUSD:
+          type: number
+          example: 0.0453
+        byServiceUSD:
+          type: object
+          description: By service, as in meteredUsage, and simli
+          properties:
+            simli:
+              type: number
+            llm:
+              type: number
+            llmDelegate:
+              type: number
+            tts:
+              type: number
+            agent:
+              type: number
+              description: Simli Auto's agent fee
+        simliBilledSeconds:
+          type: integer
+          description: Simli's seconds as billed (a Trinity session on a paid plan bills a fifth of its seconds, a minute's fifth at least)
+        simliPricePerMinute:
+          type: number
+          description: The plan's rate for Simli's seconds, dollars a minute
+    MeterUsage:
+      type: object
+      description: >-
+        What one service's usage meter got. A token meter's value is in its
+        own units: the tokens weighted by their list prices over the meter's
+        price, so the meter bills what they cost (in whole units).
+      properties:
+        meter:
+          type: string
+          example: gpt_6_luna_tokens
+        value:
+          type: integer
+          description: What the meter was given
+        connectedSeconds:
+          type: integer
+          description: Billed by the seconds the session was connected
+        speakingSeconds:
+          type: number
+          description: (TTS) Seconds the avatar spoke
+        uncachedInputTokens:
+          type: integer
+        cachedInputTokens:
+          type: integer
+        cacheWriteInputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+          description: Output tokens, thinking included
+        uncachedInputAudioTokens:
+          type: integer
+          description: (Speech to speech) Audio tokens, priced apart from the text ones above
+        cachedInputAudioTokens:
+          type: integer
+        outputAudioTokens:
+          type: integer
+        transcribedSeconds:
+          type: number
+          description: (GPT-Realtime) Seconds of the user's speech transcribed
+        transcriptionPricePerMinute:
+          type: number
+          description: The transcription's list price, dollars per minute
+        listPricesPerMillion:
+          type: object
+          description: The model's list prices used, dollars per 1M tokens (its text's, where it prices audio apart)
+          properties:
+            input:
+              type: number
+            cachedInput:
+              type: number
+            cacheWrite:
+              type: number
+            output:
+              type: number
+            audioInput:
+              type: number
+            cachedAudioInput:
+              type: number
+            audioOutput:
+              type: number
+        meterPricePerMillion:
+          type: number
+          description: The meter's price, dollars per 1M of its units
+        costUSD:
+          type: number
+          description: What the tokens cost at those list prices
+    SessionMetrics:
+      type: object
+      description: (Simli Auto) What the session did. A field is present only where the session's services report it.
+      properties:
+        startup:
+          type: object
+          description: Milliseconds from the session's start on Simli's server
+          properties:
+            firstFrameMs:
+              type: integer
+              description: To the avatar's first frame
+            userJoinedMs:
+              type: integer
+              description: To the user joining
+            firstWordsMs:
+              type: integer
+              description: To the avatar's first words
+        speech:
+          type: object
+          properties:
+            userSeconds:
+              type: number
+              description: Seconds the user spoke
+            avatarSeconds:
+              type: number
+              description: Seconds the avatar spoke
+        turns:
+          type: object
+          properties:
+            user:
+              type: integer
+            typed:
+              type: integer
+              description: The user's turns they typed (user-input on the session websocket) instead of saying; counted in user too
+            avatar:
+              type: integer
+            interruptions:
+              type: integer
+              description: Times the user cut the avatar off
+            backchannels:
+              type: integer
+              description: Short listening sounds ("mhm") the avatar made while the user talked; neither its turns nor replies
+        replies:
+          type: object
+          description: From the end of the user's speech to the avatar's voice, per reply (typed turns' replies aren't counted)
+          properties:
+            count:
+              type: integer
+            meanMs:
+              type: integer
+            p50Ms:
+              type: integer
+            p90Ms:
+              type: integer
+            maxMs:
+              type: integer
+        ttfbMs:
+          type: object
+          description: Mean time to first byte of each kind of service (stt, llm, tts)
+          additionalProperties:
+            type: integer
+        usage:
+          type: object
+          properties:
+            llm:
+              type: object
+              description: Tokens the LLM or speech-to-speech model reported
+              properties:
+                inputTokens:
+                  type: integer
+                outputTokens:
+                  type: integer
+                totalTokens:
+                  type: integer
+                cachedInputTokens:
+                  type: integer
+                cacheWriteInputTokens:
+                  type: integer
+                reasoningTokens:
+                  type: integer
+                inputAudioTokens:
+                  type: integer
+                outputAudioTokens:
+                  type: integer
+                cachedInputAudioTokens:
+                  type: integer
+            tts:
+              type: object
+              properties:
+                characters:
+                  type: integer
+            stt:
+              type: object
+              properties:
+                audioSeconds:
+                  type: number
+        toolCalls:
+          type: integer
+          description: Function calls the model made (knowledge base searches among them)
+        errors:
+          type: integer
 
     Error:
       type: object
