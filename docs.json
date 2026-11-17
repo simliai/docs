@@ -67,8 +67,9 @@
                         "group": "Starter repos",
                         "icon": "github",
                         "pages": [
-                            "api-reference/samples/openai",
+                            "api-reference/samples/gemini",
                             "api-reference/samples/elevenlabs",
+                            "api-reference/samples/openai",
                             "api-reference/samples/all-samples"
                         ]
                     },

@@ -8,10 +8,10 @@ description: "ElevenLabs Agents starter, built with the Simli JavaScript SDK"
 	A Next.js app that gives an ElevenLabs agent a Simli avatar.
 </Card>
 
-The page connects to your [ElevenLabs agent](https://elevenlabs.io/app/agents) over a WebSocket, sends the agent your microphone, and plays the agent's voice through the avatar with the [JavaScript SDK](/api-reference/javascript). Both API keys stay on the server: `/api/simli-token` creates the Simli [session token](/api-reference/javascript#2-create-a-session-token-on-your-server), and `/api/elevenlabs-signed-url` gets a short-lived signed URL for the agent.
+The page connects to an [ElevenLabs agent](https://elevenlabs.io/docs/eleven-agents) over a WebSocket, sends the agent your microphone, and plays the agent's voice through the avatar with the [JavaScript SDK](/api-reference/javascript). Both API keys stay on the server: `/api/simli-token` creates the Simli [session token](/api-reference/javascript#2-create-a-session-token-on-your-server), and `/api/elevenlabs-signed-url` gets a short-lived signed URL for the agent.
 
-In the ElevenLabs agent's settings, set the **TTS output format to PCM 16000 Hz** (Simli needs 16 kHz PCM) and a short **first message**, so the avatar greets you as soon as the conversation opens.
+There are no ElevenLabs dashboard steps: on the first request, the server finds or creates its own ElevenLabs agent through the Agents API, configured from `app/avatar.ts` (prompt, first message, voice, language, LLM and call limits), with the PCM 16000 Hz audio Simli needs. When you change `app/avatar.ts`, the next request updates the agent. To use an agent you configured yourself instead, set `ELEVENLABS_AGENT_ID`; the README says how to set it up.
 
-To run it, copy `.env.example`, fill in `SIMLI_API_KEY`, `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`, then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-elevenlabs#readme) has the details.
+To run it, copy `.env.example`, fill in `SIMLI_API_KEY` and `ELEVENLABS_API_KEY`, then run `npm install` and `npm run dev`. If you restrict the ElevenLabs key, give it ElevenLabs Agents read and write access. The [README](https://github.com/simliai/create-simli-app-elevenlabs#readme) has the details, including the ElevenLabs free plan's limits.
 
-<Warning>In production, both routes return `403` until you put them behind your own sign-in, because anyone who can call them starts a conversation on your Simli and ElevenLabs accounts. Also set call and duration limits on the ElevenLabs agent. See the README's "Before you deploy".</Warning>
+<Warning>In production, both routes return `403` until you put them behind your own sign-in, because anyone who can call them starts a conversation on your Simli and ElevenLabs accounts. The managed agent's call limits are set in `app/avatar.ts`; lower them for production. See the README's "Before you deploy".</Warning>
