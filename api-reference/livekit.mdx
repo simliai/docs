@@ -179,7 +179,7 @@ Use the starter's web page, LiveKit's [Agents Playground](https://agents-playgro
 
 ## Before you go to production
 
-- Anyone who can join a room in your LiveKit project starts a conversation, which uses your Simli minutes and LiveKit Inference credit. The starter page's token route hands a token to anyone who opens the page, so put it behind your own sign-in before you deploy it.
+- Anyone who can join a room in your LiveKit project starts a conversation, which uses your Simli minutes and LiveKit Inference credit. The starter page's token route has no sign-in, so a production build refuses to hand out tokens (403) until you add your own sign-in, or set `ALLOW_UNAUTHENTICATED_SESSIONS=true` for a demo.
 - The avatar leaves the room as soon as its agent does, so ending the agent's session, or deleting the room, ends the Simli session and its billing. A brief network blip on the agent's side doesn't count: LiveKit resumes the connection.
 - To deploy the agent, run `python agent.py start` on any server, or see [LiveKit's deployment guide](https://docs.livekit.io/deploy/agents/). The page builds with `npm run build` and runs with `npm start`, or deploys to any Next.js host.
 
