@@ -1,0 +1,22 @@
+---
+title: "Gemini Live"
+icon: "google"
+description: "Gemini Live starter: a Next.js app built with the Simli JavaScript SDK, on a free Google AI Studio key"
+---
+
+<Card title="create-simli-app-gemini" icon="github" href="https://github.com/simliai/create-simli-app-gemini">
+	A Next.js app where a Gemini Live voice agent talks to you through a Simli avatar. It runs on a free Google AI Studio key, with no card needed.
+</Card>
+
+The browser sends your microphone to the [Gemini Live API](https://aistudio.google.com/docs/live-api) over a WebSocket, and plays the model's voice through the avatar with the [JavaScript SDK](/api-reference/javascript). Both API keys stay on the server:
+
+- `/api/simli-token` creates the Simli [session token](/api-reference/javascript#2-create-a-session-token-on-your-server).
+- `/api/gemini-token` mints a short-lived, single-use Gemini [ephemeral token](https://aistudio.google.com/docs/live-api/ephemeral-tokens). The model, voice and prompt are set on the server, in `app/avatar.ts`, and locked into the token, so the browser can't change them.
+
+The default model is `gemini-3.8-live`, free of charge on the free tier, and the default voice is `Sulafat`, to match the default face. For a male face, use a male voice such as `Achird`.
+
+To run it, copy `.env.example`, fill in `SIMLI_API_KEY` and `GEMINI_API_KEY` (free from [Google AI Studio](https://aistudio.google.com/apikey): sign in with a Google account, no billing needed), then run `npm install` and `npm run dev`. The [README](https://github.com/simliai/create-simli-app-gemini#readme) has the details, including how to change the face, voice and prompt.
+
+<Warning>The free tier is for trying things out. On it, Google may use your prompts and the model's responses to improve its products, its rate limits are low, and you may only serve users in the EEA, Switzerland or the UK on the paid tier. See the README's "Free tier". In production, both routes return `403` until you put them behind your own sign-in, because anyone who can call them starts a session on your Simli and Gemini accounts. See the README's "Before you deploy".</Warning>
+
+For an agent that runs on a server instead, see [LiveKit Agents](/api-reference/livekit) or [Pipecat](/api-reference/pipecat).

@@ -9,6 +9,8 @@ description: "The API devs use to add faces to realtime AI agents"
 The Simli speech-to-video API lets developers create lip-synced AI avatar interactions. With visual AI avatars, you can create anything! Mock interviews, sales assistants, language learning, coaching, customer-service training, historical characters, and so much more. 
 Ready to make your first one?
 
+<Tip>The quickest free start is the [Gemini Live starter](/api-reference/samples/gemini): a Next.js app that runs on a free Google AI Studio key and a Simli API key. See [all starters](/api-reference/samples/all-samples) for ElevenLabs, LiveKit, OpenAI and more.</Tip>
+
 <CardGroup cols={2}>
 
 <Card title="Use LiveKit Agents" icon="pickaxe" iconType="duotone" href="/api-reference/livekit">
@@ -38,7 +40,7 @@ Each pathway needs a Simli API key, from your [Simli dashboard](https://app.siml
 
 | Pathway | Runs | What you bring |
 | --- | --- | --- |
-| [LiveKit Agents](/api-reference/livekit) | A Python agent in your LiveKit room | Your own LiveKit server, reachable from the internet: LiveKit Cloud, or self-hosted with a public address (not `localhost`). A key for your model provider: OpenAI for the starter. |
+| [LiveKit Agents](/api-reference/livekit) | A Python agent in your LiveKit room | Your own LiveKit server, reachable from the internet: LiveKit Cloud, or self-hosted with a public address (not `localhost`). The starter needs only a LiveKit Cloud project, on the free Build plan: its models run on LiveKit Inference, with no other keys. |
 | [Pipecat](/api-reference/pipecat) | A Python agent on your machine | An OpenAI API key. No other accounts. |
 | [JavaScript SDK](/api-reference/javascript) | In the browser | A backend route that creates session tokens, so your API key never goes in the browser. |
 | [Python SDK](/api-reference/python) | In your Python program | Nothing else. |

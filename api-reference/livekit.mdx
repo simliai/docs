@@ -8,24 +8,25 @@ description: "Give a LiveKit Agents voice agent a lip-synced Simli avatar"
 
 ## What you need
 
-- **A LiveKit server that's reachable from the internet**: a [LiveKit Cloud](https://cloud.livekit.io) project (the free tier works), or a self-hosted LiveKit server with a public address. You need its URL, API key and API secret.
-- A Simli API key, from your [Simli dashboard](https://app.simli.com)
-- A key for your model provider. The starter uses OpenAI's Realtime API, so an [OpenAI API key](https://platform.openai.com/api-keys) is all it needs: there's no separate speech-to-text or text-to-speech provider.
+- **A [LiveKit Cloud](https://cloud.livekit.io) project**: the free Build plan works, with no card required. You need its URL, API key and API secret. The starter runs its models on [LiveKit Inference](https://docs.livekit.io/agents/models/): Deepgram Nova-3 for speech-to-text, Gemma 4 31B as the LLM and Cartesia Sonic 3.5 for text-to-speech. The LiveKit project's credentials pay for them, so there are no OpenAI, Deepgram or other model keys.
+- A Simli API key, from your [Simli dashboard](https://app.simli.com). The free plan works.
 - Python 3.10 or later (the starter uses [uv](https://docs.astral.sh/uv/)), and [Node.js](https://nodejs.org) 20.9 or later for the starter's web page
 
-<Warning>A LiveKit server running on your own machine (`localhost`, or `livekit-server --dev`) won't work. Simli's servers join your room from the internet, so `LIVEKIT_URL` must be reachable from the internet: use LiveKit Cloud, or a self-hosted server with a public address.</Warning>
+<Warning>A LiveKit server running on your own machine (`localhost`, or `livekit-server --dev`) won't work. Simli's servers join your room from the internet, so `LIVEKIT_URL` must be reachable from the internet. LiveKit Inference also runs only on LiveKit Cloud, so the starter needs a LiveKit Cloud project. The Simli plugin itself works with a self-hosted server with a public address too, if your agent brings its own model plugins and keys.</Warning>
+
+On the free plans, LiveKit's Build plan includes $2.50 of LiveKit Inference credit a month, and Simli's free plan 50 avatar minutes a month and 1 session at a time. The starter's README has the details.
 
 ## Run the starter
 
 <Card title="create-simli-app-livekit-agents" icon="github" href="https://github.com/simliai/create-simli-app-livekit-agents">
-	A LiveKit Agents voice agent on OpenAI's Realtime API, with a Simli Trinity-2 avatar and a small web page to talk to it. Its lockfile pins the versions it was tested with.
+	A LiveKit Agents voice agent on LiveKit Inference, with a Simli Trinity-2 avatar and a small web page to talk to it. Its lockfile pins the versions it was tested with.
 </Card>
 
 ```bash
 git clone https://github.com/simliai/create-simli-app-livekit-agents
 cd create-simli-app-livekit-agents
 uv sync
-cp .env.example .env                          # then paste in your keys
+cp .env.example .env                          # then paste in your four values
 cp frontend/.env.example frontend/.env.local  # then copy in the same three LIVEKIT_ values
 uv run agent.py dev
 ```
@@ -45,7 +46,7 @@ The agent registers as `simli-agent` and only joins rooms whose token dispatches
 ### 1. Install the packages
 
 ```bash
-pip install "livekit-agents[openai,simli]>=1.8.10" python-dotenv
+pip install "livekit-agents>=1.8.11" "livekit-plugins-simli>=1.8.11" python-dotenv
 ```
 
 ### 2. Set your keys
@@ -57,10 +58,9 @@ LIVEKIT_URL=wss://your-project.livekit.cloud
 LIVEKIT_API_KEY=...
 LIVEKIT_API_SECRET=...
 SIMLI_API_KEY=...
-OPENAI_API_KEY=...
 ```
 
-The Simli plugin reads the `LIVEKIT_*` values too: it gives the avatar a token to join the room.
+LiveKit Inference bills the models to the project in these `LIVEKIT_*` values. The Simli plugin reads them too: it gives the avatar a token to join the room.
 
 ### 3. Add the avatar to your agent
 
@@ -71,8 +71,16 @@ import asyncio
 import os
 
 from dotenv import load_dotenv
-from livekit.agents import Agent, AgentServer, AgentSession, JobContext, cli
-from livekit.plugins import openai, simli
+from livekit.agents import (
+    Agent,
+    AgentServer,
+    AgentSession,
+    JobContext,
+    TurnHandlingOptions,
+    cli,
+    inference,
+)
+from livekit.plugins import simli
 
 load_dotenv()
 
@@ -82,7 +90,14 @@ server = AgentServer()
 # Explicit dispatch: the agent only joins rooms whose token names it.
 @server.rtc_session(agent_name=os.getenv("LIVEKIT_AGENT_NAME") or "simli-agent")
 async def entrypoint(ctx: JobContext) -> None:
-    session = AgentSession(llm=openai.realtime.RealtimeModel(model="gpt-realtime", voice="marin"))
+    # Speech-to-text, LLM and text-to-speech, all on LiveKit Inference.
+    session = AgentSession(
+        stt=inference.STT(model="deepgram/nova-3", language="en"),
+        llm=inference.LLM(model="google/gemma-4-31b-it"),
+        tts=inference.TTS(model="cartesia/sonic-3.5", voice="9626c31c-bec5-4cca-baa8-f8ba9e84c8bc"),  # Jacqueline
+        # LiveKit's turn detector decides when the user has finished speaking.
+        turn_handling=TurnHandlingOptions(turn_detection=inference.TurnDetector()),
+    )
 
     # Connect first: wait_for_join() below only waits once the room is connected.
     await ctx.connect()
@@ -110,7 +125,7 @@ async def entrypoint(ctx: JobContext) -> None:
         return
 
     await session.start(agent=Agent(instructions="You are a friendly voice assistant."), room=ctx.room)
-    session.generate_reply(instructions="Greet the user in one short sentence.")
+    session.say("Hi, I'm Ava. What would you like to talk about?")
 
 
 if __name__ == "__main__":
@@ -149,7 +164,7 @@ python agent.py start   # in production
 
 Both connect to your LiveKit project and wait. The agent joins a room, and starts a Simli session, when the room's token [dispatches it by name](https://docs.livekit.io/agents/server/agent-dispatch/): `simli-agent`, or your `LIVEKIT_AGENT_NAME`.
 
-`python agent.py console` talks to the agent in your terminal instead. It's voice only, with no avatar, since there's no LiveKit room. The starter's agent handles that case. The [LiveKit CLI](https://docs.livekit.io/agents/server/startup-modes/) can also run the same `agent.py`, with `lk agent dev` and `lk agent console`.
+`python agent.py console` talks to the agent in your terminal instead. It's voice only, with no avatar, since there's no LiveKit room, but it still needs the `LIVEKIT_*` values for LiveKit Inference. The starter's agent handles that case. The [LiveKit CLI](https://docs.livekit.io/agents/server/startup-modes/) can also run the same `agent.py`, with `lk agent dev` and `lk agent console`.
 
 ### 5. Talk to it
 
@@ -159,16 +174,17 @@ Use the starter's web page, LiveKit's [Agents Playground](https://agents-playgro
 
 - **The Simli avatar didn't start:** the Simli error logged just before says why. `401` means `SIMLI_API_KEY` is wrong, `400` means the face ID wasn't found, and `429` means your Simli account is already running as many sessions as it can.
 - **The Simli avatar didn't join the room:** usually Simli couldn't reach your LiveKit server. `LIVEKIT_URL` must be reachable from the internet, not `localhost`.
+- **The avatar appears but never answers, and the agent logs STT, LLM or TTS errors:** LiveKit Inference refused the request. Check that `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` belong to the project in `LIVEKIT_URL`, and whether this month's Inference credit is used up.
 - **The page says the avatar didn't join:** check that the agent is running, that `.env` and `frontend/.env.local` hold the same `LIVEKIT_*` values, and that `LIVEKIT_AGENT_NAME` matches in both if you set it.
 
 ## Before you go to production
 
-- Anyone who can join a room in your LiveKit project starts a conversation, which uses your Simli minutes and model credit. The starter page's token route hands a token to anyone who opens the page, so put it behind your own sign-in before you deploy it.
+- Anyone who can join a room in your LiveKit project starts a conversation, which uses your Simli minutes and LiveKit Inference credit. The starter page's token route has no sign-in, so a production build refuses to hand out tokens (403) until you add your own sign-in, or set `ALLOW_UNAUTHENTICATED_SESSIONS=true` for a demo.
 - The avatar leaves the room as soon as its agent does, so ending the agent's session, or deleting the room, ends the Simli session and its billing. A brief network blip on the agent's side doesn't count: LiveKit resumes the connection.
 - To deploy the agent, run `python agent.py start` on any server, or see [LiveKit's deployment guide](https://docs.livekit.io/deploy/agents/). The page builds with `npm run build` and runs with `npm start`, or deploys to any Next.js host.
 
 ## Learn more
 
-- The starter's [README](https://github.com/simliai/create-simli-app-livekit-agents#readme): changing the face, model, voice and prompt
+- The starter's [README](https://github.com/simliai/create-simli-app-livekit-agents#readme): changing the face, models, voice and prompt, and the free plans' limits
 - [LiveKit's guide to Simli](https://docs.livekit.io/agents/models/avatar/plugins/simli/)
 - [LiveKit Agents docs](https://docs.livekit.io/agents/): tools, other models and more
